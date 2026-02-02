@@ -5,6 +5,8 @@ import api from './api';
 import type { ApiResponse } from '@/types';
 import type {
   CreditBasicStatsResult,
+  CreditBatchRunResult,
+  CreditBatchStatus,
   CreditCorrelationResult,
   CreditDistributionResult,
   CreditMissingPatternResult,
@@ -16,6 +18,24 @@ import type {
 const creditService = {
   predict: async (payload: CreditPredictRequest): Promise<ApiResponse<CreditPredictResult>> => {
     const response = await api.post<ApiResponse<CreditPredictResult>>('/credit/run', payload);
+    return response.data;
+  },
+
+  /**
+   * 배치 신용평가 실행 (개인/그룹/전체)
+   */
+  runBatch: async (payload: CreditPredictRequest): Promise<ApiResponse<CreditBatchRunResult>> => {
+    const response = await api.post<ApiResponse<CreditBatchRunResult>>('/credit/run', payload);
+    return response.data;
+  },
+
+  /**
+   * 배치 실행 상태 조회
+   */
+  getBatchStatus: async (batchId: string, runId: string): Promise<ApiResponse<CreditBatchStatus>> => {
+    const response = await api.get<ApiResponse<CreditBatchStatus>>('/credit/run/status', {
+      params: { batchId, runId },
+    });
     return response.data;
   },
   distribution: async (): Promise<ApiResponse<CreditDistributionResult>> => {

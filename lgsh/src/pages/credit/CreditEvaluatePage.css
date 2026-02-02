@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 800px;
 }
 
 .credit-evaluate-page .page-header {
@@ -20,12 +21,50 @@
   color: #6b7280;
 }
 
-.credit-evaluate-page .credit-mode-card .label {
-  font-weight: 600;
+.credit-evaluate-page .evaluate-card {
+  padding: 16px;
 }
 
-.credit-evaluate-page .credit-mode-card .helper-text {
-  color: #6b7280;
+.credit-evaluate-page .evaluate-layout {
+  display: flex;
+  gap: 24px;
+}
+
+.credit-evaluate-page .mode-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.credit-evaluate-page .mode-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.credit-evaluate-page .mode-form {
+  flex: 1;
+  border-left: 1px solid #e5e7eb;
+  padding-left: 20px;
+}
+
+.credit-evaluate-page .form-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.credit-evaluate-page .form-row .ant-form-item {
+  flex: 1;
+  margin-bottom: 8px;
+}
+
+.credit-evaluate-page .form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .credit-evaluate-page .form-grid {
