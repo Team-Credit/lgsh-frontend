@@ -32,3 +32,10 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Windows 예약어 무시
+**/nul
+**/NUL
+
+.metadata/
+*.log

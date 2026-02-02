@@ -1,0 +1,134 @@
+/**
+ * 위젯 컨테이너 스타일
+ */
+
+.widget-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.widget-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.widget-card.edit-mode {
+  border: 2px dashed var(--line, #e6ebf5);
+}
+
+.widget-card.edit-mode:hover {
+  border-color: var(--primary, #1e3a8a);
+}
+
+.widget-card .ant-card-head {
+  min-height: 40px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line-light, #f0f3f9);
+}
+
+.widget-card .ant-card-head-title {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 0;
+}
+
+.widget-card .ant-card-body {
+  flex: 1;
+  padding: 12px;
+  overflow: auto;
+}
+
+.widget-card .ant-card-extra {
+  padding: 8px 0;
+}
+
+/* 위젯 액션 */
+.widget-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.widget-actions .ant-btn {
+  color: var(--muted, #64748b);
+}
+
+.widget-actions .ant-btn:hover {
+  color: var(--primary, #1e3a8a);
+}
+
+/* 로딩 상태 */
+.widget-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 80px;
+}
+
+/* 에러 상태 */
+.widget-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* 빈 상태 */
+.widget-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* 위젯 타입별 스타일 */
+.widget-type-stat_card .ant-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.widget-type-chart .ant-card-body {
+  padding: 8px;
+}
+
+.widget-type-list .ant-card-body {
+  padding: 0;
+}
+
+/* 다크모드 */
+:root[data-theme='dark'] .widget-card {
+  background: var(--panel, #0c1628);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme='dark'] .widget-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme='dark'] .widget-card.edit-mode {
+  border-color: var(--line, #1c2a46);
+}
+
+:root[data-theme='dark'] .widget-card.edit-mode:hover {
+  border-color: var(--primary, #3b82f6);
+}
+
+:root[data-theme='dark'] .widget-card .ant-card-head {
+  border-bottom-color: var(--line, #1c2a46);
+}
+
+:root[data-theme='dark'] .widget-card .ant-card-head-title {
+  color: var(--text, #e5e7eb);
+}
+
+:root[data-theme='dark'] .widget-actions .ant-btn {
+  color: var(--muted, #94a3b8);
+}
+
+:root[data-theme='dark'] .widget-actions .ant-btn:hover {
+  color: var(--primary, #3b82f6);
+}

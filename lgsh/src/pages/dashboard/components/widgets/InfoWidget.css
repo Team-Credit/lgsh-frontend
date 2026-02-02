@@ -1,0 +1,51 @@
+/**
+ * 정보 위젯 스타일
+ */
+
+.info-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+}
+
+.info-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.info-widget-name {
+  font-size: 14px;
+}
+
+.info-widget-details .ant-descriptions-item {
+  padding-bottom: 4px;
+}
+
+.info-widget-details .ant-descriptions-item-label {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+
+.info-widget-details .ant-descriptions-item-content {
+  font-size: 12px;
+}
+
+/* 다크모드 */
+:root[data-theme='dark'] .info-widget-name {
+  color: var(--text, #e5e7eb);
+}
+
+:root[data-theme='dark'] .info-widget-details .ant-descriptions-item-label {
+  color: var(--muted, #94a3b8);
+}
+
+:root[data-theme='dark'] .info-widget-details .ant-descriptions-item-content {
+  color: var(--text, #e5e7eb);
+}
+
+:root[data-theme='dark'] .info-widget .ant-typography {
+  color: var(--text, #e5e7eb);
+}
