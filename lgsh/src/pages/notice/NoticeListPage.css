@@ -1,0 +1,38 @@
+﻿.notice-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-card .ant-card-body {
+  padding: 12px;
+}
+
+.notice-list__title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.notice-list__title-link:hover {
+  text-decoration: underline;
+}
+
+.notice-list__table .ant-table-thead > tr > th {
+  background: #fafafa;
+}
+
+.notice-list__pinned-row {
+  background: #fffbe6;
+}
+
+.notice-list__pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}

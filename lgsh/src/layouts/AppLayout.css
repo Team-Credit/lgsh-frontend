@@ -1,0 +1,346 @@
+/**
+ * AppLayout 스타일
+ * - 1920x1080 해상도 기준
+ * - 상단 헤더: 64px
+ * - 좌측 사이드바: 280px (접힘: 64px)
+ */
+
+/* ========== 전체 레이아웃 ========== */
+.app-layout {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* ========== 헤더 ========== */
+.app-header {
+  height: var(--header-height);
+  padding: 0 24px;
+  background: var(--header-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.header-center {
+  flex: 1;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 브랜드 */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px;
+  object-fit: contain;
+}
+
+.header-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+/* 검색 */
+.header-search {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  height: 42px;
+}
+
+.header-search input {
+  background: transparent !important;
+  color: white !important;
+}
+
+.header-search input::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.header-search .ant-input-prefix {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.header-search .ant-input-clear-icon {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 아이콘 버튼 */
+.header-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: white !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.header-icon-btn .anticon {
+  font-size: 18px;
+}
+
+/* 사용자 정보 */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.header-user:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.header-avatar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.header-user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.header-user-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+}
+
+.header-user-role {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ========== 바디 영역 ========== */
+.app-body {
+  height: calc(100vh - var(--header-height));
+}
+
+/* ========== 사이드바 ========== */
+.app-sider {
+  background: var(--panel) !important;
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.app-sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 사이드바 헤더 */
+.sider-header {
+  height: 56px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.sider-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sider-collapse-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--muted) !important;
+}
+
+.sider-collapse-btn:hover {
+  background: var(--primary-bg) !important;
+  color: var(--primary) !important;
+}
+
+/* 접힌 상태 */
+.app-sider.ant-layout-sider-collapsed .sider-header {
+  justify-content: center;
+  padding: 0;
+}
+
+/* 메뉴 */
+.sider-menu {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: none !important;
+  padding: 8px;
+  background: transparent !important;
+}
+
+.sider-menu .ant-menu-item {
+  margin: 4px 0;
+  border-radius: 8px;
+  height: 44px;
+  line-height: 44px;
+}
+
+.sider-menu .ant-menu-item:hover {
+  background: color-mix(in srgb, var(--primary-bg) 60%, transparent) !important;
+}
+
+.sider-menu .ant-menu-item-selected {
+  background: var(--primary-bg) !important;
+}
+
+.sider-menu .ant-menu-item-selected a {
+  color: var(--primary) !important;
+  font-weight: 600;
+}
+
+.sider-menu .ant-menu-submenu-title {
+  margin: 4px 0;
+  border-radius: 8px;
+  height: 44px;
+  line-height: 44px;
+}
+
+.sider-menu .ant-menu-submenu-title:hover {
+  background: color-mix(in srgb, var(--primary-bg) 60%, transparent) !important;
+}
+
+.sider-menu .ant-menu-sub {
+  background: transparent !important;
+}
+
+/* 접힌 메뉴 */
+.app-sider.ant-layout-sider-collapsed .sider-menu {
+  padding: 8px 4px;
+}
+
+.app-sider.ant-layout-sider-collapsed .sider-menu .ant-menu-item {
+  padding: 0 !important;
+  justify-content: center;
+}
+
+/* ========== 메인 컨텐츠 ========== */
+.app-content {
+  background: var(--bg);
+  overflow: auto;
+  padding: 0;
+}
+
+/* ========== 다크 모드 ========== */
+[data-theme="dark"] .app-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+}
+
+[data-theme="dark"] .app-sider {
+  background: var(--panel) !important;
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .sider-header {
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .sider-menu .ant-menu-item-selected {
+  background: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+}
+
+/* ========== 반응형 ========== */
+@media (max-width: 1400px) {
+  .header-center {
+    max-width: 360px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .header-center {
+    display: none;
+  }
+
+  .app-sider {
+    position: fixed !important;
+    left: 0;
+    top: var(--header-height);
+    bottom: 0;
+    z-index: var(--z-dropdown);
+  }
+
+  .app-sider.ant-layout-sider-collapsed {
+    transform: translateX(-100%);
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  .header-brand-text {
+    display: none;
+  }
+
+  .header-user-info {
+    display: none;
+  }
+
+  .header-user {
+    padding: 4px;
+    border-radius: 50%;
+  }
+}

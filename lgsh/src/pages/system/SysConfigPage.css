@@ -1,0 +1,257 @@
+/**
+ * 환경설정 관리 페이지 스타일
+ */
+
+.sys-config-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  gap: 16px;
+}
+
+.sys-config-page .page-header {
+  margin-bottom: 8px;
+}
+
+.sys-config-page .page-header h4 {
+  margin-bottom: 4px;
+}
+
+/* 패널 그룹 */
+.config-panel-group {
+  flex: 1;
+  min-height: 0;
+}
+
+.config-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+}
+
+/* 리사이즈 핸들 */
+.sys-config-page .resize-handle {
+  width: 6px;
+  background: var(--line, #e6ebf5);
+  cursor: col-resize;
+  transition: background-color 0.2s;
+  margin: 0 2px;
+  border-radius: 3px;
+}
+
+.sys-config-page .resize-handle:hover {
+  background: var(--primary, #1e3a8a);
+}
+
+/* 좌측 코드 섹션 */
+.code-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+}
+
+/* 카드 */
+.code-card,
+.config-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.code-card .ant-card-body,
+.config-card .ant-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px;
+}
+
+/* 검색 폼 */
+.sys-config-page .search-form {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line, #e6ebf5);
+}
+
+.sys-config-page .search-form .ant-form-item {
+  margin-bottom: 4px;
+}
+
+/* 테이블 */
+.sys-config-page .ant-table-wrapper {
+  flex: 1;
+  overflow: auto;
+}
+
+.sys-config-page .ant-table {
+  font-size: 13px;
+}
+
+.sys-config-page .ant-table-thead > tr > th {
+  background: #f8fafc;
+  font-weight: 600;
+  padding: 6px 8px;
+}
+
+.sys-config-page .ant-table-tbody > tr > td {
+  padding: 6px 8px;
+}
+
+/* 선택된 행 */
+.sys-config-page .ant-table-row-selected,
+.sys-config-page .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: #e8f0fe !important;
+}
+
+.sys-config-page .ant-table-tbody > tr:hover > td {
+  background: #f0f5ff;
+}
+
+/* 행 클릭 커서 */
+.sys-config-page .ant-table-tbody > tr {
+  cursor: pointer;
+}
+
+/* Resizable 핸들 */
+.sys-config-page .react-resizable-handle {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  z-index: 1;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+}
+
+.sys-config-page .react-resizable-handle:hover {
+  background: rgba(30, 58, 138, 0.1);
+}
+
+/* 모달 */
+.sys-config-page .ant-modal-body {
+  padding: 16px 24px;
+}
+
+/* 태그 스타일 */
+.sys-config-page .ant-tag {
+  margin-right: 0;
+}
+
+/* 버튼 그룹 */
+.sys-config-page .ant-space {
+  flex-wrap: wrap;
+}
+
+/* 설정키 코드 스타일 */
+.sys-config-page .ant-typography code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  font-size: 12px;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* 반응형 */
+@media (max-width: 1200px) {
+  .config-panel-group {
+    flex-direction: column;
+  }
+
+  .config-panel {
+    min-width: auto;
+    min-height: 300px;
+  }
+
+  .sys-config-page .resize-handle {
+    width: 100%;
+    height: 6px;
+    cursor: row-resize;
+    margin: 2px 0;
+  }
+}
+
+/* 다크모드 */
+:root.dark .sys-config-page .ant-table-thead > tr > th {
+  background: #1c2a46 !important;
+  color: var(--text) !important;
+}
+
+:root.dark .sys-config-page .ant-table-tbody > tr > td {
+  color: var(--text);
+}
+
+:root.dark .sys-config-page .resize-handle {
+  background: #1c2a46;
+}
+
+:root.dark .sys-config-page .resize-handle:hover {
+  background: #3b82f6;
+}
+
+:root.dark .sys-config-page .ant-table-row-selected,
+:root.dark .sys-config-page .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+:root.dark .sys-config-page .ant-table-tbody > tr:hover > td {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* 다크모드 - 코드/코드명 텍스트 */
+:root.dark .sys-config-page .ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .sys-config-page .ant-typography.ant-typography-secondary {
+  color: var(--text-secondary) !important;
+}
+
+/* 다크모드 - 페이지 헤더 */
+:root.dark .sys-config-page .page-header h4,
+:root.dark .sys-config-page .page-header .ant-typography {
+  color: var(--text) !important;
+}
+
+/* 다크모드 - 카드 타이틀 */
+:root.dark .sys-config-page .ant-card-head-title {
+  color: var(--text) !important;
+}
+
+/* 다크모드 - 설정키 코드 스타일 */
+:root.dark .sys-config-page .ant-typography code {
+  background: #1e293b;
+  color: #93c5fd;
+}
+
+/* 다크모드 - 검색폼 라벨 */
+:root.dark .sys-config-page .search-form .ant-form-item-label > label {
+  color: var(--text) !important;
+}
+
+/* 다크모드 - 테이블 빈 상태 텍스트 */
+:root.dark .sys-config-page .ant-empty-description {
+  color: var(--text-secondary) !important;
+}
+
+/* 다크모드 - 컬럼 설정 팝오버 */
+:root.dark .sys-config-page .ant-popover-inner {
+  background: #1f2937;
+}
+
+:root.dark .sys-config-page .ant-popover-inner-content {
+  color: var(--text);
+}
+
+/* 다크모드 - 검색폼 border */
+:root.dark .sys-config-page .search-form {
+  border-bottom-color: var(--border);
+}
+
+/* 다크모드 - 체크박스 */
+:root.dark .sys-config-page .ant-checkbox-wrapper {
+  color: var(--text);
+}

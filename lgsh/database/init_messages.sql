@@ -1,0 +1,204 @@
+-- ============================================================
+-- TB_SYS_MESSAGE 초기 데이터 (메시지코드)
+-- 로지신해 시스템 메시지 관리
+-- ============================================================
+
+-- 기존 데이터 삭제 (필요시)
+-- DELETE FROM TB_SYS_MESSAGE WHERE MSG_CODE LIKE 'S%' OR MSG_CODE LIKE 'E%' OR MSG_CODE LIKE 'W%' OR MSG_CODE LIKE 'I%' OR MSG_CODE LIKE 'C%';
+
+-- ============================================================
+-- 성공 메시지 (S로 시작)
+-- ============================================================
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S001', 'SUCCESS', '저장되었습니다.', '데이터 저장 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S002', 'SUCCESS', '삭제되었습니다.', '데이터 삭제 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S003', 'SUCCESS', '수정되었습니다.', '데이터 수정 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S004', 'SUCCESS', '등록되었습니다.', '데이터 등록 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S005', 'SUCCESS', '승인되었습니다.', '승인 처리 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S006', 'SUCCESS', '반려되었습니다.', '반려 처리 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S007', 'SUCCESS', '복사되었습니다.', '데이터 복사 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S008', 'SUCCESS', '로그인되었습니다.', '로그인 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S009', 'SUCCESS', '로그아웃되었습니다.', '로그아웃 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S010', 'SUCCESS', '다운로드가 완료되었습니다.', '파일 다운로드 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S011', 'SUCCESS', '업로드가 완료되었습니다.', '파일 업로드 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S012', 'SUCCESS', '처리가 완료되었습니다.', '일반 처리 완료', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S013', 'SUCCESS', '전송되었습니다.', '데이터 전송 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S014', 'SUCCESS', '초기화되었습니다.', '데이터 초기화 성공', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('S015', 'SUCCESS', '적용되었습니다.', '설정 적용 성공', 'Y', 1, SYSDATE);
+
+-- ============================================================
+-- 에러 메시지 (E로 시작)
+-- ============================================================
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E001', 'ERROR', '저장에 실패했습니다.', '데이터 저장 실패', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E002', 'ERROR', '삭제에 실패했습니다.', '데이터 삭제 실패', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E003', 'ERROR', '수정에 실패했습니다.', '데이터 수정 실패', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E004', 'ERROR', '등록에 실패했습니다.', '데이터 등록 실패', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E005', 'ERROR', '조회에 실패했습니다.', '데이터 조회 실패', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E006', 'ERROR', '서버 연결에 실패했습니다.', '서버 통신 오류', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E007', 'ERROR', '인증에 실패했습니다.', '로그인 인증 실패', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E008', 'ERROR', '권한이 없습니다.', '접근 권한 없음', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E009', 'ERROR', '세션이 만료되었습니다.', '세션 타임아웃', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E010', 'ERROR', '파일 업로드에 실패했습니다.', '파일 업로드 오류', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC ,USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E011', 'ERROR', '파일 다운로드에 실패했습니다.', '파일 다운로드 오류', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E012', 'ERROR', '데이터를 찾을 수 없습니다.', '데이터 없음 (404)', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E013', 'ERROR', '중복된 데이터가 존재합니다.', '데이터 중복 오류', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E014', 'ERROR', '처리 중 오류가 발생했습니다.', '일반 처리 오류', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('E015', 'ERROR', '유효하지 않은 요청입니다.', '잘못된 요청 (400)', 'Y', 1, SYSDATE);
+
+-- ============================================================
+-- 경고 메시지 (W로 시작)
+-- ============================================================
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W001', 'WARN', '필수 항목을 입력해주세요.', '필수값 누락 경고', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W002', 'WARN', '선택된 항목이 없습니다.', '선택 없음 경고', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W003', 'WARN', '변경된 내용이 없습니다.', '변경사항 없음', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W004', 'WARN', '형식이 올바르지 않습니다.', '입력 형식 오류', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W005', 'WARN', '입력 범위를 초과했습니다.', '범위 초과 경고', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W006', 'WARN', '이미 처리된 항목입니다.', '중복 처리 경고', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W007', 'WARN', '사용 중인 데이터입니다.', '참조 데이터 존재', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W008', 'WARN', '비밀번호가 일치하지 않습니다.', '비밀번호 불일치', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W009', 'WARN', '파일 크기가 초과되었습니다.', '파일 용량 초과', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('W010', 'WARN', '허용되지 않는 파일 형식입니다.', '파일 형식 오류', 'Y', 1, SYSDATE);
+
+-- ============================================================
+-- 안내 메시지 (I로 시작)
+-- ============================================================
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('I001', 'INFO', '처리 중입니다.', '처리 진행 안내', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('I002', 'INFO', '로딩 중입니다.', '데이터 로딩 안내', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('I003', 'INFO', '검색 결과가 없습니다.', '검색 결과 없음', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('I004', 'INFO', '데이터가 없습니다.', '데이터 없음 안내', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('I005', 'INFO', '저장 중입니다.', '저장 진행 안내', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('I006', 'INFO', '업로드 중입니다.', '업로드 진행 안내', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('I007', 'INFO', '다운로드 중입니다.', '다운로드 진행 안내', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('I008', 'INFO', '잠시만 기다려주세요.', '대기 요청 안내', 'Y', 1, SYSDATE);
+
+-- ============================================================
+-- 확인 메시지 (C로 시작)
+-- ============================================================
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C001', 'CONFIRM', '삭제하시겠습니까?', '삭제 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C002', 'CONFIRM', '저장하시겠습니까?', '저장 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C003', 'CONFIRM', '수정하시겠습니까?', '수정 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C004', 'CONFIRM', '등록하시겠습니까?', '등록 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C005', 'CONFIRM', '승인하시겠습니까?', '승인 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C006', 'CONFIRM', '반려하시겠습니까?', '반려 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C007', 'CONFIRM', '취소하시겠습니까? 변경 내용이 저장되지 않습니다.', '취소 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C008', 'CONFIRM', '로그아웃 하시겠습니까?', '로그아웃 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C009', 'CONFIRM', '초기화하시겠습니까?', '초기화 확인', 'Y', 1, SYSDATE);
+
+INSERT INTO TB_SYS_MESSAGE (MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC, USE_YN, REG_USER_ID, REG_DT) 
+VALUES ('C010', 'CONFIRM', '이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?', '비가역 작업 확인', 'Y', 1, SYSDATE);
+
+COMMIT;
+
+-- ============================================================
+-- 확인 쿼리
+-- ============================================================
+-- SELECT MSG_CODE, MSG_TYPE, MSG_TEXT, MSG_DESC FROM TB_SYS_MESSAGE ORDER BY MSG_CODE;
+-- SELECT MSG_TYPE, COUNT(*) AS CNT FROM TB_SYS_MESSAGE GROUP BY MSG_TYPE ORDER BY MSG_TYPE;

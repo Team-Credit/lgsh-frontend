@@ -1,0 +1,207 @@
+/**
+ * 액션 버튼 스타일
+ */
+
+/* ========== 기본 액션 버튼 ========== */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ========== 승인 버튼 (Success) ========== */
+.action-btn.btn-success {
+  background-color: var(--success) !important;
+  border-color: var(--success) !important;
+}
+
+.action-btn.btn-success:hover:not(:disabled) {
+  background-color: var(--success-light) !important;
+  border-color: var(--success-light) !important;
+}
+
+.action-btn.btn-success:active:not(:disabled) {
+  background-color: #047857 !important;
+  border-color: #047857 !important;
+}
+
+/* ========== 엑셀 다운로드 버튼 ========== */
+.action-btn.btn-export {
+  background-color: #16a34a !important;
+  border-color: #16a34a !important;
+  color: white !important;
+}
+
+.action-btn.btn-export:hover:not(:disabled) {
+  background-color: #15803d !important;
+  border-color: #15803d !important;
+}
+
+/* ========== 아이콘 버튼 (레이블 없음) ========== */
+.action-btn.ant-btn-icon-only {
+  padding: 0;
+  width: 40px;
+  height: 40px;
+}
+
+.action-btn.ant-btn-icon-only.ant-btn-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.action-btn.ant-btn-icon-only.ant-btn-lg {
+  width: 48px;
+  height: 48px;
+}
+
+/* ========== 버튼 그룹 ========== */
+.btn-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-group-sm {
+  gap: 6px;
+}
+
+.btn-group-lg {
+  gap: 12px;
+}
+
+/* 구분선이 있는 버튼 그룹 */
+.btn-group-divided {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-group-divided .btn-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--line);
+  margin: 0 4px;
+}
+
+/* ========== 툴바 버튼 영역 ========== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--panel);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  gap: 16px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ========== 폼 하단 버튼 영역 ========== */
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.form-actions-center {
+  justify-content: center;
+}
+
+.form-actions-between {
+  justify-content: space-between;
+}
+
+/* ========== 모달 버튼 영역 ========== */
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 24px;
+}
+
+/* ========== 비활성화 상태 ========== */
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ========== 로딩 상태 ========== */
+.action-btn.ant-btn-loading {
+  pointer-events: none;
+}
+
+/* ========== 크기별 스타일 ========== */
+
+/* Small */
+.action-btn.ant-btn-sm {
+  font-size: 13px;
+  padding: 4px 12px;
+  height: 32px;
+}
+
+.action-btn.ant-btn-sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Middle (기본) */
+.action-btn {
+  font-size: 14px;
+  padding: 6px 16px;
+  height: 40px;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Large */
+.action-btn.ant-btn-lg {
+  font-size: 15px;
+  padding: 8px 20px;
+  height: 48px;
+}
+
+.action-btn.ant-btn-lg svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ========== 다크 모드 ========== */
+[data-theme="dark"] .action-btn.btn-export {
+  background-color: #22c55e !important;
+  border-color: #22c55e !important;
+}
+
+[data-theme="dark"] .action-btn.btn-export:hover:not(:disabled) {
+  background-color: #16a34a !important;
+  border-color: #16a34a !important;
+}

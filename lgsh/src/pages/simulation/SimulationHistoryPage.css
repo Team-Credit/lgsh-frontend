@@ -1,0 +1,65 @@
+.simulation-history-page {
+  padding: 16px 20px 32px;
+}
+
+.simulation-history-card {
+  border-radius: 12px;
+}
+
+.history-filter {
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.simulation-detail-modal .detail-summary {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.simulation-detail-modal .detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.simulation-detail-modal .detail-label {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.simulation-detail-modal .detail-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.simulation-detail-modal .detail-json {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+  max-height: 240px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.simulation-detail-modal .detail-breakdown {
+  display: grid;
+  gap: 6px;
+}
+
+.simulation-detail-modal .detail-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+
+.simulation-detail-modal .detail-empty {
+  color: #94a3b8;
+  font-size: 12px;
+}

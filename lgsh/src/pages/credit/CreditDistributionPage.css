@@ -1,0 +1,81 @@
+.credit-distribution-page {
+  padding: 24px;
+}
+
+.credit-distribution-page .page-header {
+  margin-bottom: 20px;
+}
+
+.credit-distribution-page .page-title {
+  margin-bottom: 4px;
+}
+
+.filter-card {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.filter-input {
+  width: 100%;
+}
+
+.filter-button {
+  width: 100%;
+}
+
+:root.dark .credit-distribution-page .filter-button,
+:root.dark .credit-distribution-page .filter-button:disabled,
+:root.dark .credit-distribution-page .filter-button[disabled],
+[data-theme="dark"] .credit-distribution-page .filter-button,
+[data-theme="dark"] .credit-distribution-page .filter-button:disabled,
+[data-theme="dark"] .credit-distribution-page .filter-button[disabled],
+:root.dark .credit-distribution-page .filter-button.ant-btn:disabled,
+[data-theme="dark"] .credit-distribution-page .filter-button.ant-btn:disabled,
+:root.dark .credit-distribution-page .filter-button.ant-btn-primary:disabled,
+[data-theme="dark"] .credit-distribution-page .filter-button.ant-btn-primary:disabled {
+  color: var(--text) !important;
+  font-weight: 700;
+}
+
+.stat-row {
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.stat-card {
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 6px;
+  color: #1f2937;
+}
+
+.chart-card {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.distribution-chart {
+  height: 280px;
+  padding: 8px 0 4px;
+}
+
+@media (max-width: 768px) {
+  .credit-distribution-page {
+    padding: 16px;
+  }
+
+  .distribution-chart {
+    height: 220px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+}

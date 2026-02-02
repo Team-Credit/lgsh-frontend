@@ -1,0 +1,137 @@
+/**
+ * 대시보드 페이지 스타일
+ */
+
+/* 통계 카드 */
+.stat-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow2);
+}
+
+.stat-card .ant-card-body {
+  padding: 20px;
+}
+
+.stat-card-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.stat-card-left {
+  flex: 1;
+}
+
+.stat-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.stat-card-value {
+  margin-bottom: 8px;
+}
+
+.stat-card-trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stat-card-trend.up {
+  color: var(--success);
+}
+
+.stat-card-trend.down {
+  color: var(--error);
+}
+
+.stat-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 차트 카드 */
+.chart-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow2);
+  height: 100%;
+}
+
+.chart-card .ant-card-head {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 20px;
+  min-height: auto;
+}
+
+.chart-card .ant-card-head-title {
+  font-weight: 700;
+}
+
+.chart-card .ant-card-body {
+  padding: 20px;
+}
+
+/* 등급 분포 */
+.grade-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grade-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grade-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grade-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* 테이블 카드 */
+.table-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow2);
+  height: 100%;
+}
+
+.table-card .ant-card-head {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 20px;
+  min-height: auto;
+}
+
+.table-card .ant-card-head-title {
+  font-weight: 700;
+}
+
+.table-card .ant-card-body {
+  padding: 0;
+}
+
+.table-card .ant-table-wrapper {
+  border-radius: 0;
+}
+
+.table-card .ant-table-thead > tr > th {
+  background: var(--panel2);
+}

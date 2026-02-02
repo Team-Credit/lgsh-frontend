@@ -1,0 +1,126 @@
+/**
+ * 모달 스타일
+ */
+
+/* ========== 기본 모달 ========== */
+.lgsh-modal .ant-modal-content {
+  border-radius: var(--radius-xl);
+  padding: 0;
+  overflow: hidden;
+}
+
+.lgsh-modal .ant-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+}
+
+.lgsh-modal .ant-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.lgsh-modal .ant-modal-body {
+  padding: 24px;
+}
+
+.lgsh-modal .ant-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+
+/* ========== 모달 푸터 ========== */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ========== 확인 모달 컨텐츠 ========== */
+.confirm-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.confirm-icon {
+  margin-bottom: 16px;
+}
+
+.confirm-icon-info {
+  color: var(--info);
+}
+
+.confirm-icon-success {
+  color: var(--success);
+}
+
+.confirm-icon-warning {
+  color: var(--warning);
+}
+
+.confirm-icon-error {
+  color: var(--error);
+}
+
+.confirm-message {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+.confirm-warning {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ========== 폼 모달 ========== */
+.lgsh-modal-form .ant-modal-body {
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+}
+
+/* ========== 삭제 모달 ========== */
+.lgsh-modal-delete .confirm-icon {
+  color: var(--error);
+}
+
+/* ========== 반응형 ========== */
+@media (max-width: 576px) {
+  .lgsh-modal .ant-modal-content {
+    border-radius: var(--radius);
+  }
+
+  .lgsh-modal .ant-modal-header,
+  .lgsh-modal .ant-modal-body,
+  .lgsh-modal .ant-modal-footer {
+    padding: 16px;
+  }
+
+  .confirm-message {
+    font-size: 15px;
+  }
+}
+
+/* ========== 다크 모드 ========== */
+[data-theme="dark"] .lgsh-modal .ant-modal-content {
+  background: var(--panel);
+}
+
+[data-theme="dark"] .lgsh-modal .ant-modal-header {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .lgsh-modal .ant-modal-footer {
+  background: var(--panel);
+  border-color: var(--line);
+}

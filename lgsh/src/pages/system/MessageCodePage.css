@@ -1,0 +1,105 @@
+/**
+ * 메시지코드관리 페이지 스타일
+ */
+
+.message-code-page {
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message-code-page .page-header {
+  margin-bottom: 8px;
+}
+
+.message-code-page .message-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-code-page .message-card .ant-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.message-code-page .search-form {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 4px;
+}
+
+.message-code-page .ant-table-wrapper {
+  flex: 1;
+}
+
+/* 테이블 행 호버 효과 */
+.message-code-page .ant-table-row {
+  cursor: pointer;
+}
+
+.message-code-page .ant-table-row:hover {
+  background-color: #e6f7ff;
+}
+
+/* 모달 내 폼 스타일 */
+.message-code-page .ant-modal-body {
+  padding-top: 16px;
+}
+
+/* 컬럼 리사이즈 핸들 스타일 */
+.message-code-page .react-resizable {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.message-code-page .react-resizable-handle {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  z-index: 1;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+.message-code-page .react-resizable-handle:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+/* 테이블 헤더 스타일 */
+.message-code-page .ant-table-thead > tr > th {
+  position: relative;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .message-code-page .search-form {
+  background: #374151;
+}
+
+:root.dark .message-code-page .ant-table-row:hover {
+  background-color: #374151;
+}
+
+:root.dark .message-code-page .react-resizable-handle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 관리 컬럼 아이콘 다크모드 */
+:root.dark .message-code-page .ant-btn-text {
+  color: #e5e7eb;
+}
+
+:root.dark .message-code-page .ant-btn-text:hover {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+:root.dark .message-code-page .ant-btn-text[disabled] {
+  color: #6b7280;
+}

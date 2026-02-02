@@ -1,0 +1,127 @@
+/**
+ * 대상자등록 페이지 스타일
+ */
+
+.person-page {
+  padding: 16px;
+}
+
+.person-page .page-header {
+  margin-bottom: 16px;
+}
+
+.person-page .search-card {
+  background: var(--panel, #ffffff);
+  border-radius: var(--radius-lg, 12px);
+  margin-bottom: 16px;
+}
+
+.person-page .search-card .ant-form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.person-page .ant-table-wrapper {
+  background: var(--panel, #ffffff);
+}
+
+.person-page .ant-table-thead > tr > th {
+  background: var(--bg, #f8fafc);
+  color: var(--text, #1e3a8a);
+  font-weight: 600;
+  position: relative;
+}
+
+.person-page .ant-table-row:hover {
+  background: var(--bg, #f8fafc);
+}
+
+/* 컬럼 리사이즈 핸들 스타일 */
+.person-page .react-resizable {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.person-page .react-resizable-handle {
+  position: absolute;
+  width: 10px;
+  height: 100%;
+  bottom: 0;
+  right: -5px;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.person-page .react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  right: 4px;
+  top: 0;
+  background-color: #d9d9d9;
+  transition: background-color 0.3s;
+}
+
+.person-page .react-resizable-handle:hover::after {
+  background-color: #1890ff;
+}
+
+/* 모달 탭 스타일 */
+.person-page .ant-tabs-nav {
+  margin-bottom: 16px;
+}
+
+/* 반응형 - 태블릿 */
+@media (max-width: 1200px) {
+  .person-page {
+    padding: 16px;
+  }
+
+  .person-page .search-card .ant-form-inline {
+    flex-direction: column;
+  }
+
+  .person-page .search-card .ant-form-item {
+    width: 100%;
+  }
+}
+
+/* 반응형 - 모바일 */
+@media (max-width: 768px) {
+  .person-page {
+    padding: 12px;
+  }
+
+  .person-page .page-header h3 {
+    font-size: 18px;
+  }
+}
+
+/* 다크모드 */
+:root.dark .person-page .ant-table-thead > tr > th {
+  background: #374151 !important;
+  color: var(--text) !important;
+}
+
+:root.dark .person-page .ant-table-tbody > tr > td {
+  color: var(--text);
+}
+
+:root.dark .person-page .ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .person-page .page-header h4,
+:root.dark .person-page .page-header .ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .person-page .search-form .ant-form-item-label > label {
+  color: var(--text) !important;
+}
+
+:root.dark .person-page .react-resizable-handle::after {
+  background-color: #4b5563;
+}

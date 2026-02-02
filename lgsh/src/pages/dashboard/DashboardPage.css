@@ -1,0 +1,123 @@
+/**
+ * 로지신해 - 대시보드 페이지 스타일
+ * Ant Design + TypeScript
+ */
+
+/* 레이아웃 */
+.dashboard-layout {
+  min-height: 100vh;
+  background: #f0f4f8;
+}
+
+/* 헤더 */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 0 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo-icon {
+  font-size: 28px;
+  color: #1e3a8a;
+}
+
+.header-title {
+  margin: 0 !important;
+  color: #1e3a8a !important;
+  font-weight: 700 !important;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-info-trigger {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.user-info-trigger:hover {
+  background: #f1f5f9;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #374151;
+}
+
+/* 콘텐츠 */
+.dashboard-content {
+  padding: 24px;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* 환영 카드 */
+.welcome-card {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 16px;
+}
+
+.welcome-card .ant-card-body {
+  padding: 32px;
+}
+
+.welcome-card h3.ant-typography {
+  color: #ffffff !important;
+}
+
+.welcome-card .ant-typography-secondary {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* 다크모드 */
+[data-theme="dark"] .dashboard-layout {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .dashboard-header {
+  background: #1e293b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .user-info-trigger:hover {
+  background: #334155;
+}
+
+[data-theme="dark"] .user-name {
+  color: #e5e7eb;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 0 16px;
+  }
+  
+  .header-title {
+    display: none;
+  }
+  
+  .dashboard-content {
+    padding: 16px;
+  }
+}

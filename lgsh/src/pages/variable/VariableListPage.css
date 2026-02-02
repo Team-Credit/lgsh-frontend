@@ -1,0 +1,68 @@
+/**
+ * 변수 메타 관리 페이지 스타일
+ * VAR-001
+ */
+
+.variable-page {
+    padding: 0;
+}
+
+.variable-page .page-header {
+    margin-bottom: 16px;
+}
+
+.variable-page .search-card {
+    margin-bottom: 16px;
+}
+
+.variable-page .search-card .ant-form-item {
+    margin-bottom: 0;
+}
+
+/* Resizable 컬럼 핸들 */
+.variable-page .react-resizable-handle {
+    position: absolute;
+    right: -5px;
+    bottom: 0;
+    z-index: 1;
+    width: 10px;
+    height: 100%;
+    cursor: col-resize;
+}
+
+.variable-page .react-resizable-handle:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+/* 테이블 스타일 */
+.variable-page .ant-table-thead > tr > th {
+    background: #fafafa;
+    font-weight: 600;
+}
+
+.variable-page .ant-table-tbody > tr:hover > td {
+    background: #f5f5f5;
+}
+
+/* 태그 스타일 */
+.variable-page .ant-tag {
+    margin-right: 0;
+}
+
+/* 액션 버튼 */
+.variable-page .ant-btn-text {
+    padding: 4px 8px;
+}
+
+.variable-page .ant-btn-text:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* 모달 폼 */
+.variable-page .ant-modal-body .ant-form-item {
+    margin-bottom: 16px;
+}
+
+.variable-page .ant-modal-body .ant-form-item:last-child {
+    margin-bottom: 0;
+}

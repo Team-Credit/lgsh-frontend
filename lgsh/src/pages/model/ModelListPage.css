@@ -1,0 +1,78 @@
+/**
+ * 모델관리 페이지 스타일
+ */
+
+.model-list-page {
+  padding: 0;
+}
+
+.model-list-page .page-header {
+  margin-bottom: 16px;
+}
+
+.model-list-page .search-card {
+  margin-bottom: 16px;
+}
+
+.model-list-page .search-card .ant-form-item {
+  margin-bottom: 0;
+}
+
+/* Resizable 핸들 */
+.model-list-page .react-resizable {
+  position: relative;
+}
+
+.model-list-page .react-resizable-handle {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.model-list-page .react-resizable-handle:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+/* 테이블 스타일 */
+.model-list-page .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+}
+
+.model-list-page .ant-table-cell {
+  white-space: nowrap;
+}
+
+/* 성능 지표 카드 */
+.model-list-page .ant-statistic-title {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.model-list-page .ant-statistic-content {
+  font-size: 20px;
+}
+
+/* 타임라인 */
+.model-list-page .ant-timeline-item-content {
+  padding-bottom: 12px;
+}
+
+/* 모달 내 탭 */
+.model-list-page .ant-modal-body .ant-tabs-nav {
+  margin-bottom: 16px;
+}
+
+/* 태그 스타일 */
+.model-list-page .ant-tag {
+  margin-right: 0;
+}
+
+/* 프로그레스 바 */
+.model-list-page .ant-progress-text {
+  font-weight: 600;
+}

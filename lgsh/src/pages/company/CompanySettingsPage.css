@@ -1,0 +1,141 @@
+/**
+ * 원청사 설정 페이지 스타일
+ */
+.company-settings-page {
+  padding: 0;
+}
+
+.company-settings-page .page-header {
+  margin-bottom: 16px;
+}
+
+.company-settings-page .search-card {
+  margin-bottom: 16px;
+}
+
+.company-settings-page .search-card .ant-form-item {
+  margin-bottom: 0;
+}
+
+/* 테이블 스타일 */
+.company-settings-page .ant-table-thead > tr > th {
+  background-color: #f8fafc !important;
+  font-weight: 600;
+}
+
+.company-settings-page .ant-table-row:hover > td {
+  background-color: #f0f5ff !important;
+}
+
+/* 리사이즈 핸들 스타일 */
+.company-settings-page .react-resizable-handle {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  top: 0;
+  width: 10px;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.company-settings-page .react-resizable-handle:hover {
+  background-color: rgba(30, 58, 138, 0.1);
+}
+
+/* 사용률 Progress 스타일 */
+.company-settings-page .ant-progress-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 라이선스 정보 섹션 */
+.license-info-section {
+  background-color: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.license-info-section .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.license-info-section .info-row:last-child {
+  margin-bottom: 0;
+}
+
+.license-info-section .info-label {
+  width: 100px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.license-info-section .info-value {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+/* 모달 스타일 */
+.company-settings-page .ant-modal-body {
+  padding-top: 8px;
+}
+
+/* 테이블 내 프로그레스 바 */
+.company-settings-page .ant-progress-line {
+  margin-bottom: 0;
+}
+
+/* 태그 스타일 */
+.company-settings-page .ant-tag {
+  font-size: 12px;
+}
+
+/* 반응형 */
+@media (max-width: 1200px) {
+  .company-settings-page .search-card .ant-form {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .company-settings-page .search-card .ant-form-item {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .company-settings-page .page-header {
+    margin-bottom: 12px;
+  }
+
+  .company-settings-page .search-card {
+    margin-bottom: 12px;
+  }
+
+  .license-info-section {
+    padding: 12px;
+  }
+
+  .license-info-section .info-label {
+    width: 80px;
+    font-size: 12px;
+  }
+}
+
+/* 다크모드 */
+[data-theme="dark"] .company-settings-page .ant-table-thead > tr > th {
+  background-color: #1a2744 !important;
+}
+
+[data-theme="dark"] .company-settings-page .ant-table-row:hover > td {
+  background-color: #1e3a5f !important;
+}
+
+[data-theme="dark"] .license-info-section {
+  background-color: #1a2744;
+}
+
+[data-theme="dark"] .license-info-section .info-value {
+  color: #e5e7eb;
+}

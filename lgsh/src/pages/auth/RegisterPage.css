@@ -1,0 +1,299 @@
+/* 회원가입 페이지 스타일 */
+
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%);
+  padding: 20px;
+}
+
+.register-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.register-card {
+  background: var(--panel);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.register-header {
+  padding: 32px 40px 24px;
+  text-align: center;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.register-logo-wrapper {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.register-logo {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  filter: drop-shadow(0 0 8px rgba(30, 58, 138, 0.3));
+}
+
+.register-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px 0;
+}
+
+.register-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.register-body {
+  padding: 32px 40px;
+}
+
+.register-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.register-notice {
+  padding: 12px 16px;
+  background: rgba(30, 58, 138, 0.08);
+  border: 1px solid rgba(30, 58, 138, 0.2);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.register-notice p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.half {
+  flex: 1;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-label .required {
+  color: var(--error);
+  margin-left: 2px;
+}
+
+.form-input {
+  height: 44px;
+  padding: 0 14px;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--muted);
+}
+
+.form-input.error {
+  border-color: var(--error);
+}
+
+.form-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.form-error {
+  font-size: 12px;
+  color: var(--error);
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: -8px;
+  margin-bottom: 4px;
+}
+
+.register-button {
+  width: 100%;
+  height: 48px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+}
+
+.register-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(30, 58, 138, 0.3);
+}
+
+.register-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-link {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.login-link a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.login-link a:hover {
+  color: var(--primary2);
+  text-decoration: underline;
+}
+
+.register-footer {
+  padding: 16px 40px;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.register-footer-text {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* 가입 완료 화면 */
+.register-success {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: white;
+}
+
+.register-success h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
+.register-success p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+}
+
+/* 다크모드 */
+[data-theme="dark"] .register-page {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+[data-theme="dark"] .register-card {
+  background: #1e293b;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .register-header,
+[data-theme="dark"] .register-footer {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .form-input {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .register-notice {
+  background: rgba(30, 58, 138, 0.15);
+  border-color: rgba(30, 58, 138, 0.3);
+}
+
+/* 반응형 */
+@media (max-width: 520px) {
+  .register-container {
+    max-width: 100%;
+  }
+
+  .register-header,
+  .register-body,
+  .register-footer {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .register-title {
+    font-size: 20px;
+  }
+}

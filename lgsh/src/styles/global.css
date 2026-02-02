@@ -1,0 +1,424 @@
+/**
+ * 로지신해 글로벌 스타일
+ */
+
+/* CSS Variables */
+:root {
+  --primary: #1e3a8a;
+  --primary-hover: #1e40af;
+  --primary-light: #dbeafe;
+  --success: #059669;
+  --warning: #d97706;
+  --error: #dc2626;
+  --info: #0284c7;
+  --text: #1f2937;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --bg: #f3f4f6;
+  --white: #ffffff;
+  --header-height: 64px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 80px;
+  --header-bg: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+}
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: var(--app-font-size, 14px);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ant Design 컴포넌트에 폰트 크기 적용 */
+.ant-btn,
+.ant-input,
+.ant-select,
+.ant-table,
+.ant-form,
+.ant-modal,
+.ant-card,
+.ant-menu,
+.ant-dropdown,
+.ant-message,
+.ant-notification,
+.ant-tabs,
+.ant-tag,
+.ant-badge,
+.ant-tooltip,
+.ant-popover {
+  font-size: var(--app-font-size, 14px) !important;
+}
+
+/* 테이블 셀 */
+.ant-table-thead > tr > th,
+.ant-table-tbody > tr > td {
+  font-size: var(--app-font-size, 14px) !important;
+}
+
+/* 폼 라벨 */
+.ant-form-item-label > label {
+  font-size: var(--app-font-size, 14px) !important;
+}
+
+/* 메뉴 아이템 */
+.ant-menu-item,
+.ant-menu-submenu-title {
+  font-size: var(--app-font-size, 14px) !important;
+}
+
+/* 모달 타이틀 */
+.ant-modal-title {
+  font-size: calc(var(--app-font-size, 14px) + 2px) !important;
+}
+
+/* 카드 제목 */
+.ant-card-head-title {
+  font-size: calc(var(--app-font-size, 14px) + 2px) !important;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* 링크 */
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+/* 로고 애니메이션 */
+@keyframes logoShine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes logoGlow {
+  0%, 100% { 
+    filter: drop-shadow(0 0 8px rgba(30, 58, 138, 0.3));
+  }
+  50% { 
+    filter: drop-shadow(0 0 20px rgba(30, 58, 138, 0.6));
+  }
+}
+
+.logo-animated {
+  animation: logoGlow 3s ease-in-out infinite;
+}
+
+/* 페이드 인 애니메이션 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark {
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-light: rgba(59, 130, 246, 0.2);
+  --text: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --border: #374151;
+  --bg: #111827;
+  --white: #1f2937;
+}
+
+:root.dark body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Ant Design 다크 모드 오버라이드 */
+:root.dark .ant-layout {
+  background: var(--bg);
+}
+
+:root.dark .ant-card {
+  background: var(--white);
+  border-color: var(--border);
+}
+
+:root.dark .ant-card-head {
+  background: var(--white);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark .ant-card-body {
+  background: var(--white);
+}
+
+:root.dark .ant-table {
+  background: var(--white);
+  color: var(--text);
+}
+
+:root.dark .ant-table-thead > tr > th {
+  background: #374151 !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+:root.dark .ant-table-tbody > tr > td {
+  background: var(--white);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root.dark .ant-table-tbody > tr:hover > td {
+  background: #374151 !important;
+}
+
+:root.dark .ant-table-row-selected > td {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+:root.dark .ant-input,
+:root.dark .ant-input-affix-wrapper,
+:root.dark .ant-select-selector,
+:root.dark .ant-picker {
+  background: #374151 !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+:root.dark .ant-input::placeholder,
+:root.dark .ant-select-selection-placeholder {
+  color: #9ca3af !important;
+}
+
+:root.dark .ant-select-dropdown {
+  background: #1f2937;
+  border-color: var(--border);
+}
+
+:root.dark .ant-select-item {
+  color: var(--text);
+}
+
+:root.dark .ant-select-item-option-active,
+:root.dark .ant-select-item-option-selected {
+  background: #374151 !important;
+}
+
+:root.dark .ant-modal-content {
+  background: var(--white);
+  color: var(--text);
+}
+
+:root.dark .ant-modal-header {
+  background: var(--white);
+  border-color: var(--border);
+}
+
+:root.dark .ant-modal-title {
+  color: var(--text);
+}
+
+:root.dark .ant-modal-close-x {
+  color: var(--text);
+}
+
+:root.dark .ant-form-item-label > label {
+  color: var(--text);
+}
+
+:root.dark .ant-btn-default {
+  background: #374151;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark .ant-btn-default:hover {
+  background: #4b5563;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+:root.dark .ant-menu {
+  background: var(--white);
+  color: var(--text);
+}
+
+:root.dark .ant-menu-item {
+  color: var(--text);
+}
+
+:root.dark .ant-menu-item:hover {
+  background: #374151 !important;
+}
+
+:root.dark .ant-menu-item-selected {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: var(--primary) !important;
+}
+
+:root.dark .ant-menu-submenu-title {
+  color: var(--text);
+}
+
+:root.dark .ant-menu-submenu-title:hover {
+  background: #374151 !important;
+}
+
+:root.dark .main-sider {
+  background: var(--white) !important;
+  border-color: var(--border);
+}
+
+:root.dark .sider-toggle {
+  border-color: var(--border);
+}
+
+:root.dark .toggle-btn {
+  color: var(--text) !important;
+}
+
+:root.dark .ant-tabs-nav {
+  background: var(--white);
+}
+
+:root.dark .ant-tabs-tab {
+  color: var(--text-secondary);
+}
+
+:root.dark .ant-tabs-tab-active {
+  color: var(--primary) !important;
+}
+
+:root.dark .ant-pagination-item {
+  background: #374151;
+  border-color: var(--border);
+}
+
+:root.dark .ant-pagination-item a {
+  color: var(--text);
+}
+
+:root.dark .ant-pagination-item-active {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+:root.dark .ant-pagination-item-active a {
+  color: white;
+}
+
+:root.dark .ant-empty-description {
+  color: var(--text-secondary);
+}
+
+:root.dark .ant-tag {
+  background: #374151;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark .ant-divider {
+  border-color: var(--border);
+}
+
+:root.dark .ant-popover-inner {
+  background: #1f2937;
+}
+
+:root.dark .ant-popover-title {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root.dark .ant-popover-inner-content {
+  color: var(--text);
+}
+
+:root.dark .ant-checkbox-wrapper {
+  color: var(--text);
+}
+
+/* Typography 다크모드 */
+:root.dark .ant-typography {
+  color: var(--text);
+}
+
+:root.dark .ant-typography.ant-typography-secondary {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark h1.ant-typography,
+:root.dark h2.ant-typography,
+:root.dark h3.ant-typography,
+:root.dark h4.ant-typography,
+:root.dark h5.ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .ant-typography strong {
+  color: var(--text);
+}
+
+/* Descriptions 다크모드 */
+:root.dark .ant-descriptions-item-label {
+  color: var(--text-secondary);
+}
+
+:root.dark .ant-descriptions-item-content {
+  color: var(--text);
+}
+
+/* Statistic 다크모드 */
+:root.dark .ant-statistic-title {
+  color: var(--text-secondary);
+}
+
+:root.dark .ant-statistic-content {
+  color: var(--text);
+}
+
+/* 스크롤바 다크모드 */
+:root.dark ::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+:root.dark ::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+:root.dark ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

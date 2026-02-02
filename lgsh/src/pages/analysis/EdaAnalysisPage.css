@@ -1,0 +1,295 @@
+.eda-analysis-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.eda-tabs .ant-tabs-nav {
+  margin-bottom: 16px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.summary-card {
+  min-height: 200px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.summary-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.summary-tag {
+  margin-left: 8px;
+}
+
+.summary-card-body {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary-metrics {
+  display: flex;
+  gap: 24px;
+}
+
+.metric-label {
+  display: block;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.summary-card-empty {
+  margin-top: 24px;
+}
+
+.empty-tab {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.correlation-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(520px, 1.2fr) minmax(420px, 0.8fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.correlation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.filter-item.wide {
+  min-width: 240px;
+  flex: 1;
+}
+
+.filter-input {
+  width: 100%;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 2px;
+  margin-left: auto;
+}
+
+.analysis-table .ant-table-thead > tr > th {
+  background: #1f5fa8;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: center;
+}
+
+.analysis-table .ant-table-tbody > tr > td {
+  text-align: center;
+}
+
+.analysis-table .ant-table-tbody > tr:nth-child(odd) > td {
+  background: #f3f4f6;
+}
+
+.analysis-table .ant-table-tbody > tr:nth-child(even) > td {
+  background: #ffffff;
+}
+
+.outlier-table .ant-table-tbody > tr.outlier-row-outlier > td {
+  background: #ffe5e5;
+}
+
+.outlier-table .ant-table-tbody > tr.outlier-row-boundary > td {
+  background: #fff4cc;
+}
+
+.outlier-row-outlier .outlier-score {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.outlier-row-boundary .outlier-score {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.outlier-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 12px;
+  flex-wrap: wrap;
+}
+
+.outlier-summary {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.excel-button {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+.excel-button:hover,
+.excel-button:focus {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.heatmap-card,
+.pvalue-card {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+
+.heatmap-wrapper {
+  overflow: auto;
+  padding-bottom: 8px;
+}
+
+.heatmap-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.heatmap-table {
+  border-collapse: collapse;
+  min-width: 640px;
+  font-size: 12px;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.heatmap-table th,
+.heatmap-table td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.heatmap-table.heatmap-5 th,
+.heatmap-table.heatmap-5 td {
+  width: 96px;
+  height: 96px;
+}
+
+.heatmap-table.heatmap-10 th,
+.heatmap-table.heatmap-10 td {
+  width: 96px;
+  height: 72px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.heatmap-table.heatmap-10 th {
+  white-space: normal;
+  word-break: keep-all;
+}
+
+.heatmap-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.heatmap-modal-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.heatmap-pdf-capture {
+  position: absolute;
+  left: -99999px;
+  top: 0;
+  width: 1100px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.heatmap-header {
+  background: #f8fafc;
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.heatmap-corner {
+  background: #f8fafc;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.heatmap-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 960px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .eda-analysis-page {
+    padding: 16px;
+  }
+}

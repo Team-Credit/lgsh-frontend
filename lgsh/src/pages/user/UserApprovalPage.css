@@ -1,0 +1,140 @@
+/**
+ * 사용자 승인 페이지 스타일
+ */
+
+.user-approval-page {
+  padding: 16px;
+}
+
+.user-approval-page .page-header {
+  margin-bottom: 16px;
+}
+
+.user-approval-page .search-card {
+  background: var(--panel, #ffffff);
+  border-radius: var(--radius-lg, 12px);
+  margin-bottom: 16px;
+}
+
+.user-approval-page .search-card .ant-form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-approval-page .ant-table-wrapper {
+  background: var(--panel, #ffffff);
+}
+
+.user-approval-page .ant-table-thead > tr > th {
+  background: var(--bg, #f8fafc);
+  color: var(--text, #1e3a8a);
+  font-weight: 600;
+  position: relative;
+}
+
+.user-approval-page .ant-table-row:hover {
+  background: var(--bg, #f8fafc);
+}
+
+/* 미승인 사용자 행 강조 */
+.user-approval-page .pending-row {
+  background-color: #fffbe6;
+}
+
+.user-approval-page .pending-row:hover {
+  background-color: #fff7cc !important;
+}
+
+/* 컬럼 리사이즈 핸들 스타일 */
+.user-approval-page .react-resizable {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.user-approval-page .react-resizable-handle {
+  position: absolute;
+  width: 10px;
+  height: 100%;
+  bottom: 0;
+  right: -5px;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.user-approval-page .react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  right: 4px;
+  top: 0;
+  background-color: #d9d9d9;
+  transition: background-color 0.3s;
+}
+
+.user-approval-page .react-resizable-handle:hover::after {
+  background-color: #1890ff;
+}
+
+/* 반응형 - 태블릿 */
+@media (max-width: 1200px) {
+  .user-approval-page {
+    padding: 16px;
+  }
+
+  .user-approval-page .search-card .ant-form-inline {
+    flex-direction: column;
+  }
+
+  .user-approval-page .search-card .ant-form-item {
+    width: 100%;
+  }
+}
+
+/* 반응형 - 모바일 */
+@media (max-width: 768px) {
+  .user-approval-page {
+    padding: 12px;
+  }
+
+  .user-approval-page .page-header h3 {
+    font-size: 18px;
+  }
+}
+
+/* 다크모드 */
+:root.dark .user-approval-page .ant-table-thead > tr > th {
+  background: #374151 !important;
+  color: var(--text) !important;
+}
+
+:root.dark .user-approval-page .ant-table-tbody > tr > td {
+  color: var(--text);
+}
+
+:root.dark .user-approval-page .ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .user-approval-page .page-header h4,
+:root.dark .user-approval-page .page-header .ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .user-approval-page .search-form .ant-form-item-label > label {
+  color: var(--text) !important;
+}
+
+:root.dark .user-approval-page .react-resizable-handle::after {
+  background-color: #4b5563;
+}
+
+/* 다크모드 미승인 행 */
+:root.dark .user-approval-page .pending-row {
+  background-color: #3f3f00;
+}
+
+:root.dark .user-approval-page .pending-row:hover {
+  background-color: #4a4a00 !important;
+}

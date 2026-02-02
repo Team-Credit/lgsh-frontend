@@ -1,0 +1,119 @@
+/**
+ * 로지신해 CSS 변수 정의
+ * - Ant Design 테마와 일관성 유지
+ * - 기존 데모 CSS와 호환
+ */
+
+:root {
+  /* ========== 배경 ==========  */
+  --bg: #f6f8fc;
+  --panel: #ffffff;
+  --panel2: #fbfdff;
+  --panel-elevated: #ffffff;
+
+  /* ========== 테두리 ========== */
+  --line: #e6ebf5;
+  --line-light: #f0f3f9;
+
+  /* ========== 텍스트 ========== */
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --muted: #64748b;
+  --muted-light: #94a3b8;
+
+  /* ========== Primary 색상 ========== */
+  --primary: #1e3a8a;
+  --primary2: #2563eb;
+  --primary-light: #3b82f6;
+  --primary-bg: #eff6ff;
+
+  /* ========== 상태 색상 ========== */
+  --success: #059669;
+  --success-light: #10b981;
+  --success-bg: #ecfdf5;
+
+  --warning: #d97706;
+  --warning-light: #f59e0b;
+  --warning-bg: #fffbeb;
+
+  --error: #dc2626;
+  --error-light: #ef4444;
+  --error-bg: #fef2f2;
+
+  --info: #0284c7;
+  --info-light: #0ea5e9;
+  --info-bg: #f0f9ff;
+
+  /* ========== 그림자 ========== */
+  --shadow: 0 12px 40px rgba(15, 23, 42, 0.10);
+  --shadow2: 0 6px 20px rgba(15, 23, 42, 0.08);
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+
+  /* ========== 레이아웃 ========== */
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  --gap: 16px;
+  --gap-sm: 8px;
+  --gap-lg: 24px;
+
+  /* ========== 헤더 ========== */
+  --header-height: 64px;
+  --header-bg: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%);
+
+  /* ========== 사이드바 ========== */
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 64px;
+
+  /* ========== 폰트 ========== */
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", monospace;
+  --app-font-size: 14px; /* 기본 폰트 크기 (12~20px) */
+
+  /* ========== 트랜지션 ========== */
+  --transition-fast: 0.15s ease;
+  --transition: 0.25s ease;
+  --transition-slow: 0.35s ease;
+
+  /* ========== Z-index ========== */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-tooltip: 500;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark,
+[data-theme="dark"] {
+  --bg: #070b14;
+  --panel: #0c1628;
+  --panel2: #0b1424;
+  --panel-elevated: #0f1d32;
+
+  --line: #1c2a46;
+  --line-light: #162033;
+
+  --text: #e5e7eb;
+  --text-secondary: #9aa7bd;
+  --muted: #9aa7bd;
+  --muted-light: #6b7a94;
+
+  --primary: #3b82f6;
+  --primary2: #60a5fa;
+  --primary-light: #93c5fd;
+  --primary-bg: rgba(59, 130, 246, 0.1);
+
+  --success-bg: rgba(5, 150, 105, 0.1);
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --error-bg: rgba(220, 38, 38, 0.1);
+  --info-bg: rgba(2, 132, 199, 0.1);
+
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
+  --shadow2: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
