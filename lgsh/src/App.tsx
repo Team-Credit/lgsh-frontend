@@ -20,6 +20,7 @@ import { ProtectedRoute } from '@/components/common';
 import { MainLayout } from '@/layouts';
 import { ExcelExportProvider } from '@/contexts';
 import LoginPage from '@/pages/auth/LoginPage';
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import { routes } from '@/routes';
 import '@/styles/global.css';
@@ -43,6 +44,9 @@ const AppRoutes: React.FC = () => {
     <Routes>
       {/* 로그인 */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* 비밀번호 재설정 */}
+      <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
 
       {/* 회원가입 */}
       <Route path="/register" element={<RegisterPage />} />

@@ -12,18 +12,18 @@ interface ApiResponse<T> {
 
 interface PersonDetailResponseDto {
   personId: string;
-  personName: string;
+  personNm: string;
   personNo: string;
   mobileNo: string;
   email: string;
-  groupName: string;
+  personGrpNm: string;
   jobCode: string;
   annualIncome: number | null;
   marriageYn: string;
   address: string;
-  latestScore: number | null;
-  latestGrade: string;
-  evalDt: string;
+  creditScore: number | null;
+  creditGrade: string;
+  scoreDt: string;
 }
 
 interface PersonDetailDataProps {
@@ -145,7 +145,7 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
           <div className="card-title">기본 프로필</div>
           <div className="card-row">
             <span className="label">이름</span>
-            <span className="value">{data.personName || '-'}</span>
+            <span className="value">{data.personNm || '-'}</span>
           </div>
           <div className="card-row">
             <span className="label">연락처</span>
@@ -153,7 +153,7 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
           </div>
           <div className="card-row">
             <span className="label">관리그룹</span>
-            <span className="value">{data.groupName || '-'}</span>
+            <span className="value">{data.personGrpNm || '-'}</span>
           </div>
           <div className="card-row">
             <span className="label">이메일</span>
@@ -164,13 +164,13 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
         <div className="person-card highlight">
           <div className="card-title">최신 신용평가</div>
           <div className="score-box">
-            <div className="score-value">{data.latestScore ?? '-'}</div>
+            <div className="score-value">{data.creditScore ?? '-'}</div>
             <div className="score-unit">점</div>
           </div>
-          <div className="grade-badge">{data.latestGrade || '-'}</div>
+          <div className="grade-badge">{data.creditGrade || '-'}</div>
           <div className="card-row">
             <span className="label">평가일</span>
-            <span className="value">{data.evalDt || '-'}</span>
+            <span className="value">{data.scoreDt || '-'}</span>
           </div>
         </div>
       </div>
@@ -208,9 +208,9 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
             </thead>
             <tbody>
               <tr>
-                <td>{data.evalDt || '-'}</td>
-                <td>{data.latestScore ?? '-'}</td>
-                <td>{data.latestGrade || '-'}</td>
+                <td>{data.scoreDt || '-'}</td>
+                <td>{data.creditScore ?? '-'}</td>
+                <td>{data.creditGrade || '-'}</td>
               </tr>
             </tbody>
           </table>

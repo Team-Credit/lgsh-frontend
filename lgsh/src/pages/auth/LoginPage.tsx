@@ -6,7 +6,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Spin } from 'antd';
+import { Spin, Modal, message } from 'antd';
+import api from '@/services/api';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginAsync, clearError } from '@/store/slices/authSlice';
 import './LoginPage.css';
@@ -29,6 +30,13 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [formErrors, setFormErrors] = useState<{ userId?: string; password?: string }>({});
+
+  // 비밀번호 찾기 모달 상태
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotUserId, setForgotUserId] = useState('');
+  const [forgotCompanyId, setForgotCompanyId] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   // 이미 로그인 상태면 대시보드로 이동
   useEffect(() => {
@@ -84,7 +92,7 @@ const LoginPage: React.FC = () => {
 
     // 로그인 요청
     const result = await dispatch(loginAsync({ userId, password }));
-    
+
     if (loginAsync.fulfilled.match(result)) {
       navigate('/dashboard', { replace: true });
     }
@@ -95,6 +103,38 @@ const LoginPage: React.FC = () => {
     setUserId(account.userId);
     setPassword(account.password);
     setFormErrors({});
+  };
+
+  // 비밀번호 재설정 링크 발송
+  const handleSendResetLink = async () => {
+    if (!forgotUserId || !forgotCompanyId || !forgotEmail) {
+      message.error('모든 정보를 입력해주세요.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotEmail)) {
+      message.error('올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      await api.post('/auth/forgot-password', {
+        userId: forgotUserId,
+        companyId: forgotCompanyId,
+        email: forgotEmail
+      });
+      message.success('정보가 일치하면 비밀번호 재설정 링크가 이메일로 발송됩니다.');
+      setIsModalOpen(false);
+      setForgotEmail('');
+      setForgotUserId('');
+      setForgotCompanyId('');
+    } catch (err: any) {
+      console.error(err);
+      message.error('요청 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   return (
@@ -170,7 +210,14 @@ const LoginPage: React.FC = () => {
                   />
                   아이디 저장
                 </label>
-                <a href="#" className="forgot-password">
+                <a
+                  href="#"
+                  className="forgot-password"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsModalOpen(true);
+                  }}
+                >
                   비밀번호 찾기
                 </a>
               </div>
@@ -212,15 +259,56 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 푸터 */}
-          <div className="login-footer">
-            <p className="login-footer-text">
-              © 2026 LGSH. All rights reserved.
-            </p>
-          </div>
         </div>
       </div>
-    </div>
+
+
+      {/* 비밀번호 찾기 모달 */}
+      <Modal
+        title="비밀번호 찾기"
+        open={isModalOpen}
+        onOk={handleSendResetLink}
+        onCancel={() => setIsModalOpen(false)}
+        okText="재설정 링크 발송"
+        cancelText="취소"
+        confirmLoading={forgotLoading}
+      >
+        <p>가입 시 등록 정보를 모두 입력해 주세요.</p>
+        <div className="form-group" style={{ marginTop: '16px' }}>
+          <label className="form-label">아이디</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="아이디"
+            value={forgotUserId}
+            onChange={(e) => setForgotUserId(e.target.value)}
+            disabled={forgotLoading}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">회사 ID</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="회사 ID (예: CMP001)"
+            value={forgotCompanyId}
+            onChange={(e) => setForgotCompanyId(e.target.value)}
+            disabled={forgotLoading}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">이메일</label>
+          <input
+            type="email"
+            className="form-input"
+            placeholder="example@email.com"
+            value={forgotEmail}
+            onChange={(e) => setForgotEmail(e.target.value)}
+            disabled={forgotLoading}
+          />
+        </div>
+      </Modal>
+    </div >
   );
 };
 
