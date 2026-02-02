@@ -2,8 +2,8 @@
  * 신용평가 실행 화면
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Form, Input, Button, Space, message, Modal } from 'antd';
-import { CalculatorOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Space, message, Modal, Radio, Progress, Spin } from 'antd';
+import { CalculatorOutlined, ThunderboltOutlined, UserOutlined, TeamOutlined, GlobalOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -14,7 +14,7 @@ import {
   Legend,
 } from 'chart.js';
 import type { ChartOptions } from 'chart.js';
-import type { CreditPredictRequest, CreditPredictResult } from '@/types';
+import type { CreditPredictRequest, CreditPredictResult, CreditBatchStatus } from '@/types';
 import { creditService, personService } from '@/services';
 import './CreditEvaluatePage.css';
 
@@ -36,13 +36,18 @@ const CreditEvaluatePage: React.FC = () => {
   const [form] = Form.useForm<CreditPredictRequest>();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CreditPredictResult | null>(null);
+  const [batchId, setBatchId] = useState<string | null>(null);
+  const [batchStatus, setBatchStatus] = useState<CreditBatchStatus | null>(null);
   const [evalTime, setEvalTime] = useState<string>('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfMode, setPdfMode] = useState(false);
   const pdfRef = React.useRef<HTMLDivElement | null>(null);
   const personId = Form.useWatch('personId', form);
+  const mode = Form.useWatch('mode', form);
   const [personName, setPersonName] = useState('');
   const [personLookupStatus, setPersonLookupStatus] = useState<LookupStatus>('idle');
+
+  // ... (previous logic for itemScoreRows, formatItemLabel, gradeInfo, gradeDisplay, displayPerson, itemScoreChart) ...
 
   const itemScoreRows = useMemo(() => {
     const itemScores = (result?.itemScores || {}) as ItemScores;
@@ -87,10 +92,12 @@ const CreditEvaluatePage: React.FC = () => {
   }, [gradeInfo.color, gradeInfo.grade, result?.creditGrade]);
 
   const displayPerson = useMemo(() => {
+    if (mode === 'group') return '그룹 평가';
+    if (mode === 'all') return '전체 평가';
     const idText = personId ? `${personId} - ******` : '-';
     const nameText = personName || '미확인';
     return `${nameText} (${idText})`;
-  }, [personId, personName]);
+  }, [personId, personName, mode]);
 
   const itemScoreChart = useMemo(() => {
     const labels = itemScoreRows.map((row) => formatItemLabel(row.item));
@@ -142,6 +149,12 @@ const CreditEvaluatePage: React.FC = () => {
   }, [itemScoreRows]);
 
   useEffect(() => {
+    if (mode !== 'single') {
+      setPersonName('');
+      setPersonLookupStatus('idle');
+      return;
+    }
+
     const trimmed = (personId || '').trim();
     if (!trimmed) {
       setPersonName('');
@@ -168,7 +181,40 @@ const CreditEvaluatePage: React.FC = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [personId]);
+  }, [personId, mode]);
+
+  useEffect(() => {
+    if (!batchId) {
+      setBatchStatus(null);
+      return;
+    }
+
+    const fetchStatus = async () => {
+      try {
+        const response = await creditService.status(batchId);
+        if (response.success && response.data) {
+          setBatchStatus(response.data);
+          if (['COMPLETED', 'FAILED', 'PARTIAL_SUCCESS'].includes(response.data.status)) {
+            return true; // Stop polling
+          }
+        }
+      } catch (error) {
+        console.error('Batch status check failed', error);
+      }
+      return false; // Continue polling
+    };
+
+    fetchStatus(); // Initial fetch
+
+    const intervalId = setInterval(async () => {
+      const stop = await fetchStatus();
+      if (stop) {
+        clearInterval(intervalId);
+      }
+    }, 1000); // Poll every 1 second
+
+    return () => clearInterval(intervalId);
+  }, [batchId]);
 
   const handleSubmit = async () => {
     try {
@@ -179,9 +225,13 @@ const CreditEvaluatePage: React.FC = () => {
       const response = await creditService.predict(values as CreditPredictRequest);
 
       if (response.success && response.data) {
-        setResult(response.data);
-        setEvalTime(new Date().toLocaleString('ko-KR'));
-        message.success('평가가 완료되었습니다.');
+        if (values.mode === 'single') {
+          setResult(response.data);
+          setEvalTime(new Date().toLocaleString('ko-KR'));
+          message.success('평가가 완료되었습니다.');
+        } else {
+          setBatchId(response.data.batchId || null);
+        }
       } else {
         message.error(response.message || '평가에 실패했습니다.');
       }
@@ -254,6 +304,7 @@ const CreditEvaluatePage: React.FC = () => {
           form={form}
           layout="vertical"
           initialValues={{
+            mode: 'single',
             personId: '1000001',
             modelId: 'MDL_001',
             batchDesc: 'UI 평가',
@@ -261,29 +312,64 @@ const CreditEvaluatePage: React.FC = () => {
         >
           <div className="form-grid">
             <Form.Item
-              label="고객 ID"
-              name="personId"
-              rules={[{ required: true, message: '고객 ID를 입력해주세요.' }]}
+              label="실행 모드"
+              name="mode"
+              rules={[{ required: true, message: '실행 모드를 선택해주세요.' }]}
+              className="full-width"
             >
-              <Input placeholder="예: P0001" maxLength={20} />
+              <Radio.Group buttonStyle="solid">
+                <Radio.Button value="single">
+                  <UserOutlined style={{ marginRight: 6 }} /> 개인
+                </Radio.Button>
+                <Radio.Button value="group">
+                  <TeamOutlined style={{ marginRight: 6 }} /> 그룹
+                </Radio.Button>
+                <Radio.Button value="all">
+                  <GlobalOutlined style={{ marginRight: 6 }} /> 전체
+                </Radio.Button>
+              </Radio.Group>
             </Form.Item>
-            <Form.Item
-              label="고객명"
-              validateStatus={
-                personLookupStatus === 'not_found' || personLookupStatus === 'error' ? 'error' : undefined
-              }
-              help={
-                personLookupStatus === 'loading'
-                  ? '조회 중...'
-                  : personLookupStatus === 'not_found'
-                    ? '고객 정보를 찾을 수 없습니다.'
-                    : personLookupStatus === 'error'
-                      ? '고객명 조회에 실패했습니다.'
-                      : undefined
-              }
-            >
-              <Input value={personName} placeholder="고객명 표시" disabled />
-            </Form.Item>
+
+            {mode === 'single' && (
+              <>
+                <Form.Item
+                  label="고객 ID"
+                  name="personId"
+                  rules={[{ required: true, message: '고객 ID를 입력해주세요.' }]}
+                >
+                  <Input placeholder="예: P0001" maxLength={20} />
+                </Form.Item>
+                <Form.Item
+                  label="고객명"
+                  validateStatus={
+                    personLookupStatus === 'not_found' || personLookupStatus === 'error' ? 'error' : undefined
+                  }
+                  help={
+                    personLookupStatus === 'loading'
+                      ? '조회 중...'
+                      : personLookupStatus === 'not_found'
+                        ? '고객 정보를 찾을 수 없습니다.'
+                        : personLookupStatus === 'error'
+                          ? '고객명 조회에 실패했습니다.'
+                          : undefined
+                  }
+                >
+                  <Input value={personName} placeholder="고객명 표시" disabled />
+                </Form.Item>
+              </>
+            )}
+
+            {mode === 'group' && (
+              <Form.Item
+                label="관리자 ID (그룹 기준)"
+                name="userId"
+                rules={[{ required: true, message: '관리자 ID를 입력해주세요.' }]}
+                tooltip="입력한 사용자 ID가 관리하는 그룹 전체를 대상으로 평가합니다."
+              >
+                <Input placeholder="예: user01" maxLength={20} />
+              </Form.Item>
+            )}
+
             <Form.Item
               label="모델 ID"
               name="modelId"
@@ -308,6 +394,7 @@ const CreditEvaluatePage: React.FC = () => {
               onClick={() => {
                 form.resetFields();
                 setResult(null);
+                setPersonName('');
               }}
             >
               초기화
@@ -338,43 +425,90 @@ const CreditEvaluatePage: React.FC = () => {
             </button>
           </div>
           <div className="result-modal-body">
-          <div className="result-meta">
-            <div>대상자: {displayPerson}</div>
-            <div>평가일시: {evalTime || '-'}</div>
-          </div>
-          <div className="result-cards">
-            <div className="result-card">
-              <div className="result-card-title">신용점수</div>
-              <div className="result-score">{result?.creditScore ?? '-'}</div>
-              <div className="result-score-unit">점</div>
+            <div className="result-meta">
+              <div>대상자: {displayPerson}</div>
+              <div>평가일시: {evalTime || '-'}</div>
             </div>
-            <div className="result-card">
-              <div className="result-card-title">신용등급</div>
-              <div className="result-grade" style={{ color: gradeDisplay.color }}>
-                {gradeDisplay.grade}
+            <div className="result-cards">
+              <div className="result-card">
+                <div className="result-card-title">신용점수</div>
+                <div className="result-score">{result?.creditScore ?? '-'}</div>
+                <div className="result-score-unit">점</div>
               </div>
-              <div className="result-grade-desc">{gradeInfo.label}</div>
+              <div className="result-card">
+                <div className="result-card-title">신용등급</div>
+                <div className="result-grade" style={{ color: gradeDisplay.color }}>
+                  {gradeDisplay.grade}
+                </div>
+                <div className="result-grade-desc">{gradeInfo.label}</div>
+              </div>
+            </div>
+
+            <div className="result-section">
+              <div className="result-section-title">항목별 점수</div>
+              {itemScoreRows.length === 0 ? (
+                <div className="result-empty">항목별 점수가 없습니다.</div>
+              ) : (
+                <div className="item-score-chart">
+                  <Bar data={itemScoreChart.data} options={itemScoreChart.options} />
+                </div>
+              )}
+            </div>
+
+            <div className="result-actions pdf-hide">
+              <Button onClick={handleSavePdf} loading={pdfLoading}>
+                PDF 저장
+              </Button>
+              <Button type="primary" onClick={() => setResult(null)}>확인</Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        title="배치 평가 진행 중"
+        open={!!batchId}
+        footer={null}
+        closable={false}
+        centered
+        maskClosable={false}
+      >
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          {batchStatus?.status === 'COMPLETED' || batchStatus?.status === 'PARTIAL_SUCCESS' ? (
+            <div style={{ marginBottom: 20 }}>
+              <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a', marginBottom: 16 }} />
+              <h3>평가가 완료되었습니다.</h3>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 20 }}>
+              <Spin size="large" />
+              <div style={{ marginTop: 16 }}>평가 데이터를 처리하고 있습니다...</div>
+            </div>
+          )}
+
+          <div style={{ marginBottom: 24 }}>
+            <Progress
+              percent={
+                batchStatus?.totalCount
+                  ? Math.floor(((batchStatus.processedCount || 0) / batchStatus.totalCount) * 100)
+                  : 0
+              }
+              status={
+                batchStatus?.status === 'FAILED' ? 'exception' :
+                  (batchStatus?.status === 'COMPLETED' ? 'success' : 'active')
+              }
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, color: '#666' }}>
+              <span>전체: {batchStatus?.totalCount || 0}건</span>
+              <span>성공: {batchStatus?.successCount || 0}건</span>
             </div>
           </div>
 
-          <div className="result-section">
-            <div className="result-section-title">항목별 점수</div>
-            {itemScoreRows.length === 0 ? (
-              <div className="result-empty">항목별 점수가 없습니다.</div>
-            ) : (
-              <div className="item-score-chart">
-                <Bar data={itemScoreChart.data} options={itemScoreChart.options} />
-              </div>
-            )}
-          </div>
-
-          <div className="result-actions pdf-hide">
-            <Button onClick={handleSavePdf} loading={pdfLoading}>
-              PDF 저장
+          {(batchStatus?.status === 'COMPLETED' || batchStatus?.status === 'PARTIAL_SUCCESS') && (
+            <Button type="primary" onClick={() => setBatchId(null)} block size="large">
+              확인
             </Button>
-            <Button type="primary" onClick={() => setResult(null)}>확인</Button>
-          </div>
-          </div>
+          )}
         </div>
       </Modal>
     </div>

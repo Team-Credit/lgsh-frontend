@@ -72,6 +72,12 @@ const creditService = {
     );
     return response.data;
   },
+  status: async (batchId: string, runId?: string): Promise<ApiResponse<import('@/types').CreditBatchStatus>> => {
+    const response = await api.get<ApiResponse<import('@/types').CreditBatchStatus>>('/credit/run/status', {
+      params: { batchId, runId },
+    });
+    return response.data;
+  },
 };
 
 export default creditService;

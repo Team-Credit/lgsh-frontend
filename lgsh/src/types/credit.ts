@@ -3,9 +3,11 @@
  */
 
 export interface CreditPredictRequest {
-  personId: string;
+  personId?: string;
   modelId: string;
   batchDesc: string;
+  mode?: 'single' | 'group' | 'all';
+  userId?: string;
 }
 
 export interface CreditPredictResult {
@@ -13,6 +15,18 @@ export interface CreditPredictResult {
   creditScore: number;
   creditGrade: string;
   itemScores: Record<string, number>;
+  batchId?: string;
+}
+
+export interface CreditBatchStatus {
+  batchId: string;
+  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL_SUCCESS';
+  totalCount: number;
+  processedCount: number;
+  successCount: number;
+  failCount: number;
+  startedAt?: string;
+  endedAt?: string;
 }
 
 export interface CreditDistributionStats {
