@@ -28,6 +28,9 @@ const SimulationPage = lazy(() => import('@/pages/simulation/SimulationPage'));
 const SimulationHistoryPage = lazy(() => import('@/pages/simulation/SimulationHistoryPage'));
 const MenuAdminPage = lazy(() => import('@/pages/system/MenuAdminPage'));
 
+// AI 챗봇
+const AiChatPage = lazy(() => import('@/pages/ai/AiChatPage'));
+
 // 공지사항
 const NoticeListPage = lazy(() => import('@/pages/notice/NoticeListPage'));
 const NoticeDetail = lazy(() => import('@/pages/notice/NoticeDetail'));
@@ -271,6 +274,14 @@ export const routes: RouteConfig[] = [
     element: FileManagementPage,
     title: '파일관리',
     menuId: 'M0807',
+  },
+
+  // AI 챗봇
+  {
+    path: 'ai/chat',
+    element: AiChatPage,
+    title: 'AI 어시스턴트',
+    menuId: 'M0901',
   },
 ];
 
