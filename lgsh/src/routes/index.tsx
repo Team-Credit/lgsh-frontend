@@ -259,7 +259,7 @@ export const routes: RouteConfig[] = [
 
   // 시스템관리 > 배치관리
   {
-    path: 'admin/batches',
+    path: 'ops/batches',
     element: BatchManagementPage,
     title: '배치관리',
     menuId: 'M0806',

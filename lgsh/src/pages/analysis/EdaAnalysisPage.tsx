@@ -38,7 +38,6 @@ const tabKeys = {
   correlation: 'correlation',
   tab3: 'tab3',
   tab4: 'tab4',
-  tab5: 'tab5',
 };
 
 const VARIABLE_LABELS: Record<string, string> = {
@@ -288,19 +287,21 @@ const EdaAnalysisPage: React.FC = () => {
   }, [activeKey, statsPage, statsSearch]);
 
   useEffect(() => {
-    if (activeKey === tabKeys.tab3) {
-      fetchMissingPatterns();
+    if (activeKey === tabKeys.summary || activeKey === tabKeys.tab3) {
+      if (missingItems.length === 0) {
+        fetchMissingPatterns();
+      }
     }
   }, [activeKey, missingStartDate, missingEndDate]);
 
   useEffect(() => {
-    if (activeKey === tabKeys.tab4 && variableOptions.length === 0) {
+    if ((activeKey === tabKeys.summary || activeKey === tabKeys.tab4) && variableOptions.length === 0) {
       fetchVariableOptions();
     }
   }, [activeKey, variableOptions.length]);
 
   useEffect(() => {
-    if (activeKey === tabKeys.tab4 && selectedVariable && outlierItems.length === 0) {
+    if ((activeKey === tabKeys.summary || activeKey === tabKeys.tab4) && selectedVariable && outlierItems.length === 0) {
       fetchOutliers();
     }
   }, [activeKey, selectedVariable]);
@@ -1056,8 +1057,8 @@ const EdaAnalysisPage: React.FC = () => {
               <Table<CreditMissingPatternItem>
                 columns={missingColumns}
                 dataSource={missingItems}
-                rowKey={(record, index) =>
-                  String(record.variableName || (record as any).variableNm || index)
+                rowKey={(record) =>
+                  String(record.variableName || (record as any).variableNm || (record as any).variable_nm || '')
                 }
                 pagination={{ pageSize: 20, showSizeChanger: false }}
                 size="middle"
@@ -1136,8 +1137,8 @@ const EdaAnalysisPage: React.FC = () => {
               <Table<CreditOutlierItem>
                 columns={outlierColumns}
                 dataSource={outlierItems}
-                rowKey={(record, index) =>
-                  String(record.personId || (record as any).person_id || index)
+                rowKey={(record) =>
+                  String(record.personId || (record as any).person_id || '')
                 }
                 pagination={{ pageSize: 20, showSizeChanger: false }}
                 size="middle"
@@ -1166,11 +1167,6 @@ const EdaAnalysisPage: React.FC = () => {
         </Spin>
       ),
     },
-    {
-      key: tabKeys.tab5,
-      label: '탭 5',
-      children: <EmptyTab />,
-    },
   ];
 
   return (
@@ -1185,11 +1181,6 @@ const EdaAnalysisPage: React.FC = () => {
   );
 };
 
-const EmptyTab: React.FC = () => (
-  <div className="empty-tab">
-    <Text type="secondary">화면 준비 중입니다.</Text>
-  </div>
-);
 
 const heatmapColor = (value: number) => {
   const clamped = Math.max(-1, Math.min(1, value));
