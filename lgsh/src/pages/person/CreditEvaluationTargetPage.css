@@ -1,0 +1,150 @@
+/**
+ * 신용평가 대상자 목록 페이지 스타일
+ */
+
+.credit-evaluation-target-page {
+  padding: 16px;
+}
+
+.credit-evaluation-target-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.credit-evaluation-target-page .search-card,
+.credit-evaluation-target-page .table-card {
+  background: var(--panel, #ffffff);
+  border-radius: var(--radius-lg, 12px);
+  margin-bottom: 16px;
+}
+
+.credit-evaluation-target-page .search-title,
+.credit-evaluation-target-page .table-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text, #1f2937);
+  margin-bottom: 12px;
+}
+
+.credit-evaluation-target-page .search-title::before,
+.credit-evaluation-target-page .table-title::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #111827;
+  border-radius: 2px;
+}
+
+.credit-evaluation-target-page .search-card .ant-form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.credit-evaluation-target-page .search-card .ant-form-item {
+  margin-right: 0;
+}
+
+.credit-evaluation-target-page .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.credit-evaluation-target-page .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9ca3af;
+}
+
+.credit-evaluation-target-page .status-dot.active {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.credit-evaluation-target-page .status-dot.inactive {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.credit-evaluation-target-page .ant-table-wrapper {
+  background: var(--panel, #ffffff);
+}
+
+.credit-evaluation-target-page .ant-table-thead > tr > th {
+  background: #1f6fb2;
+  color: #ffffff;
+  font-weight: 600;
+  position: relative;
+}
+
+.credit-evaluation-target-page .ant-table-row:hover {
+  background: var(--bg, #f8fafc);
+}
+
+.credit-evaluation-target-page .footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 반응형 - 태블릿 */
+@media (max-width: 1200px) {
+  .credit-evaluation-target-page {
+    padding: 16px;
+  }
+
+  .credit-evaluation-target-page .search-card .ant-form-inline {
+    flex-direction: column;
+  }
+
+  .credit-evaluation-target-page .search-card .ant-form-item {
+    width: 100%;
+  }
+}
+
+/* 반응형 - 모바일 */
+@media (max-width: 768px) {
+  .credit-evaluation-target-page {
+    padding: 12px;
+  }
+
+  .credit-evaluation-target-page .page-header h4 {
+    font-size: 18px;
+  }
+
+  .credit-evaluation-target-page .footer-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* 다크모드 */
+:root.dark .credit-evaluation-target-page .ant-table-thead > tr > th {
+  background: #1f4f7a !important;
+  color: var(--text) !important;
+}
+
+:root.dark .credit-evaluation-target-page .ant-table-tbody > tr > td {
+  color: var(--text);
+}
+
+:root.dark .credit-evaluation-target-page .ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .credit-evaluation-target-page .page-header h4,
+:root.dark .credit-evaluation-target-page .page-header .ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .credit-evaluation-target-page .search-form .ant-form-item-label > label {
+  color: var(--text) !important;
+}
