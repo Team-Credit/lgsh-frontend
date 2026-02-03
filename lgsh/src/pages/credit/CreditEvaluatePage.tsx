@@ -25,6 +25,7 @@ import {
   ReloadOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import { Bar } from 'react-chartjs-2';
 import {
@@ -47,6 +48,8 @@ import { creditService, personService } from '@/services';
 import './CreditEvaluatePage.css';
 
 const { Title, Text } = Typography;
+
+const STORAGE_KEY = 'credit_batch_in_progress';
 
 type LookupStatus = 'idle' | 'loading' | 'found' | 'not_found' | 'error';
 type ItemScores = Record<string, number>;
@@ -82,36 +85,100 @@ const CreditEvaluatePage: React.FC = () => {
   const personId = Form.useWatch('personId', form);
   const [personName, setPersonName] = useState('');
   const [personLookupStatus, setPersonLookupStatus] = useState<LookupStatus>('idle');
+  const [batchProgressModal, setBatchProgressModal] = useState(false);
+  const [batchSummaryModal, setBatchSummaryModal] = useState(false);
+  const [batchStarting, setBatchStarting] = useState(false);
+
+  const isBatchRunning = batchStarting || statusPolling || batchProgressModal;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved || !saved.batchResult || !saved.mode) return;
+      const { batchResult: savedBatch, mode: savedMode } = saved;
+      if (!savedBatch.batchId || !savedBatch.runId) return;
+      setMode(savedMode);
+      setBatchResult(savedBatch);
+      setStatusPolling(true);
+      setBatchProgressModal(true);
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
 
   // 배치 상태 폴링
   useEffect(() => {
     if (!batchResult || !statusPolling || mode === 'single') return;
 
-    const pollInterval = setInterval(async () => {
+    const fetchStatus = async () => {
       try {
-        const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId);
+        const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId, {
+          mode: batchResult.mode,
+          userId: batchResult.userId,
+        });
         if (response.success && response.data) {
           setBatchStatus(response.data);
 
-          // 완료되면 폴링 중지
           if (['SUCCESS', 'PARTIAL', 'FAILED'].includes(response.data.status)) {
             setStatusPolling(false);
+            setBatchProgressModal(false);
+            try {
+              localStorage.removeItem(STORAGE_KEY);
+            } catch {
+              // ignore storage errors
+            }
             if (response.data.status === 'SUCCESS') {
-              message.success('배치 평가가 완료되었습니다.');
+              setBatchSummaryModal(true);
             } else if (response.data.status === 'PARTIAL') {
-              message.warning('배치 평가가 부분적으로 완료되었습니다.');
+              message.warning('평가가 부분적으로 완료되었습니다.');
+              setBatchSummaryModal(true);
             } else {
-              message.error('배치 평가가 실패했습니다.');
+              message.error('평가가 실패했습니다.');
             }
           }
         }
       } catch (error) {
         console.error('Status polling error:', error);
       }
-    }, 3000);
+    };
 
+    // ? ?? ? ?? ???? ??? ??? ??
+    fetchStatus();
+    const pollInterval = setInterval(fetchStatus, 1500);
     return () => clearInterval(pollInterval);
   }, [batchResult, statusPolling, mode]);
+
+  // 개인 ID 조회
+  useEffect(() => {
+    const trimmed = (personId || '').trim();
+    if (!trimmed) {
+      setPersonName('');
+      setPersonLookupStatus('idle');
+      return;
+    }
+
+    setPersonLookupStatus('loading');
+    const timer = setTimeout(async () => {
+      try {
+        const response = await personService.getName(trimmed);
+        const resolvedName = response.data?.personNm;
+        if (response.success && resolvedName) {
+          setPersonName(resolvedName);
+          setPersonLookupStatus('found');
+        } else {
+          setPersonName('');
+          setPersonLookupStatus('not_found');
+        }
+      } catch (error) {
+        setPersonName('');
+        setPersonLookupStatus('error');
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [personId]);
 
   const itemScoreRows = useMemo(() => {
     const itemScores = (result?.itemScores || {}) as ItemScores;
@@ -212,36 +279,54 @@ const CreditEvaluatePage: React.FC = () => {
 
   // 개인 ID 조회
   useEffect(() => {
-    const trimmed = (personId || '').trim();
-    if (!trimmed) {
-      setPersonName('');
-      setPersonLookupStatus('idle');
-      return;
-    }
+    if (!batchResult || !statusPolling || mode === 'single') return;
 
-    setPersonLookupStatus('loading');
-    const timer = setTimeout(async () => {
+    const fetchStatus = async () => {
       try {
-        const response = await personService.getName(trimmed);
-        const resolvedName = response.data?.personNm;
-        if (response.success && resolvedName) {
-          setPersonName(resolvedName);
-          setPersonLookupStatus('found');
-        } else {
-          setPersonName('');
-          setPersonLookupStatus('not_found');
+        const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId, {
+          mode,
+          userId: batchResult.userId,
+        });
+        if (response.success && response.data) {
+          setBatchStatus(response.data);
+
+          if (['SUCCESS', 'PARTIAL', 'FAILED'].includes(response.data.status)) {
+            setStatusPolling(false);
+            setBatchProgressModal(false);
+            try {
+              localStorage.removeItem(STORAGE_KEY);
+            } catch {
+              // ignore storage errors
+            }
+            if (response.data.status === 'SUCCESS') {
+              setBatchSummaryModal(true);
+            } else if (response.data.status === 'PARTIAL') {
+              message.warning('??? ????? ???????.');
+              setBatchSummaryModal(true);
+            } else {
+              message.error('??? ??????.');
+            }
+          }
         }
       } catch (error) {
-        setPersonName('');
-        setPersonLookupStatus('error');
+        console.error('Status polling error:', error);
       }
-    }, 300);
+    };
 
-    return () => clearTimeout(timer);
-  }, [personId]);
+    fetchStatus();
+    const pollInterval = setInterval(fetchStatus, 3000);
+    return () => clearInterval(pollInterval);
+  }, [batchResult, statusPolling, mode]);
 
   // 평가 실행
   const handleSubmit = async () => {
+    if (isBatchRunning) {
+      if (!batchProgressModal) {
+        setBatchProgressModal(true);
+      }
+      return;
+    }
+
     try {
       const values = await form.validateFields();
       setLoading(true);
@@ -254,10 +339,8 @@ const CreditEvaluatePage: React.FC = () => {
         mode,
       };
 
-      // 단일 모드
       if (mode === 'single') {
         const response = await creditService.predict(payload);
-
         if (response.success && response.data) {
           setResult(response.data);
           setEvalTime(new Date().toLocaleString('ko-KR'));
@@ -265,17 +348,34 @@ const CreditEvaluatePage: React.FC = () => {
         } else {
           message.error(response.message || '평가에 실패했습니다.');
         }
-      }
-      // 배치 모드 (그룹/전체)
-      else {
+      } else {
+        setBatchProgressModal(true);
+        setBatchStarting(true);
         const response = await creditService.runBatch(payload);
 
         if (response.success && response.data) {
           setBatchResult(response.data);
           setStatusPolling(true);
+          try {
+            localStorage.setItem(
+              STORAGE_KEY,
+              JSON.stringify({
+                mode,
+                batchResult: response.data,
+              })
+            );
+          } catch {
+            // ignore storage errors
+          }
           message.success(`${modeLabels[mode].label}가 시작되었습니다.`);
         } else {
-          message.error(response.message || '배치 평가 시작에 실패했습니다.');
+          setBatchProgressModal(false);
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            // ignore storage errors
+          }
+          message.error(response.message || '평가 시작에 실패했습니다.');
         }
       }
     } catch (error: any) {
@@ -283,26 +383,33 @@ const CreditEvaluatePage: React.FC = () => {
         message.error('필수 값을 확인해주세요.');
       } else {
         const errorMessage =
-          error?.response?.data?.message || error?.message || '평가 중 오류가 발생했습니다.';
+          error?.response?.data?.message ||
+          error?.message ||
+          '평가 중 오류가 발생했습니다.';
         message.error(errorMessage);
       }
     } finally {
+      setBatchStarting(false);
       setLoading(false);
     }
   };
 
-  // 상태 새로고침
+
+  // 상태 수동 조회
   const handleRefreshStatus = useCallback(async () => {
     if (!batchResult) return;
     try {
-      const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId);
+      const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId, {
+        mode: batchResult.mode,
+        userId: batchResult.userId,
+      });
       if (response.success && response.data) {
         setBatchStatus(response.data);
       }
     } catch (error) {
       message.error('상태 조회에 실패했습니다.');
     }
-  }, [batchResult]);
+  }, [batchResult, mode]);
 
   // PDF 저장
   const handleSavePdf = async () => {
@@ -539,7 +646,7 @@ const CreditEvaluatePage: React.FC = () => {
                   onClick={handleSubmit}
                   loading={loading}
                 >
-                  {mode === 'single' ? '평가 실행' : '배치 실행'}
+                  {isBatchRunning ? '\uD3C9\uAC00 \uC911..' : '\uD3C9\uAC00 \uC2E4\uD589'}
                 </Button>
                 <Button
                   onClick={() => {
@@ -556,12 +663,12 @@ const CreditEvaluatePage: React.FC = () => {
           </div>
         </div>
 
-        {/* 배치 실행 결과 및 상태 */}
+        {/* 평가 실행 결과 및 상태 */}
         {batchResult && mode !== 'single' && (
           <Card
             title={
               <Space>
-                <span>배치 실행 정보</span>
+                <span>평가 실행 정보</span>
                 {renderStatusTag(batchStatus?.status)}
                 {statusPolling && <Spin size="small" />}
               </Space>
@@ -574,7 +681,7 @@ const CreditEvaluatePage: React.FC = () => {
             style={{ marginTop: 24 }}
           >
             <Descriptions bordered column={2} size="small">
-              <Descriptions.Item label="배치 ID">{batchResult.batchId}</Descriptions.Item>
+              <Descriptions.Item label="실행 ID">{batchResult.batchId}</Descriptions.Item>
               <Descriptions.Item label="실행 모드">
                 <Tag color="blue">{modeLabels[batchResult.mode].label}</Tag>
               </Descriptions.Item>
@@ -682,6 +789,184 @@ const CreditEvaluatePage: React.FC = () => {
                 확인
               </Button>
             </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 배치 진행 모달 */}
+      <Modal
+        open={batchProgressModal}
+        footer={null}
+        closable={false}
+        centered
+        width={600}
+        className="batch-progress-modal"
+      >
+        <div className="batch-progress-header">
+          <div className="batch-progress-title">
+            {modeLabels[mode].icon}
+            <span style={{ marginLeft: 8 }}>{modeLabels[mode].label} 진행중</span>
+          </div>
+          <Button
+            type="text"
+            icon={<span style={{ fontSize: 18 }}>×</span>}
+            onClick={() => setBatchProgressModal(false)}
+            className="batch-progress-minimize"
+            title="백그라운드로 전환"
+          />
+        </div>
+        <div className="batch-progress-body">
+          {batchResult && (
+            <Descriptions bordered column={1} size="small" style={{ marginBottom: 16 }}>
+              <Descriptions.Item label="실행 ID">{batchResult.batchId}</Descriptions.Item>
+              <Descriptions.Item label="실행 모드">
+                <Tag color="blue">{modeLabels[batchResult.mode].label}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="시작 시간">
+                {new Date(batchResult.runStart).toLocaleString('ko-KR')}
+              </Descriptions.Item>
+            </Descriptions>
+          )}
+          {batchStatus && (
+            <>
+              <div style={{ marginBottom: 8 }}>
+                <Text strong>진행 상황</Text>
+                <span style={{ marginLeft: 8 }}>{renderStatusTag(batchStatus.status)}</span>
+              </div>
+              <Progress percent={progressPercent} status="active" strokeColor="#1890ff" />
+              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between' }}>
+                <Text>전체: {batchStatus.totalCount.toLocaleString()}명</Text>
+                <Text type="success">완료: {batchStatus.successCount.toLocaleString()}명</Text>
+                <Text type="danger">실패: {batchStatus.failCount.toLocaleString()}명</Text>
+              </div>
+            </>
+          )}
+          {!batchStatus && (
+            <div style={{ textAlign: 'center', padding: 24 }}>
+              <Spin size="large" />
+              <div style={{ marginTop: 12 }}>
+                {batchStarting ? '평가 요청 전송중...' : '평가 준비 중...'}
+              </div>
+            </div>
+          )}
+          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 12 }}>
+            <Button
+              danger
+              icon={<StopOutlined />}
+              onClick={() => {
+                setStatusPolling(false);
+                setBatchProgressModal(false);
+                message.warning('평가가 중지되었습니다. 이미 처리된 건은 저장됩니다.');
+              }}
+            >
+              중지
+            </Button>
+            <Button onClick={() => setBatchProgressModal(false)}>
+              백그라운드로 전환
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 배치 완료 요약 모달 */}
+      <Modal
+        open={batchSummaryModal}
+        footer={null}
+        closable={false}
+        centered
+        width={700}
+        className="batch-summary-modal"
+      >
+        <div className="batch-summary-header">
+          <div className="batch-summary-title">
+            <CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+            {modeLabels[mode].label} 완료
+          </div>
+          <Button
+            type="text"
+            icon={<span style={{ fontSize: 18 }}>×</span>}
+            onClick={() => setBatchSummaryModal(false)}
+            className="batch-summary-close"
+          />
+        </div>
+        <div className="batch-summary-body">
+          {batchStatus && (
+            <>
+              <div className="summary-cards">
+                <div className="summary-card">
+                  <div className="summary-card-title">평균 신용점수</div>
+                  <div className="summary-card-value">
+                    {batchStatus.avgScore?.toFixed(1) ?? '-'}
+                  </div>
+                  <div className="summary-card-unit">점</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-card-title">평가 완료</div>
+                  <div className="summary-card-value success">
+                    {batchStatus.successCount.toLocaleString()}
+                  </div>
+                  <div className="summary-card-unit">명</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-card-title">평가 실패</div>
+                  <div className="summary-card-value danger">
+                    {batchStatus.failCount.toLocaleString()}
+                  </div>
+                  <div className="summary-card-unit">명</div>
+                </div>
+              </div>
+
+              {batchStatus.gradeDistribution && (
+                <div className="summary-distribution">
+                  <Title level={5}>등급 분포</Title>
+                  <div className="grade-bars">
+                    {Object.entries(batchStatus.gradeDistribution).map(([grade, count]) => {
+                      const total = batchStatus.successCount || 1;
+                      const percent = ((count as number) / total) * 100;
+                      const letter = grade.charAt(0);
+                      return (
+                        <div key={grade} className="grade-bar-item">
+                          <div className="grade-bar-label">{grade}</div>
+                          <div className="grade-bar-track">
+                            <div
+                              className="grade-bar-fill"
+                              style={{
+                                width: `${percent}%`,
+                                backgroundColor: gradeColorMap[letter] || '#888',
+                              }}
+                            />
+                          </div>
+                          <div className="grade-bar-count">
+                            {(count as number).toLocaleString()}명 ({percent.toFixed(1)}%)
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="summary-info">
+                <Descriptions bordered column={2} size="small">
+                  <Descriptions.Item label="실행 ID">{batchResult?.batchId}</Descriptions.Item>
+                  <Descriptions.Item label="실행 모드">
+                    <Tag color="blue">{modeLabels[mode].label}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="시작 시간">
+                    {batchResult ? new Date(batchResult.runStart).toLocaleString('ko-KR') : '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="완료 시간">
+                    {batchStatus.endedAt ? new Date(batchStatus.endedAt).toLocaleString('ko-KR') : '-'}
+                  </Descriptions.Item>
+                </Descriptions>
+              </div>
+            </>
+          )}
+
+          <div className="summary-actions">
+            <Button type="primary" onClick={() => setBatchSummaryModal(false)}>
+              확인
+            </Button>
           </div>
         </div>
       </Modal>

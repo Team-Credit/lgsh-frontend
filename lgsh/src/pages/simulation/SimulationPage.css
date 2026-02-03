@@ -23,8 +23,8 @@
 }
 
 .scenario-item {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--panel2, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
 }
 
 .scenario-header {
@@ -33,10 +33,11 @@
 
 .scenario-title {
   font-weight: 600;
+  color: var(--text, #0f172a);
 }
 
 .scenario-desc {
-  color: #64748b;
+  color: var(--muted, #64748b);
   font-size: 12px;
 }
 
@@ -55,7 +56,7 @@
 }
 
 .simulation-result .result-empty {
-  color: #94a3b8;
+  color: var(--muted-light, #94a3b8);
   font-size: 13px;
 }
 
@@ -71,8 +72,12 @@
   gap: 10px;
 }
 
+.score-block strong {
+  color: var(--text, #0f172a);
+}
+
 .score-label {
-  color: #64748b;
+  color: var(--muted, #64748b);
   font-size: 12px;
   width: 90px;
 }
@@ -83,16 +88,17 @@
 }
 
 .delta.positive {
-  color: #16a34a;
+  color: var(--success, #16a34a);
 }
 
 .delta.negative {
-  color: #dc2626;
+  color: var(--error, #dc2626);
 }
 
 .applied-columns .section-title {
   font-weight: 600;
   margin-bottom: 8px;
+  color: var(--text, #0f172a);
 }
 
 .column-tags {
@@ -103,7 +109,7 @@
 
 .save-indicator {
   margin-top: 12px;
-  color: #16a34a;
+  color: var(--success, #16a34a);
   font-weight: 600;
 }
 
@@ -114,6 +120,7 @@
 .score-breakdown .section-title {
   font-weight: 600;
   margin-bottom: 8px;
+  color: var(--text, #0f172a);
 }
 
 .breakdown-list {
@@ -126,17 +133,17 @@
   justify-content: space-between;
   padding: 6px 8px;
   border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--panel2, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
   font-size: 12px;
 }
 
 .breakdown-label {
-  color: #475569;
+  color: var(--text-secondary, #475569);
   font-weight: 600;
 }
 
 .breakdown-value {
-  color: #0f172a;
+  color: var(--text, #0f172a);
   font-weight: 600;
 }

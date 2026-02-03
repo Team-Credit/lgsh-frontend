@@ -42,7 +42,7 @@ export interface CreditModel {
 }
 
 // 모델 유형
-export type ModelType = 'MAIN' | 'CHALLENGER' | 'REFERENCE';
+export type ModelType = 'MAIN' | 'CHALLENGER' | 'REFERENCE' | 'BACKUP' | 'TEST';
 
 // 알고리즘 유형
 export type AlgorithmType = 'LOGISTIC' | 'XGBOOST' | 'TABNET';

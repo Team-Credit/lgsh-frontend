@@ -264,3 +264,180 @@
     text-align: left;
   }
 }
+
+/* 배치 진행 모달 */
+.batch-progress-modal .ant-modal-content {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.batch-progress-modal .ant-modal-body {
+  padding: 0;
+}
+
+.batch-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #1890ff;
+  color: #ffffff;
+}
+
+.batch-progress-title {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.batch-progress-minimize {
+  color: #ffffff !important;
+  font-size: 20px;
+}
+
+.batch-progress-minimize:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.batch-progress-body {
+  padding: 20px 24px 24px;
+  background: #ffffff;
+}
+
+/* 배치 완료 요약 모달 */
+.batch-summary-modal .ant-modal-content {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.batch-summary-modal .ant-modal-body {
+  padding: 0;
+}
+
+.batch-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #52c41a;
+  color: #ffffff;
+}
+
+.batch-summary-title {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.batch-summary-close {
+  color: #ffffff !important;
+  font-size: 20px;
+}
+
+.batch-summary-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.batch-summary-body {
+  padding: 24px;
+  background: #ffffff;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+}
+
+.summary-card-title {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.summary-card-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.summary-card-value.success {
+  color: #16a34a;
+}
+
+.summary-card-value.danger {
+  color: #dc2626;
+}
+
+.summary-card-unit {
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.summary-distribution {
+  margin-bottom: 24px;
+}
+
+.grade-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.grade-bar-item {
+  display: grid;
+  grid-template-columns: 50px 1fr 120px;
+  align-items: center;
+  gap: 12px;
+}
+
+.grade-bar-label {
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+}
+
+.grade-bar-track {
+  height: 20px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.grade-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.grade-bar-count {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: right;
+}
+
+.summary-info {
+  margin-bottom: 20px;
+}
+
+.summary-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}

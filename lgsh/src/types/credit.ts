@@ -45,6 +45,8 @@ export interface CreditBatchStatus {
   failCount: number;
   startedAt?: string;
   endedAt?: string;
+  avgScore?: number;
+  gradeDistribution?: Record<string, number>;
 }
 
 export interface CreditDistributionStats {
