@@ -1,0 +1,36 @@
+/**
+ * 마감관리 페이지 스타일
+ */
+
+.report-close-page {
+  padding: 24px;
+  min-height: 100%;
+  background: #f5f5f5;
+}
+
+.report-close-page .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.report-close-page .ant-statistic-title {
+  font-size: 13px;
+  color: #8c8c8c;
+}
+
+.report-close-page .ant-statistic-content {
+  font-size: 24px;
+}
+
+.report-close-page .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.report-close-page .ant-table-row:hover {
+  background: #f5f5f5;
+}
+
+/* 타임라인 스타일 */
+.report-close-page .ant-timeline-item-content {
+  padding-bottom: 16px;
+}

@@ -20,3 +20,4 @@ export * from './companySetting';
 export * from './model';
 export * from './variable';
 export * from './simulation';
+export * from './report';
