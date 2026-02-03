@@ -15,6 +15,7 @@ import {
   Typography,
   Descriptions,
   Spin,
+  Alert,
 } from 'antd';
 import {
   CalculatorOutlined,
@@ -88,6 +89,8 @@ const CreditEvaluatePage: React.FC = () => {
   const [batchProgressModal, setBatchProgressModal] = useState(false);
   const [batchSummaryModal, setBatchSummaryModal] = useState(false);
   const [batchStarting, setBatchStarting] = useState(false);
+  const [celeryRunning, setCeleryRunning] = useState<boolean | null>(null);
+  const [celeryWarned, setCeleryWarned] = useState(false);
 
   const isBatchRunning = batchStarting || statusPolling || batchProgressModal;
 
@@ -107,6 +110,35 @@ const CreditEvaluatePage: React.FC = () => {
       // ignore storage errors
     }
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCeleryStatus = async () => {
+      try {
+        const response = await creditService.getCeleryStatus();
+        const running = !!(response.success && response.data?.running);
+        if (!isMounted) return;
+        setCeleryRunning(running);
+        if (!running && !celeryWarned) {
+          message.warning('Celery 미실행 상태입니다. 그룹/전체 평가는 실행할 수 없습니다.');
+          setCeleryWarned(true);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        setCeleryRunning(false);
+        if (!celeryWarned) {
+          message.warning('Celery 미실행 상태입니다. 그룹/전체 평가는 실행할 수 없습니다.');
+          setCeleryWarned(true);
+        }
+      }
+    };
+
+    fetchCeleryStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, [celeryWarned]);
 
   // 배치 상태 폴링
   useEffect(() => {
@@ -326,6 +358,10 @@ const CreditEvaluatePage: React.FC = () => {
       }
       return;
     }
+    if (mode !== 'single' && celeryRunning === false) {
+      message.warning('Celery 미실행 상태입니다. 그룹/전체 평가는 실행할 수 없습니다.');
+      return;
+    }
 
     try {
       const values = await form.validateFields();
@@ -489,6 +525,15 @@ const CreditEvaluatePage: React.FC = () => {
       </div>
 
       <Card className="evaluate-card">
+        {celeryRunning === false && (
+          <Alert
+            type="warning"
+            showIcon
+            message="Celery 미실행"
+            description="그룹/전체 평가는 실행되지 않습니다. start_celery.cmd로 워커를 먼저 실행하세요."
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <div className="evaluate-layout">
           {/* 왼쪽: 모드 선택 버튼 */}
           <div className="mode-buttons">

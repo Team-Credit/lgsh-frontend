@@ -49,6 +49,13 @@ export interface CreditBatchStatus {
   gradeDistribution?: Record<string, number>;
 }
 
+export interface CreditCeleryStatus {
+  running: boolean;
+  workerCount: number;
+  workers?: string[];
+  error?: string;
+}
+
 export interface CreditDistributionStats {
   average: number;
   median: number;
