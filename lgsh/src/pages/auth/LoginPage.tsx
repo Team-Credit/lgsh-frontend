@@ -37,6 +37,8 @@ const LoginPage: React.FC = () => {
   const [forgotUserId, setForgotUserId] = useState('');
   const [forgotCompanyId, setForgotCompanyId] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [resetLockUntil, setResetLockUntil] = useState<number | null>(null);
+  const [lockRemaining, setLockRemaining] = useState(0);
 
   // 이미 로그인 상태면 대시보드로 이동
   useEffect(() => {
@@ -58,6 +60,46 @@ const LoginPage: React.FC = () => {
       setRememberMe(true);
     }
   }, []);
+
+  // ???? ?? ?? ?? ??
+  useEffect(() => {
+    const saved = localStorage.getItem('lgsh_forgot_lock_until');
+    if (saved) {
+      const ts = Number(saved);
+      if (!Number.isNaN(ts) && ts > Date.now()) {
+        setResetLockUntil(ts);
+      } else {
+        localStorage.removeItem('lgsh_forgot_lock_until');
+      }
+    }
+  }, []);
+
+  // ?? ?? ?? ??
+  useEffect(() => {
+    if (!resetLockUntil) {
+      setLockRemaining(0);
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(0, resetLockUntil - Date.now());
+      setLockRemaining(remaining);
+      if (remaining <= 0) {
+        setResetLockUntil(null);
+        localStorage.removeItem('lgsh_forgot_lock_until');
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [resetLockUntil]);
+
+  const formatRemaining = (ms: number) => {
+    const totalSec = Math.ceil(ms / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return `${min}:${sec.toString().padStart(2, '0')}`;
+  };
+
 
   // 폼 유효성 검사
   const validateForm = (): boolean => {
@@ -131,7 +173,19 @@ const LoginPage: React.FC = () => {
       setForgotCompanyId('');
     } catch (err: any) {
       console.error(err);
-      message.error('요청 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      const errCode = err?.response?.data?.code;
+      if (errCode === 'ERR_USER_017') {
+        const lockUntil = Date.now() + 5 * 60 * 1000;
+        localStorage.setItem('lgsh_forgot_lock_until', String(lockUntil));
+        setResetLockUntil(lockUntil);
+        setIsModalOpen(false);
+        setForgotEmail('');
+        setForgotUserId('');
+        setForgotCompanyId('');
+        message.error(err?.response?.data?.message || '\uBE44\uBC00\uBC88\uD638 \uCC3E\uAE30 \uC694\uCCAD\uC774 5\uD68C \uC5F0\uC18D\uC73C\uB85C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. 5\uBD84 \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.');
+      } else {
+        message.error(err?.response?.data?.message || '\uC694\uCCAD \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.');
+      }
     } finally {
       setForgotLoading(false);
     }
@@ -215,11 +269,20 @@ const LoginPage: React.FC = () => {
                   className="forgot-password"
                   onClick={(e) => {
                     e.preventDefault();
+                    if (resetLockUntil) {
+                      message.warning("\uC5EC\uB7EC \uBC88\uC758 \uC2E4\uD328\uB85C \uC778\uD574 \uB0A8\uC740 \uC2DC\uAC04 \uD6C4\uC5D0 \uB2E4\uC2DC \uC2DC\uB3C4\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB0A8\uC740 \uC2DC\uAC04: \u201C" + formatRemaining(lockRemaining) + "\u201D");
+                      return;
+                    }
                     setIsModalOpen(true);
                   }}
                 >
                   비밀번호 찾기
                 </a>
+                {resetLockUntil && (
+                  <span style={{ marginLeft: '8px', fontSize: '12px', color: '#c0392b' }}>
+                    {"\uB2E4\uC2DC \uC2DC\uB3C4 \uAC00\uB2A5\uD55C \uC2DC\uAC04: " + formatRemaining(lockRemaining)}
+                  </span>
+                )}
               </div>
 
               {/* 로그인 버튼 */}
