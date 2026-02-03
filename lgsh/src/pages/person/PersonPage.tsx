@@ -33,6 +33,7 @@ import {
   ReloadOutlined,
   UserOutlined,
   SettingOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType, TableRowSelection } from 'antd/es/table/interface';
 import type { ResizeCallbackData } from 'react-resizable';
@@ -45,6 +46,7 @@ import { useCommonCodes } from '@/hooks';
 import { useExcelExport } from '@/contexts';
 import type { ExcelColumn } from '@/utils/excelExport';
 import PersonGroupSelectModal from '@/components/PersonGroupSelectModal';
+import PersonDetailData from './PersonDetailData';
 import './PersonPage.css';
 import 'react-resizable/css/styles.css';
 
@@ -168,6 +170,10 @@ const PersonPage: React.FC = () => {
 
   // 관리그룹 선택 모달
   const [personGroupModalOpen, setPersonGroupModalOpen] = useState(false);
+
+  // 대상자 상세 모달 상태
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailPersonId, setDetailPersonId] = useState('');
 
   // 컬럼 표시 설정
   const defaultVisibleColumns = {
@@ -447,6 +453,12 @@ const PersonPage: React.FC = () => {
     }
   };
 
+  // 상세 보기 모달 열기
+  const handleDetailView = (record: PersonFull) => {
+    setDetailPersonId(record.personId);
+    setDetailModalOpen(true);
+  };
+
   // 컬럼 리사이즈 핸들러
   const handleResize = (key: string) => (_: React.SyntheticEvent, { size }: ResizeCallbackData) => {
     setColumnWidths((prevWidths) => {
@@ -644,6 +656,13 @@ const PersonPage: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleDetailView(record)}
+            title="상세보기"
+          />
           <Button
             type="link"
             size="small"
@@ -1090,6 +1109,22 @@ const PersonPage: React.FC = () => {
         onSelect={handlePersonGroupSelect}
         companyId={userCompanyId || form.getFieldValue('companyId')}
       />
+
+      {/* 상세 보기 모달 */}
+      <Modal
+        title={null}
+        open={detailModalOpen}
+        onCancel={() => setDetailModalOpen(false)}
+        footer={null}
+        width={900}
+        destroyOnClose
+        centered
+        style={{ top: 20 }}
+      >
+        <div style={{ padding: '0px' }}>
+          <PersonDetailData personId={detailPersonId} />
+        </div>
+      </Modal>
     </div>
   );
 };
