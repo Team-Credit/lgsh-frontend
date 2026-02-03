@@ -56,7 +56,7 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
       setErrorMessage(null);
       try {
         const response = await api.get<ApiResponse<PersonDetailResponseDto>>(
-          `/persons/${resolvedPersonId}/detail`
+          `/persons/${resolvedPersonId}/details`
         );
         if (response.data.success && response.data.data) {
           setData(response.data.data);

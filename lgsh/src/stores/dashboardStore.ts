@@ -20,6 +20,12 @@ const DEFAULT_SETTINGS: DashboardSettings = {
   minWidgetCount: 4,
   maxWidgetCount: 8,
 };
+const FALLBACK_CONFIG: DashboardConfig = {
+  isCustomized: false,
+  layout: [],
+  refreshInterval: DEFAULT_SETTINGS.refreshInterval,
+};
+
 
 interface DashboardState {
   // 상태
@@ -67,8 +73,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       set({ config, isLoading: false });
       originalLayout = [...config.layout];
     } catch (error) {
-      console.error('대시보드 설정 로드 실패:', error);
-      set({ error: '대시보드 설정을 불러올 수 없습니다.', isLoading: false });
+      console.error('Dashboard config load failed:', error);
+      set({
+        config: FALLBACK_CONFIG,
+        error: 'Failed to load dashboard config.',
+        isLoading: false,
+      });
+      message.warning('Failed to load dashboard config. Using defaults.');
     }
   },
 
