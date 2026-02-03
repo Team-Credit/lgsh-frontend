@@ -4,6 +4,10 @@
  */
 import React, { lazy } from 'react';
 
+const CreditEvaluationTargetPage = lazy(
+  () => import('@/pages/person/CreditEvaluationTargetPage')
+);
+
 // Lazy Loading으로 컴포넌트 동적 로드
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 const PersonGroupPage = lazy(() => import('@/pages/person/PersonGroupPage'));
@@ -53,6 +57,15 @@ export const routes: RouteConfig[] = [
     title: '대시보드',
     menuId: 'M01',
   },
+
+  // 신용평가 > 대상자 목록
+{
+  path: 'persons',
+  element: CreditEvaluationTargetPage,
+  title: '대상자 목록',
+  menuId: 'M0200',
+},
+
 
   // 신용평가 > 대상자등록
   {
@@ -254,7 +267,7 @@ export const routes: RouteConfig[] = [
     path: 'admin/roles',
     element: lazy(() => import('@/pages/system/RolePage')),
     title: '역할관리',
-    menuId: 'M0802',
+    menuId: 'M0803',
   },
 
   // 시스템관리 > 배치관리
@@ -275,3 +288,5 @@ export const routes: RouteConfig[] = [
 ];
 
 export default routes;
+
+
