@@ -200,6 +200,7 @@ export interface ReportHistoryResponse {
 
 // 월간 마감 상태
 export interface MonthlyClose {
+  closeSeq?: number;  // 마감 일련번호 (마감 취소 시 필요)
   companyId: string;
   year: number;
   month: number;
@@ -209,7 +210,7 @@ export interface MonthlyClose {
   closedBy: string | null;
   closedByNm?: string;
   closeNote: string | null;
-  canCancel: boolean;
+  canCancel: boolean | string;  // 백엔드에서 'Y'/'N' 또는 boolean으로 올 수 있음
 }
 
 // 마감 처리 요청
@@ -222,10 +223,8 @@ export interface MonthlyCloseRequest {
 
 // 마감 취소 요청
 export interface CloseCancelRequest {
-  companyId: string;
-  year: number;
-  month: number;
-  cancelReason: string;
+  closeSeq: number;  // 마감 일련번호 (필수)
+  reason: string;    // 취소 사유 (필수)
 }
 
 // 마감 이력
