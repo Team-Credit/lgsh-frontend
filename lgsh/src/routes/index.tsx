@@ -33,6 +33,15 @@ const SimulationPage = lazy(() => import('@/pages/simulation/SimulationPage'));
 const SimulationHistoryPage = lazy(() => import('@/pages/simulation/SimulationHistoryPage'));
 const MenuAdminPage = lazy(() => import('@/pages/system/MenuAdminPage'));
 
+// AI 챗봇
+const AiChatPage = lazy(() => import('@/pages/ai/AiChatPage'));
+
+// 월간레포트
+const ReportKanbanPage = lazy(() => import('@/pages/report/ReportKanbanPage'));
+const ReportHistoryPage = lazy(() => import('@/pages/report/ReportHistoryPage'));
+const ReportClosePage = lazy(() => import('@/pages/report/ReportClosePage'));
+const ReportItemAdminPage = lazy(() => import('@/pages/report/ReportItemAdminPage'));
+
 // 공지사항
 const NoticeListPage = lazy(() => import('@/pages/notice/NoticeListPage'));
 const NoticeDetail = lazy(() => import('@/pages/notice/NoticeDetail'));
@@ -293,6 +302,46 @@ export const routes: RouteConfig[] = [
     element: FileManagementPage,
     title: '파일관리',
     menuId: 'M0807',
+  },
+
+  // AI 챗봇
+  {
+    path: 'ai/chat',
+    element: AiChatPage,
+    title: 'AI 어시스턴트',
+    menuId: 'M0901',
+  },
+
+  // 월간레포트 > 레포트 생성
+  {
+    path: 'report/create',
+    element: ReportKanbanPage,
+    title: '레포트 생성',
+    menuId: 'M1001',
+  },
+
+  // 월간레포트 > 레포트 이력
+  {
+    path: 'report/history',
+    element: ReportHistoryPage,
+    title: '레포트 이력',
+    menuId: 'M1002',
+  },
+
+  // 월간레포트 > 마감관리
+  {
+    path: 'report/close',
+    element: ReportClosePage,
+    title: '마감관리',
+    menuId: 'M1003',
+  },
+
+  // 월간레포트 > 항목관리 (관리자)
+  {
+    path: 'report/items',
+    element: ReportItemAdminPage,
+    title: '항목관리',
+    menuId: 'M1004',
   },
 ];
 

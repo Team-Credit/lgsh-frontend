@@ -1,0 +1,131 @@
+/**
+ * 월간레포트 칸반보드 스타일
+ */
+
+.report-kanban-page {
+  padding: 24px;
+  min-height: 100%;
+  background: #f5f5f5;
+}
+
+.kanban-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  min-height: 500px;
+}
+
+.kanban-column {
+  flex: 1;
+  min-width: 280px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s;
+}
+
+.kanban-column.drag-over {
+  background: #e6f7ff;
+  box-shadow: 0 0 0 2px #1890ff;
+}
+
+.kanban-column-header {
+  padding: 12px 16px;
+  border-bottom: 3px solid #1890ff;
+  background: #fafafa;
+  border-radius: 8px 8px 0 0;
+}
+
+.kanban-column-content {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  min-height: 400px;
+}
+
+.kanban-item {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: grab;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.kanban-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #1890ff;
+}
+
+.kanban-item.required {
+  cursor: not-allowed;
+  border-left: 3px solid #ff4d4f;
+  background: #fff1f0;
+}
+
+.kanban-item.dragging {
+  opacity: 0.5;
+  transform: rotate(3deg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.kanban-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.kanban-item-body {
+  margin-bottom: 8px;
+}
+
+.kanban-item-body .ant-typography {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.kanban-item-footer {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.kanban-item-footer .ant-tag {
+  font-size: 10px;
+  margin: 0;
+}
+
+/* 미리보기 모달 */
+.preview-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* 반응형 */
+@media (max-width: 992px) {
+  .kanban-board {
+    flex-direction: column;
+  }
+
+  .kanban-column {
+    min-width: 100%;
+  }
+
+  .kanban-column-content {
+    min-height: 200px;
+  }
+}
