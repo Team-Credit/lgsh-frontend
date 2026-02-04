@@ -224,7 +224,6 @@ const ModelListPage: React.FC = () => {
     regDt: '등록일시',
   };
 
-  // 데이터 조회
   const fetchData = async (currentPage = page) => {
     setLoading(true);
     try {
@@ -259,6 +258,8 @@ const ModelListPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+
 
   // 검색
   const handleSearch = () => {
@@ -787,6 +788,9 @@ const ModelListPage: React.FC = () => {
           신용평가 모델을 등록하고 관리합니다.
         </Text>
       </div>
+
+      {/* {"\uD3C9\uAC00 \uC2E4\uD589"} ?? */}
+      
 
       {/* 검색 영역 */}
       <Card className="search-card" size="small">
