@@ -12,6 +12,7 @@ export interface CreditPredictRequest {
   batchDesc: string;
   chunkSize?: number;
   useCelery?: boolean;
+  algorithmType?: string;
 }
 
 export interface CreditPredictResult {
@@ -47,6 +48,13 @@ export interface CreditBatchStatus {
   endedAt?: string;
   avgScore?: number;
   gradeDistribution?: Record<string, number>;
+}
+
+export interface CreditCeleryStatus {
+  running: boolean;
+  workerCount: number;
+  workers?: string[];
+  error?: string;
 }
 
 export interface CreditDistributionStats {

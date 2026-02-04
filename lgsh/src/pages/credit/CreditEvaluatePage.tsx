@@ -15,6 +15,7 @@ import {
   Typography,
   Descriptions,
   Spin,
+  Alert,
 } from 'antd';
 import {
   CalculatorOutlined,
@@ -56,6 +57,13 @@ type ItemScores = Record<string, number>;
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ChartTooltip, Legend);
 
+const formatRunStart = (value?: string | null) => {
+  if (!value) return '-';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '-';
+  return parsed.toLocaleString('ko-KR');
+};
+
 const gradeColorMap: Record<string, string> = {
   A: '#1d4ed8',
   B: '#16a34a',
@@ -88,6 +96,8 @@ const CreditEvaluatePage: React.FC = () => {
   const [batchProgressModal, setBatchProgressModal] = useState(false);
   const [batchSummaryModal, setBatchSummaryModal] = useState(false);
   const [batchStarting, setBatchStarting] = useState(false);
+  const [celeryRunning, setCeleryRunning] = useState<boolean | null>(null);
+  const [celeryWarned, setCeleryWarned] = useState(false);
 
   const isBatchRunning = batchStarting || statusPolling || batchProgressModal;
 
@@ -108,11 +118,45 @@ const CreditEvaluatePage: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCeleryStatus = async () => {
+      try {
+        const response = await creditService.getCeleryStatus();
+        const running = !!(response.success && response.data?.running);
+        if (!isMounted) return;
+        setCeleryRunning(running);
+        if (!running && !celeryWarned) {
+          message.warning('Celery 미실행 상태입니다. 그룹/전체 평가는 실행할 수 없습니다.');
+          setCeleryWarned(true);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        setCeleryRunning(false);
+        if (!celeryWarned) {
+          message.warning('Celery 미실행 상태입니다. 그룹/전체 평가는 실행할 수 없습니다.');
+          setCeleryWarned(true);
+        }
+      }
+    };
+
+    fetchCeleryStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, [celeryWarned]);
+
   // 배치 상태 폴링
   useEffect(() => {
     if (!batchResult || !statusPolling || mode === 'single') return;
 
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
     const fetchStatus = async () => {
+      if (cancelled) return;
+      let finished = false;
       try {
         const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId, {
           mode: batchResult.mode,
@@ -122,6 +166,7 @@ const CreditEvaluatePage: React.FC = () => {
           setBatchStatus(response.data);
 
           if (['SUCCESS', 'PARTIAL', 'FAILED'].includes(response.data.status)) {
+            finished = true;
             setStatusPolling(false);
             setBatchProgressModal(false);
             try {
@@ -138,16 +183,42 @@ const CreditEvaluatePage: React.FC = () => {
               message.error('평가가 실패했습니다.');
             }
           }
+        } else {
+          setBatchStatus((prev) =>
+            prev ?? {
+              batchId: batchResult.batchId,
+              status: 'RUNNING',
+              totalCount: 0,
+              processedCount: 0,
+              successCount: 0,
+              failCount: 0,
+            }
+          );
         }
       } catch (error) {
         console.error('Status polling error:', error);
+        setBatchStatus((prev) =>
+          prev ?? {
+            batchId: batchResult.batchId,
+            status: 'RUNNING',
+            totalCount: 0,
+            processedCount: 0,
+            successCount: 0,
+            failCount: 0,
+          }
+        );
       }
+      if (cancelled || finished) return;
+      timer = setTimeout(fetchStatus, 1500);
     };
 
-    // ? ?? ? ?? ???? ??? ??? ??
     fetchStatus();
-    const pollInterval = setInterval(fetchStatus, 1500);
-    return () => clearInterval(pollInterval);
+    return () => {
+      cancelled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, [batchResult, statusPolling, mode]);
 
   // 개인 ID 조회
@@ -278,45 +349,6 @@ const CreditEvaluatePage: React.FC = () => {
   }, [itemScoreRows]);
 
   // 개인 ID 조회
-  useEffect(() => {
-    if (!batchResult || !statusPolling || mode === 'single') return;
-
-    const fetchStatus = async () => {
-      try {
-        const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId, {
-          mode,
-          userId: batchResult.userId,
-        });
-        if (response.success && response.data) {
-          setBatchStatus(response.data);
-
-          if (['SUCCESS', 'PARTIAL', 'FAILED'].includes(response.data.status)) {
-            setStatusPolling(false);
-            setBatchProgressModal(false);
-            try {
-              localStorage.removeItem(STORAGE_KEY);
-            } catch {
-              // ignore storage errors
-            }
-            if (response.data.status === 'SUCCESS') {
-              setBatchSummaryModal(true);
-            } else if (response.data.status === 'PARTIAL') {
-              message.warning('??? ????? ???????.');
-              setBatchSummaryModal(true);
-            } else {
-              message.error('??? ??????.');
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Status polling error:', error);
-      }
-    };
-
-    fetchStatus();
-    const pollInterval = setInterval(fetchStatus, 3000);
-    return () => clearInterval(pollInterval);
-  }, [batchResult, statusPolling, mode]);
 
   // 평가 실행
   const handleSubmit = async () => {
@@ -324,6 +356,10 @@ const CreditEvaluatePage: React.FC = () => {
       if (!batchProgressModal) {
         setBatchProgressModal(true);
       }
+      return;
+    }
+    if (mode !== 'single' && celeryRunning === false) {
+      message.warning('Celery 미실행 상태입니다. 그룹/전체 평가는 실행할 수 없습니다.');
       return;
     }
 
@@ -355,6 +391,15 @@ const CreditEvaluatePage: React.FC = () => {
 
         if (response.success && response.data) {
           setBatchResult(response.data);
+          setBatchStatus({
+            batchId: response.data.batchId,
+            status: 'RUNNING',
+            totalCount: 0,
+            processedCount: 0,
+            successCount: 0,
+            failCount: 0,
+            startedAt: response.data.runStart,
+          });
           setStatusPolling(true);
           try {
             localStorage.setItem(
@@ -410,6 +455,34 @@ const CreditEvaluatePage: React.FC = () => {
       message.error('상태 조회에 실패했습니다.');
     }
   }, [batchResult, mode]);
+
+  const handleStopBatch = useCallback(async () => {
+    if (!batchResult) return;
+    try {
+      const response = await creditService.stopBatch({
+        batchId: batchResult.batchId,
+        runId: batchResult.runId,
+        mode: batchResult.mode,
+        userId: batchResult.userId,
+      });
+      if (response.success) {
+        setStatusPolling(false);
+        setBatchProgressModal(false);
+        setBatchStatus(null);
+        setBatchResult(null);
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          // ignore storage errors
+        }
+        message.warning('평가가 중지되었습니다. 이미 처리된 건은 저장됩니다.');
+      } else {
+        message.error(response.message || '평가 중지에 실패했습니다.');
+      }
+    } catch (error) {
+      message.error('평가 중지에 실패했습니다.');
+    }
+  }, [batchResult, handleRefreshStatus]);
 
   // PDF 저장
   const handleSavePdf = async () => {
@@ -489,6 +562,15 @@ const CreditEvaluatePage: React.FC = () => {
       </div>
 
       <Card className="evaluate-card">
+        {celeryRunning === false && (
+          <Alert
+            type="warning"
+            showIcon
+            message="Celery 미실행"
+            description="그룹/전체 평가는 실행되지 않습니다. start_celery.cmd로 워커를 먼저 실행하세요."
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <div className="evaluate-layout">
           {/* 왼쪽: 모드 선택 버튼 */}
           <div className="mode-buttons">
@@ -691,7 +773,7 @@ const CreditEvaluatePage: React.FC = () => {
                 <Descriptions.Item label="그룹">{batchResult.personGrp}</Descriptions.Item>
               )}
               <Descriptions.Item label="시작 시간">
-                {new Date(batchResult.runStart).toLocaleString('ko-KR')}
+                {formatRunStart(batchResult.runStart)}
               </Descriptions.Item>
             </Descriptions>
 
@@ -823,7 +905,7 @@ const CreditEvaluatePage: React.FC = () => {
                 <Tag color="blue">{modeLabels[batchResult.mode].label}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="시작 시간">
-                {new Date(batchResult.runStart).toLocaleString('ko-KR')}
+                {formatRunStart(batchResult.runStart)}
               </Descriptions.Item>
             </Descriptions>
           )}
@@ -853,11 +935,7 @@ const CreditEvaluatePage: React.FC = () => {
             <Button
               danger
               icon={<StopOutlined />}
-              onClick={() => {
-                setStatusPolling(false);
-                setBatchProgressModal(false);
-                message.warning('평가가 중지되었습니다. 이미 처리된 건은 저장됩니다.');
-              }}
+              onClick={handleStopBatch}
             >
               중지
             </Button>
@@ -953,7 +1031,7 @@ const CreditEvaluatePage: React.FC = () => {
                     <Tag color="blue">{modeLabels[mode].label}</Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="시작 시간">
-                    {batchResult ? new Date(batchResult.runStart).toLocaleString('ko-KR') : '-'}
+                    {formatRunStart(batchResult?.runStart)}
                   </Descriptions.Item>
                   <Descriptions.Item label="완료 시간">
                     {batchStatus.endedAt ? new Date(batchStatus.endedAt).toLocaleString('ko-KR') : '-'}

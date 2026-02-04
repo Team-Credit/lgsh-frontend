@@ -7,6 +7,7 @@ import type {
   CreditBasicStatsResult,
   CreditBatchRunResult,
   CreditBatchStatus,
+  CreditCeleryStatus,
   CreditCorrelationResult,
   CreditDistributionResult,
   CreditMissingPatternResult,
@@ -49,6 +50,19 @@ const creditService = {
     const response = await api.get<ApiResponse<CreditBatchStatus>>('/credit/run/status', {
       params: { batchId, runId, ...params },
     });
+    return response.data;
+  },
+  getCeleryStatus: async (): Promise<ApiResponse<CreditCeleryStatus>> => {
+    const response = await api.get<ApiResponse<CreditCeleryStatus>>('/credit/celery/status');
+    return response.data;
+  },
+  stopBatch: async (payload: {
+    batchId: string;
+    runId: string;
+    mode?: string;
+    userId?: string;
+  }): Promise<ApiResponse<{ revokedCount?: number }>> => {
+    const response = await api.post<ApiResponse<{ revokedCount?: number }>>('/credit/run/stop', payload);
     return response.data;
   },
   distribution: async (): Promise<ApiResponse<CreditDistributionResult>> => {
