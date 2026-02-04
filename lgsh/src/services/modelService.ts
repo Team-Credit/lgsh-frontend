@@ -58,6 +58,12 @@ export const modelService = {
    */
   deploy: (modelId: string, data: ModelDeployRequest = {}) =>
     api.put<ApiResponse<ModelDetailResponse>>(`${BASE_URL}/${modelId}/deploy`, data),
+
+  /**
+   * 모델 삭제 (DRAFT/FAILED 상태만 가능)
+   */
+  delete: (modelId: string) =>
+    api.delete<ApiResponse<void>>(`${BASE_URL}/${modelId}`),
 };
 
 export default modelService;
