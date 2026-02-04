@@ -44,3 +44,26 @@ export interface AntMenuItem {
   children?: AntMenuItem[];
   onClick?: () => void;
 }
+
+// 즐겨찾기 항목
+export interface FavoriteItem {
+  userId: string;
+  menuId: string;
+  menuNm: string;
+  menuUrl: string | null;
+  menuIcon: string | null;
+  regDt: string;
+}
+
+// 즐겨찾기 목록 응답
+export interface FavoriteListResponse {
+  favorites: FavoriteItem[];
+  totalCount: number;
+}
+
+// 즐겨찾기 토글 응답
+export interface FavoriteToggleResponse {
+  menuId: string;
+  isFavorite: boolean;
+  message: string;
+}
