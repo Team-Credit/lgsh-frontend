@@ -4,7 +4,7 @@
  * - 좌측 사이드바 (260px, 접기 가능)
  * - 메인 컨텐츠
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Button, Dropdown, Avatar, Badge, Tooltip, Spin, Slider, Popover } from 'antd';
 import type { MenuProps } from 'antd';
@@ -64,9 +64,11 @@ import type { MenuItem } from '@/types';
 import { exportAllTablesFromDOM } from '@/utils/excelExport';
 import { useExcelExport } from '@/contexts';
 import { menuService } from '@/services/menuService';
+import { chatService } from '@/services/chatService';
 import { useTokenRefresh } from '@/hooks';
 import SessionTimeoutModal from '@/components/common/SessionTimeoutModal';
 import ContractWarningModal from '@/components/common/ContractWarningModal';
+import ChatFloatingWidget from '@/components/chat/ChatFloatingWidget';
 import { clearContractWarning } from '@/store/slices/authSlice';
 import './MainLayout.css';
 
@@ -176,6 +178,7 @@ const MainLayout: React.FC = () => {
 
   // 계약 만료 경고 모달 상태
   const [showContractWarning, setShowContractWarning] = React.useState(false);
+  const [chatUnreadCount, setChatUnreadCount] = React.useState(0);
 
   // 계약 만료 경고 모달 표시 (로그인 후 최초 1회)
   useEffect(() => {
@@ -208,6 +211,31 @@ const MainLayout: React.FC = () => {
       dispatch(fetchMenus());
     }
   }, [dispatch, user?.userId]);
+
+  const refreshChatUnreadCount = useCallback(async () => {
+    if (!user) {
+      setChatUnreadCount(0);
+      return;
+    }
+    try {
+      const response = await chatService.getUnreadCount();
+      setChatUnreadCount(response.data.data?.unreadCount ?? 0);
+    } catch {
+      setChatUnreadCount(0);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void refreshChatUnreadCount();
+    const intervalId = window.setInterval(() => {
+      void refreshChatUnreadCount();
+    }, 10000);
+    return () => window.clearInterval(intervalId);
+  }, [refreshChatUnreadCount]);
+
+  const handleRefreshUnread = useCallback(() => {
+    void refreshChatUnreadCount();
+  }, [refreshChatUnreadCount]);
 
   // 초기 폰트 크기 적용
   useEffect(() => {
@@ -448,8 +476,13 @@ const MainLayout: React.FC = () => {
           </Tooltip>
 
           <Tooltip title="알림">
-            <Badge count={3} size="small">
-              <Button type="text" icon={<BellOutlined />} className="header-icon-btn" />
+            <Badge count={chatUnreadCount} size="small" overflowCount={99}>
+              <Button
+                type="text"
+                icon={<BellOutlined />}
+                className="header-icon-btn"
+                onClick={() => navigate('/chat')}
+              />
             </Badge>
           </Tooltip>
 
@@ -548,6 +581,11 @@ const MainLayout: React.FC = () => {
         open={showContractWarning}
         contractWarning={contractWarning}
         onClose={handleCloseContractWarning}
+      />
+
+      <ChatFloatingWidget
+        unreadCount={chatUnreadCount}
+        onRefreshUnread={handleRefreshUnread}
       />
     </Layout>
   );

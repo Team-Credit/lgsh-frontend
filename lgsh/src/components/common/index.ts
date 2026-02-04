@@ -3,3 +3,4 @@
  */
 export * from './Button';
 export { default as ProtectedRoute } from './ProtectedRoute';
+export { default as AppErrorBoundary } from './AppErrorBoundary';

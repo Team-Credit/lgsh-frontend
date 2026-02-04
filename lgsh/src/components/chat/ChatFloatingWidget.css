@@ -1,0 +1,134 @@
+.chat-fab-wrap {
+  position: fixed;
+  right: 28px;
+  bottom: 24px;
+  z-index: 1200;
+}
+
+.chat-fab-btn {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #ff7a59, #ff4d4f) !important;
+  border: none !important;
+  box-shadow: 0 10px 22px rgba(255, 77, 79, 0.35);
+  animation: chat-fab-bounce 2.2s ease-in-out infinite;
+}
+
+.chat-fab-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+}
+
+.chat-fab-emoji {
+  font-size: 26px;
+  line-height: 1;
+}
+
+@keyframes chat-fab-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.chat-drawer-layout {
+  display: grid;
+  grid-template-rows: 220px 1fr;
+  gap: 10px;
+  height: calc(100vh - 140px);
+}
+
+.chat-drawer-rooms {
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.chat-drawer-room-item {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 8px !important;
+}
+
+.chat-drawer-room-item.active {
+  background: #e6f7ff;
+}
+
+.chat-drawer-room-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.chat-drawer-room-last {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-drawer-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.chat-drawer-message-list {
+  flex: 1;
+  min-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.chat-drawer-bubble-wrap {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.chat-drawer-bubble-wrap.mine {
+  justify-content: flex-end;
+}
+
+.chat-drawer-bubble {
+  max-width: 76%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #e4e4e4;
+  background: #fff;
+}
+
+.chat-drawer-bubble.mine {
+  background: #e6f7ff;
+  border-color: #91d5ff;
+}
+
+.chat-drawer-sender {
+  font-size: 12px;
+  color: #666;
+}
+
+.chat-drawer-time {
+  font-size: 11px;
+  text-align: right;
+}
+
+.chat-drawer-input-wrap {
+  width: 100%;
+}
+
+.chat-drawer-input-wrap .ant-btn {
+  height: auto;
+}

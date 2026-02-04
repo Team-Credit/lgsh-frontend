@@ -12,7 +12,7 @@ const { Title, Text } = Typography;
 
 const modelSelectOrder: ModelType[] = ['MAIN', 'BACKUP', 'REFERENCE'];
 
-const modelSelectLabels: Record<ModelType, { tag: string; title: string; empty: string; hint: string }> = {
+const modelSelectLabels: Partial<Record<ModelType, { tag: string; title: string; empty: string; hint: string }>> = {
   MAIN: {
     tag: "\uC6B4\uC601\uC911",
     title: "\uC6B4\uC601 \uBAA8\uB378",
@@ -28,6 +28,18 @@ const modelSelectLabels: Record<ModelType, { tag: string; title: string; empty: 
   REFERENCE: {
     tag: "\uCC38\uC870\uC6A9",
     title: "\uCC38\uC870 \uBAA8\uB378",
+    empty: "\uBAA8\uB378 \uC5C6\uC74C",
+    hint: "\uBAA8\uB378 \uB4F1\uB85D \uD544\uC694",
+  },
+  CHALLENGER: {
+    tag: "\uCC48\uB9B0\uC800",
+    title: "\uCC48\uB9B0\uC800 \uBAA8\uB378",
+    empty: "\uBAA8\uB378 \uC5C6\uC74C",
+    hint: "\uBAA8\uB378 \uB4F1\uB85D \uD544\uC694",
+  },
+  TEST: {
+    tag: "\uD14C\uC2A4\uD2B8",
+    title: "\uD14C\uC2A4\uD2B8 \uBAA8\uB378",
     empty: "\uBAA8\uB378 \uC5C6\uC74C",
     hint: "\uBAA8\uB378 \uB4F1\uB85D \uD544\uC694",
   },
@@ -170,7 +182,7 @@ const ModelSelectPage: React.FC = () => {
         <div className="model-select-grid">
           {modelSelectOrder.map((modelType) => {
             const model = cardModels.find((item) => item.modelType === modelType) || null;
-            const label = modelSelectLabels[modelType];
+            const label = modelSelectLabels[modelType]!;
             const selected = model && selectedModelId === model.modelId;
             const selectable = Boolean(model) && modelType !== 'REFERENCE';
             const deployed = model?.approvalStatus === 'DEPLOYED' && model?.modelType === 'MAIN';
@@ -182,7 +194,11 @@ const ModelSelectPage: React.FC = () => {
                 key={modelType}
                 type="button"
                 className={`model-select-tile ${algorithmClass} ${selected ? 'selected' : ''} ${model ? '' : 'empty'} ${selectable ? '' : 'disabled'} ${deployed ? 'deployed' : ''}`}
-                onClick={() => selectable && setSelectedModelId(model.modelId)}
+                onClick={() => {
+                  if (selectable && model) {
+                    setSelectedModelId(model.modelId);
+                  }
+                }}
                 disabled={!selectable}
               >
                 <div className="model-select-tag">{tagText}</div>

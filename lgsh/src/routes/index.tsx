@@ -32,6 +32,7 @@ const BatchManagementPage = lazy(() => import('@/pages/system/BatchManagementPag
 const SimulationPage = lazy(() => import('@/pages/simulation/SimulationPage'));
 const SimulationHistoryPage = lazy(() => import('@/pages/simulation/SimulationHistoryPage'));
 const MenuAdminPage = lazy(() => import('@/pages/system/MenuAdminPage'));
+const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
 
 // 공지사항
 const NoticeListPage = lazy(() => import('@/pages/notice/NoticeListPage'));
@@ -293,6 +294,13 @@ export const routes: RouteConfig[] = [
     element: FileManagementPage,
     title: '파일관리',
     menuId: 'M0807',
+  },
+
+  // 실시간 채팅
+  {
+    path: 'chat',
+    element: ChatPage,
+    title: '실시간 채팅',
   },
 ];
 
