@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+.vite/
+
+# Next.js (혹시)
+.next/
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Storybook
+storybook-static/
+
+# Mac 시스템 파일
+.AppleDouble
+.LSOverride
+
+# Windows 시스템 파일
+ehthumbs.db
+Desktop.ini
+
+# 기타
+out/
+.tmp/
+temp/
