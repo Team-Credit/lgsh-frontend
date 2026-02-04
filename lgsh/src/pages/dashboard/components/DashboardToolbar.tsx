@@ -2,7 +2,7 @@
  * 대시보드 툴바 컴포넌트
  */
 import React from 'react';
-import { Button, Space, Tag, Tooltip, Typography } from 'antd';
+import { Button, Space, Tag, Tooltip, Typography, DatePicker } from 'antd';
 import {
   EditOutlined,
   SaveOutlined,
@@ -12,7 +12,9 @@ import {
   AppstoreOutlined,
   LayoutOutlined,
   DashboardOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import './DashboardToolbar.css';
 
 const { Title, Text } = Typography;
@@ -20,6 +22,9 @@ const { Title, Text } = Typography;
 interface DashboardToolbarProps {
   isEditMode: boolean;
   hasUnsavedChanges: boolean;
+  selectedYearMonth: string | null;
+  lastEvalMonth: string | null;
+  isLoadingYearMonth: boolean;
   onEditToggle: () => void;
   onSave: () => void;
   onCancel: () => void;
@@ -27,11 +32,15 @@ interface DashboardToolbarProps {
   onRefresh: () => void;
   onWidgetSelect: () => void;
   onAutoArrange: () => void;
+  onYearMonthChange: (yearMonth: string | null) => void;
 }
 
 const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
   isEditMode,
   hasUnsavedChanges,
+  selectedYearMonth,
+  lastEvalMonth,
+  isLoadingYearMonth,
   onEditToggle,
   onSave,
   onCancel,
@@ -39,7 +48,25 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
   onRefresh,
   onWidgetSelect,
   onAutoArrange,
+  onYearMonthChange,
 }) => {
+  // 년월을 dayjs 객체로 변환
+  const selectedDate = selectedYearMonth
+    ? dayjs(selectedYearMonth, 'YYYYMM')
+    : null;
+
+  // 년월 변경 핸들러
+  const handleYearMonthChange = (date: dayjs.Dayjs | null) => {
+    if (date) {
+      onYearMonthChange(date.format('YYYYMM'));
+    } else {
+      onYearMonthChange(null);
+    }
+  };
+
+  // 기본값(마지막 평가 년월)과 다른지 확인
+  const isCustomYearMonth = selectedYearMonth && lastEvalMonth && selectedYearMonth !== lastEvalMonth;
+
   return (
     <div className="dashboard-toolbar">
       <div className="toolbar-left">
@@ -65,6 +92,37 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
           )}
         </div>
       </div>
+
+      {/* 년월 선택기 (편집 모드가 아닐 때만 표시) */}
+      {!isEditMode && (
+        <div className="toolbar-center">
+          <Space size="small" align="center">
+            <CalendarOutlined style={{ color: '#666' }} />
+            <Text type="secondary" style={{ fontSize: 13 }}>기준 년월:</Text>
+            <DatePicker
+              picker="month"
+              value={selectedDate}
+              onChange={handleYearMonthChange}
+              format="YYYY년 MM월"
+              allowClear={false}
+              disabled={isLoadingYearMonth}
+              style={{ width: 140 }}
+              placeholder="년월 선택"
+            />
+            {isCustomYearMonth && (
+              <Tooltip title="마지막 평가 년월로 복원">
+                <Button
+                  size="small"
+                  type="link"
+                  onClick={() => onYearMonthChange(null)}
+                >
+                  기본값
+                </Button>
+              </Tooltip>
+            )}
+          </Space>
+        </div>
+      )}
 
       <div className="toolbar-right">
         <Space size="small">

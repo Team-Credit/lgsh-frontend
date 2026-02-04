@@ -24,6 +24,9 @@ const DashboardPage: React.FC = () => {
     isLoading,
     error,
     hasUnsavedChanges,
+    selectedYearMonth,
+    lastEvalMonth,
+    isLoadingYearMonth,
     loadConfig,
     loadSettings,
     updateLayout,
@@ -31,8 +34,11 @@ const DashboardPage: React.FC = () => {
     saveConfig,
     cancelEdit,
     resetConfig,
+    loadAllWidgets,
     refreshAllWidgets,
     autoArrangeWidgets,
+    loadLastEvalMonth,
+    setSelectedYearMonth,
   } = useDashboardStore();
 
   const [widgetSelectorOpen, setWidgetSelectorOpen] = useState(false);
@@ -42,14 +48,15 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     loadConfig();
     loadSettings();
-  }, [loadConfig, loadSettings]);
+    loadLastEvalMonth();
+  }, [loadConfig, loadSettings, loadLastEvalMonth]);
 
   // 위젯 데이터 자동 갱신
   useEffect(() => {
     if (!config) return;
 
-    // 초기 데이터 로드
-    refreshAllWidgets();
+    // 초기 데이터 로드 (캐시에서 조회 - 빠름)
+    loadAllWidgets();
 
     // 자동 갱신이 비활성화되었거나 주기가 0이면 갱신 안함
     if (!settings.autoRefreshEnabled || settings.refreshInterval <= 0) {
@@ -57,14 +64,15 @@ const DashboardPage: React.FC = () => {
     }
 
     // 환경설정에서 가져온 주기로 자동 갱신 (초 단위 -> 밀리초 변환)
+    // 캐시에서 조회하므로 빠름 (원본 테이블 조회 X)
     const interval = setInterval(() => {
       if (!isEditMode) {
-        refreshAllWidgets();
+        loadAllWidgets();
       }
     }, settings.refreshInterval * 1000);
 
     return () => clearInterval(interval);
-  }, [config, settings.autoRefreshEnabled, settings.refreshInterval, isEditMode, refreshAllWidgets]);
+  }, [config, settings.autoRefreshEnabled, settings.refreshInterval, isEditMode, loadAllWidgets]);
 
   // 컨테이너 너비 계산
   useEffect(() => {
@@ -203,6 +211,9 @@ const DashboardPage: React.FC = () => {
       <DashboardToolbar
         isEditMode={isEditMode}
         hasUnsavedChanges={hasUnsavedChanges}
+        selectedYearMonth={selectedYearMonth}
+        lastEvalMonth={lastEvalMonth}
+        isLoadingYearMonth={isLoadingYearMonth}
         onEditToggle={handleEditToggle}
         onSave={handleSave}
         onCancel={handleCancel}
@@ -210,6 +221,7 @@ const DashboardPage: React.FC = () => {
         onRefresh={handleRefresh}
         onWidgetSelect={() => setWidgetSelectorOpen(true)}
         onAutoArrange={autoArrangeWidgets}
+        onYearMonthChange={setSelectedYearMonth}
       />
 
       <div className="dashboard-content-area">
