@@ -12,6 +12,7 @@ export interface CreditPredictRequest {
   batchDesc: string;
   chunkSize?: number;
   useCelery?: boolean;
+  algorithmType?: string;
 }
 
 export interface CreditPredictResult {

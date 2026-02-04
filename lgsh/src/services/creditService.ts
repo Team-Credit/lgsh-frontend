@@ -56,6 +56,15 @@ const creditService = {
     const response = await api.get<ApiResponse<CreditCeleryStatus>>('/credit/celery/status');
     return response.data;
   },
+  stopBatch: async (payload: {
+    batchId: string;
+    runId: string;
+    mode?: string;
+    userId?: string;
+  }): Promise<ApiResponse<{ revokedCount?: number }>> => {
+    const response = await api.post<ApiResponse<{ revokedCount?: number }>>('/credit/run/stop', payload);
+    return response.data;
+  },
   distribution: async (): Promise<ApiResponse<CreditDistributionResult>> => {
     const response = await api.get<ApiResponse<CreditDistributionResult>>('/credit/distribution');
     return response.data;
