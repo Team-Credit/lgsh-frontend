@@ -16,7 +16,7 @@ message.config({
 });
 import { store } from '@/store';
 import { antdTheme } from '@/styles/theme';
-import { ProtectedRoute } from '@/components/common';
+import { AppErrorBoundary, ProtectedRoute } from '@/components/common';
 import { MainLayout } from '@/layouts';
 import { ExcelExportProvider } from '@/contexts';
 import LoginPage from '@/pages/auth/LoginPage';
@@ -92,9 +92,11 @@ const App: React.FC = () => {
       <ConfigProvider locale={koKR} theme={antdTheme}>
         <AntApp>
           <ExcelExportProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
+            <AppErrorBoundary>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </AppErrorBoundary>
           </ExcelExportProvider>
         </AntApp>
       </ConfigProvider>

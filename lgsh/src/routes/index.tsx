@@ -32,6 +32,7 @@ const BatchManagementPage = lazy(() => import('@/pages/system/BatchManagementPag
 const SimulationPage = lazy(() => import('@/pages/simulation/SimulationPage'));
 const SimulationHistoryPage = lazy(() => import('@/pages/simulation/SimulationHistoryPage'));
 const MenuAdminPage = lazy(() => import('@/pages/system/MenuAdminPage'));
+const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
 
 // AI 챗봇
 const AiChatPage = lazy(() => import('@/pages/ai/AiChatPage'));
@@ -310,6 +311,13 @@ export const routes: RouteConfig[] = [
     element: AiChatPage,
     title: 'AI 어시스턴트',
     menuId: 'M0901',
+  },
+
+  // 실시간 채팅
+  {
+    path: 'chat',
+    element: ChatPage,
+    title: '실시간 채팅',
   },
 
   // 월간레포트 > 레포트 생성

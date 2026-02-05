@@ -19,3 +19,4 @@ export { default as fileService } from './fileService';
 export { default as batchService } from './batchService';
 export { default as simulationService } from './simulationService';
 export { default as reportService } from './reportService';
+export { default as chatService } from './chatService';

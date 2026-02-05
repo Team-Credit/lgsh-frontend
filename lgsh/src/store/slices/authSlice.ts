@@ -19,12 +19,16 @@ const getUserFromStorage = (): UserInfo | null => {
   }
 };
 
+const initialUser = getUserFromStorage();
+const initialAccessToken = localStorage.getItem('accessToken');
+const initialRefreshToken = localStorage.getItem('refreshToken');
+
 // 초기 상태
 const initialState: AuthState = {
-  isAuthenticated: !!localStorage.getItem('accessToken'),
-  user: getUserFromStorage(),
-  accessToken: localStorage.getItem('accessToken'),
-  refreshToken: localStorage.getItem('refreshToken'),
+  isAuthenticated: !!initialAccessToken && !!initialUser,
+  user: initialUser,
+  accessToken: initialAccessToken,
+  refreshToken: initialRefreshToken,
   loading: false,
   error: null,
   contractWarning: null,
