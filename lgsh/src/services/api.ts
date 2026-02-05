@@ -78,8 +78,11 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
+      let refreshToken: string | null = null;
+      const sessionId = localStorage.getItem('sessionId');
+
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        refreshToken = localStorage.getItem('refreshToken');
         if (!refreshToken) {
           throw new Error('No refresh token');
         }
@@ -99,14 +102,20 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
-        // 로그아웃 처리 - 커스텀 이벤트 발생 (React에서 처리)
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        // 커스텀 이벤트로 로그아웃 알림
-        window.dispatchEvent(new CustomEvent('auth:logout', {
-          detail: { reason: 'token_refresh_failed' }
-        }));
+        const currentSessionId = localStorage.getItem('sessionId');
+        const currentRefreshToken = localStorage.getItem('refreshToken');
+        // ?? ??? ?? refresh ??? ?? ?? ??? ??? ??? ??
+        if (currentSessionId && sessionId && currentSessionId === sessionId && currentRefreshToken === refreshToken) {
+          // ?????? ??? - ????? ???????? (React??? ???)
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          localStorage.removeItem('sessionId');
+          // ????? ?????? ?????? ???
+          window.dispatchEvent(new CustomEvent('auth:logout', {
+            detail: { reason: 'token_refresh_failed' }
+          }));
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

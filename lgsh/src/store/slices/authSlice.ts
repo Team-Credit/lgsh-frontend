@@ -45,6 +45,7 @@ export const login = createAsyncThunk(
         localStorage.setItem('accessToken', response.data.accessToken);
         localStorage.setItem('refreshToken', response.data.refreshToken);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('sessionId', `${response.data.user.userId}-${Date.now()}`);
         return response.data;
       }
       return rejectWithValue(response.message || '로그인에 실패했습니다.');
@@ -65,6 +66,7 @@ export const logout = createAsyncThunk('auth/logout', async () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('sessionId');
   }
   return null;
 });
