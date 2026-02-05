@@ -1,5 +1,5 @@
 /**
- * 대시보드 상태 관리 (Zustand)
+ * 대시보드 상태 관리(Zustand)
  */
 import { create } from 'zustand';
 import type {
@@ -26,6 +26,20 @@ const FALLBACK_CONFIG: DashboardConfig = {
   refreshInterval: DEFAULT_SETTINGS.refreshInterval,
 };
 
+const CREDIT_BATCH_STORAGE_KEY = 'credit_batch_in_progress';
+
+export const isCreditBatchRunning = (): boolean => {
+  try {
+    const raw = localStorage.getItem(CREDIT_BATCH_STORAGE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    const batch = saved?.batchResult;
+    return !!(batch && batch.batchId && batch.runId);
+  } catch {
+    return false;
+  }
+};
+
 
 interface DashboardState {
   // 상태
@@ -37,6 +51,10 @@ interface DashboardState {
   isSaving: boolean;
   error: string | null;
   hasUnsavedChanges: boolean;
+  // 년월 관련 상태
+  selectedYearMonth: string | null;  // 선택된 년월 (YYYYMM)
+  lastEvalMonth: string | null;      // 마지막 평가 년월 (기본값)
+  isLoadingYearMonth: boolean;       // 년월 로딩 중 여부
 
   // Actions
   loadConfig: () => Promise<void>;
@@ -47,13 +65,17 @@ interface DashboardState {
   updateLayout: (layout: LayoutItem[]) => void;
   toggleWidget: (widgetId: string, visible: boolean, widgetInfo?: Widget) => void;
   loadWidgetData: (widgetId: string, yearMonth?: string, refresh?: boolean) => Promise<void>;
+  loadAllWidgets: () => Promise<void>;
   refreshAllWidgets: () => Promise<void>;
   refreshWidgetData: (widgetId: string, yearMonth?: string) => Promise<void>;
   cancelEdit: () => void;
   autoArrangeWidgets: () => void;
+  // 년월 관련 Actions
+  loadLastEvalMonth: () => Promise<void>;
+  setSelectedYearMonth: (yearMonth: string | null) => void;
 }
 
-// 원본 레이아웃 저장 (취소 시 복원용)
+// 원본 레이아웃 저장(취소 시 복원용)
 let originalLayout: DashboardLayoutItem[] | null = null;
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -65,6 +87,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   isSaving: false,
   error: null,
   hasUnsavedChanges: false,
+  // 년월 관련 초기 상태
+  selectedYearMonth: null,
+  lastEvalMonth: null,
+  isLoadingYearMonth: false,
 
   loadConfig: async () => {
     set({ isLoading: true, error: null });
@@ -88,7 +114,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const settings = await dashboardService.getSettings();
       set({ settings });
     } catch (error) {
-      console.error('대시보드 시스템 설정 로드 실패:', error);
+      console.error('대시보드 설정 로드 실패:', error);
       // 실패 시 기본값 유지
     }
   },
@@ -206,6 +232,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   loadWidgetData: async (widgetId, yearMonth, refresh = false) => {
+    if (isCreditBatchRunning()) return;
     set((state) => ({
       widgetDataCache: {
         ...state.widgetDataCache,
@@ -245,16 +272,125 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   /**
+   * 마지막 평가 년월 로드
+   */
+  loadLastEvalMonth: async () => {
+    set({ isLoadingYearMonth: true });
+    try {
+      const lastEvalMonth = await dashboardService.getLastEvalMonth();
+      set({
+        lastEvalMonth,
+        selectedYearMonth: lastEvalMonth, // 기본값으로 설정
+        isLoadingYearMonth: false,
+      });
+    } catch (error) {
+      console.error('마지막 평가 년월 로드 실패:', error);
+      // 실패 시 현재 월로 설정
+      const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '');
+      set({
+        lastEvalMonth: currentMonth,
+        selectedYearMonth: currentMonth,
+        isLoadingYearMonth: false,
+      });
+    }
+  },
+
+  /**
+   * 선택된 년월 변경
+   * - 년월 변경 시 자동으로 위젯 데이터 새로 로드
+   */
+  setSelectedYearMonth: (yearMonth: string | null) => {
+    const { lastEvalMonth, selectedYearMonth: currentYearMonth } = get();
+    const newYearMonth = yearMonth || lastEvalMonth;
+
+    // 같은 년월이면 무시
+    if (newYearMonth === currentYearMonth) return;
+
+    set({ selectedYearMonth: newYearMonth });
+
+    // 위젯 데이터 새로 로드
+    get().loadAllWidgets();
+  },
+
+  /**
+   * 모든 위젯 데이터 로드 (벌크 조회 - 성능 최적화)
+   * - 자동 새로고침 주기에 사용
+   * - 한 번의 API 호출로 모든 위젯 데이터를 조회 (DB 부하 감소)
+   * - 선택된 년월에 따라 캐시 또는 원본 테이블에서 조회
+   */
+  loadAllWidgets: async () => {
+    const { config, selectedYearMonth, lastEvalMonth } = get();
+    if (!config) return;
+
+    const visibleWidgets = config.layout.filter((item) => item.visible);
+    if (visibleWidgets.length === 0) return;
+
+    // 모든 위젯을 loading 상태로 변경
+    const loadingCache: WidgetDataCache = {};
+    visibleWidgets.forEach((widget) => {
+      loadingCache[widget.widgetId] = {
+        ...get().widgetDataCache[widget.widgetId],
+        loading: true,
+        error: undefined,
+      };
+    });
+    set((state) => ({
+      widgetDataCache: { ...state.widgetDataCache, ...loadingCache },
+    }));
+
+    try {
+      // 선택된 년월이 기본값(마지막 평가 년월)과 다르면 yearMonth 파라미터 전달
+      const yearMonthParam = selectedYearMonth !== lastEvalMonth ? selectedYearMonth : undefined;
+
+      // 벌크 API로 한 번에 모든 위젯 데이터 조회
+      const allData = await dashboardService.getAllWidgetData(yearMonthParam || undefined);
+
+      // 캐시 업데이트
+      const newCache: WidgetDataCache = {};
+      visibleWidgets.forEach((widget) => {
+        const widgetData = allData[widget.widgetId];
+        if (widgetData) {
+          newCache[widget.widgetId] = {
+            data: widgetData.data,
+            updatedAt: new Date(widgetData.updatedAt),
+            loading: false,
+          };
+        } else {
+          // 캐시에 없는 경우 기존 데이터 유지
+          newCache[widget.widgetId] = {
+            ...get().widgetDataCache[widget.widgetId],
+            loading: false,
+          };
+        }
+      });
+
+      set((state) => ({
+        widgetDataCache: { ...state.widgetDataCache, ...newCache },
+      }));
+    } catch (error) {
+      console.error('위젯 데이터 벌크 조회 실패:', error);
+      // 실패 시 개별 조회로 폴백
+      await Promise.all(
+        visibleWidgets.map((widget) => get().loadWidgetData(widget.widgetId, undefined, false))
+      );
+    }
+  },
+
+  /**
    * 모든 위젯 데이터 새로고침 (캐시 갱신)
+   * - 수동 새로고침 버튼에 사용
+   * - 원본 테이블에서 최신 데이터를 가져와 캐시 갱신
    */
   refreshAllWidgets: async () => {
     const { config } = get();
     if (!config) return;
+    if (isCreditBatchRunning()) return;
 
     const visibleWidgets = config.layout.filter((item) => item.visible);
-    // refresh=true로 캐시를 무시하고 새로 조회
+    const refresh = !isCreditBatchRunning();
+    // refresh=true forces cache bypass and fetches fresh data.
     await Promise.all(
-      visibleWidgets.map((widget) => get().loadWidgetData(widget.widgetId, undefined, true))
+      visibleWidgets.map((widget) => get().loadWidgetData(widget.widgetId, undefined, refresh))
     );
   },
 
@@ -262,7 +398,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
    * 특정 위젯 데이터 새로고침 (캐시 갱신)
    */
   refreshWidgetData: async (widgetId, yearMonth) => {
-    await get().loadWidgetData(widgetId, yearMonth, true);
+    if (isCreditBatchRunning()) return;
+    const refresh = !isCreditBatchRunning();
+    await get().loadWidgetData(widgetId, yearMonth, refresh);
   },
 
   cancelEdit: () => {
@@ -300,7 +438,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const defaultW = widget.minW ?? Math.min(widget.w, 4);
       const defaultH = widget.minH ?? Math.min(widget.h, 2);
 
-      // 현재 행에 들어갈 수 없으면 다음 행으로
+      // 현재 행에 안들어가면 다음 행으로
       if (currentX + defaultW > GRID_COLS) {
         currentX = 0;
         currentY += rowMaxHeight;

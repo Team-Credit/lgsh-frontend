@@ -76,6 +76,7 @@ const ReportClosePage: React.FC = () => {
   // 취소 모달
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelMonth, setCancelMonth] = useState<number | null>(null);
+  const [cancelCloseSeq, setCancelCloseSeq] = useState<number | null>(null);  // 마감 일련번호
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
 
@@ -167,14 +168,19 @@ const ReportClosePage: React.FC = () => {
   };
 
   // 마감 취소
-  const handleCancel = (month: number) => {
-    setCancelMonth(month);
+  const handleCancel = (record: MonthlyClose) => {
+    setCancelMonth(record.month);
+    setCancelCloseSeq(record.closeSeq || null);
     setCancelReason('');
     setCancelModalOpen(true);
   };
 
   const handleCancelConfirm = async () => {
-    if (!cancelMonth || !cancelReason.trim()) {
+    if (!cancelCloseSeq) {
+      message.warning('마감 정보를 찾을 수 없습니다.');
+      return;
+    }
+    if (!cancelReason.trim()) {
       message.warning('취소 사유를 입력해주세요.');
       return;
     }
@@ -182,10 +188,8 @@ const ReportClosePage: React.FC = () => {
     setCancelling(true);
     try {
       const response = await reportService.cancelClose({
-        companyId: userCompanyId,
-        year,
-        month: cancelMonth,
-        cancelReason,
+        closeSeq: cancelCloseSeq,
+        reason: cancelReason,
       });
 
       if (response.success) {
@@ -292,19 +296,19 @@ const ReportClosePage: React.FC = () => {
               </Button>
             </Tooltip>
           )}
-          {record.closeStatus === 'CLOSED' && record.canCancel && (
+          {record.closeStatus === 'CLOSED' && (record.canCancel === true || record.canCancel === 'Y') && (
             <Tooltip title="마감취소">
               <Button
                 size="small"
                 danger
                 icon={<UnlockOutlined />}
-                onClick={() => handleCancel(record.month)}
+                onClick={() => handleCancel(record)}
               >
                 취소
               </Button>
             </Tooltip>
           )}
-          {record.closeStatus === 'CLOSED' && !record.canCancel && (
+          {record.closeStatus === 'CLOSED' && record.canCancel !== true && record.canCancel !== 'Y' && (
             <Tooltip title="차월이 마감되어 취소할 수 없습니다">
               <Button size="small" disabled icon={<UnlockOutlined />}>
                 취소

@@ -59,26 +59,26 @@
 }
 
 /* 다크모드 */
-:root[data-theme='dark'] .stat-card-widget .ant-statistic-title {
+:root.dark .stat-card-widget .ant-statistic-title {
   color: var(--muted, #94a3b8);
 }
 
-:root[data-theme='dark'] .stat-card-widget .ant-statistic-content {
+:root.dark .stat-card-widget .ant-statistic-content {
   color: var(--text, #e5e7eb);
 }
 
-:root[data-theme='dark'] .stat-card-widget .ant-statistic-content-value {
+:root.dark .stat-card-widget .ant-statistic-content-value {
   color: var(--text, #e5e7eb);
 }
 
-:root[data-theme='dark'] .stat-card-widget .ant-statistic-content-suffix {
+:root.dark .stat-card-widget .ant-statistic-content-suffix {
   color: var(--muted, #94a3b8);
 }
 
-:root[data-theme='dark'] .stat-card-comparison .comparison-label {
+:root.dark .stat-card-comparison .comparison-label {
   color: var(--muted, #94a3b8);
 }
 
-:root[data-theme='dark'] .stat-card-month-selector .ant-picker-input > input {
+:root.dark .stat-card-month-selector .ant-picker-input > input {
   color: var(--muted, #94a3b8);
 }

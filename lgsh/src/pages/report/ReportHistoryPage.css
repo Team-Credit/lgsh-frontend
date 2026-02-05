@@ -30,8 +30,12 @@
   cursor: pointer;
 }
 
-/* Resizable 핸들 */
-.react-resizable-handle {
+/* Resizable 핸들 스타일 (덜 눈에 띄게) */
+.report-history-page .react-resizable {
+  position: relative;
+}
+
+.report-history-page .react-resizable-handle {
   position: absolute;
   right: -5px;
   bottom: 0;
@@ -39,8 +43,76 @@
   height: 100%;
   cursor: col-resize;
   z-index: 1;
+  /* 기본 핸들 아이콘(ㄴ자, |) 숨기기 */
+  background-image: none !important;
+  background-color: transparent;
 }
 
-.react-resizable-handle:hover {
+.report-history-page .react-resizable-handle:hover {
   background: rgba(24, 144, 255, 0.1);
+}
+
+.report-history-page .react-resizable-handle:active {
+  background: rgba(24, 144, 255, 0.2);
+}
+
+/* 헤더 우측에 미세한 구분선 추가 */
+.report-history-page .ant-table-thead > tr > th {
+  position: relative;
+}
+
+.report-history-page .ant-table-thead > tr > th::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 50%;
+  background: var(--border, #e5e7eb);
+  opacity: 0.5;
+}
+
+/* 마지막 컬럼과 액션 컬럼은 구분선 제거 */
+.report-history-page .ant-table-thead > tr > th:last-child::after,
+.report-history-page .ant-table-thead > tr > th.ant-table-cell-fix-right::after {
+  display: none;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .report-history-page {
+  background: var(--bg, #111827);
+}
+
+:root.dark .report-history-page .ant-card-head {
+  border-color: var(--border, #374151);
+}
+
+:root.dark .report-history-page .ant-statistic-title {
+  color: var(--text-secondary, #9ca3af);
+}
+
+:root.dark .report-history-page .ant-table-thead > tr > th {
+  background: #374151 !important;
+}
+
+:root.dark .report-history-page .ant-table-tbody > tr > td {
+  background: var(--white, #1f2937);
+  border-color: var(--border, #4b5563);
+}
+
+:root.dark .report-history-page .ant-table-tbody > tr:hover > td {
+  background: #374151 !important;
+}
+
+:root.dark .report-history-page .react-resizable-handle:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+:root.dark .report-history-page .react-resizable-handle:active {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+:root.dark .report-history-page .ant-table-thead > tr > th::after {
+  background: var(--border, #4b5563);
 }

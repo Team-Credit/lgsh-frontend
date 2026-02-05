@@ -134,11 +134,11 @@
 }
 
 /* 다크모드 */
-:root[data-theme='dark'] .dashboard-page {
+:root.dark .dashboard-page {
   background: var(--bg, #070b14);
 }
 
-:root[data-theme='dark'] .dashboard-grid.edit-mode {
+:root.dark .dashboard-grid.edit-mode {
   background: repeating-linear-gradient(
     0deg,
     transparent,
@@ -148,12 +148,12 @@
   );
 }
 
-:root[data-theme='dark'] .react-grid-item.react-grid-placeholder {
+:root.dark .react-grid-item.react-grid-placeholder {
   background: rgba(59, 130, 246, 0.1);
   border-color: var(--primary, #3b82f6);
 }
 
-:root[data-theme='dark'] .react-grid-item.react-draggable-dragging {
+:root.dark .react-grid-item.react-draggable-dragging {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 

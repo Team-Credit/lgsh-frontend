@@ -26,11 +26,11 @@
 }
 
 /* 다크모드 */
-:root[data-theme='dark'] .chart-widget .recharts-cartesian-grid-horizontal line,
-:root[data-theme='dark'] .chart-widget .recharts-cartesian-grid-vertical line {
+:root.dark .chart-widget .recharts-cartesian-grid-horizontal line,
+:root.dark .chart-widget .recharts-cartesian-grid-vertical line {
   stroke: var(--line, #1c2a46);
 }
 
-:root[data-theme='dark'] .chart-widget .recharts-text {
+:root.dark .chart-widget .recharts-text {
   fill: var(--text-secondary, #9aa7bd);
 }

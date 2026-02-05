@@ -422,3 +422,75 @@ a:hover {
 :root.dark ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* Spin 다크모드 */
+:root.dark .ant-spin-text {
+  color: var(--text);
+}
+
+/* Modal 내부 Card 다크모드 */
+:root.dark .ant-modal-body .ant-card {
+  background: #374151;
+  border-color: var(--border);
+}
+
+:root.dark .ant-modal-body .ant-card-head {
+  background: #374151;
+  border-color: var(--border);
+}
+
+:root.dark .ant-modal-body .ant-card-body {
+  background: #374151;
+}
+
+/* Modal 내부 Alert 다크모드 */
+:root.dark .ant-modal-body .ant-alert {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+:root.dark .ant-modal-body .ant-alert-info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+:root.dark .ant-modal-body .ant-alert-warning {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.2);
+}
+
+:root.dark .ant-modal-body .ant-alert-error {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+/* Modal 내부 Row/Statistic 다크모드 */
+:root.dark .ant-modal-body .ant-row .ant-card {
+  background: #374151;
+}
+
+/* Timeline 다크모드 */
+:root.dark .ant-timeline-item-tail {
+  border-color: var(--border);
+}
+
+/* List 다크모드 */
+:root.dark .ant-list-item {
+  border-color: var(--border);
+}
+
+/* Native input 다크모드 */
+:root.dark input[type="text"],
+:root.dark input[type="password"],
+:root.dark input[type="email"],
+:root.dark input[type="number"],
+:root.dark textarea {
+  background: #374151;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark input::placeholder,
+:root.dark textarea::placeholder {
+  color: #9ca3af;
+}

@@ -9,6 +9,7 @@ import type {
   WidgetData,
   DashboardLayoutItem,
   DashboardSettings,
+  AllWidgetDataResponse,
 } from '@/types/dashboard';
 
 const BASE_URL = '/dashboard';
@@ -66,7 +67,22 @@ export const dashboardService = {
 
     const queryString = params.toString();
     const url = `${BASE_URL}/widgets/${widgetId}/data${queryString ? `?${queryString}` : ''}`;
-    const response = await api.get(url);
+    const batchRunning = (() => {
+      try {
+        const raw = localStorage.getItem('credit_batch_in_progress');
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        const batch = saved?.batchResult;
+        return !!(batch && batch.batchId && batch.runId);
+      } catch {
+        return false;
+      }
+    })();
+    const response = await api.get(url, {
+      headers: {
+        'X-Credit-Batch-Running': batchRunning ? 'true' : 'false',
+      },
+    });
     return response.data.data;
   },
 
@@ -83,6 +99,31 @@ export const dashboardService = {
    */
   async getSettings(): Promise<DashboardSettings> {
     const response = await api.get(`${BASE_URL}/settings`);
+    return response.data.data;
+  },
+
+  /**
+   * 마지막 평가 년월 조회
+   * - 가장 최근 평가가 이루어진 년월을 반환
+   */
+  async getLastEvalMonth(): Promise<string> {
+    const response = await api.get(`${BASE_URL}/last-eval-month`);
+    return response.data.data.lastEvalMonth;
+  },
+
+  /**
+   * 모든 위젯 데이터 벌크 조회
+   * - yearMonth가 없거나 마지막 평가 년월과 같으면: 캐시에서 조회 (빠름)
+   * - yearMonth가 다르면: 원본 테이블에서 직접 조회
+   * @param yearMonth 조회할 년월 (선택, YYYYMM 형식)
+   */
+  async getAllWidgetData(yearMonth?: string): Promise<AllWidgetDataResponse> {
+    const params = new URLSearchParams();
+    if (yearMonth) params.append('yearMonth', yearMonth);
+
+    const queryString = params.toString();
+    const url = `${BASE_URL}/widgets/data/all${queryString ? `?${queryString}` : ''}`;
+    const response = await api.get(url);
     return response.data.data;
   },
 };

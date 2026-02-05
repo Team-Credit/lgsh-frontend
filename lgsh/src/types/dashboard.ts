@@ -190,3 +190,8 @@ export interface DashboardSettings {
   minWidgetCount: number;
   maxWidgetCount: number;
 }
+
+// 벌크 조회 응답 (위젯 ID를 키로 하는 맵)
+export type AllWidgetDataResponse = {
+  [widgetId: string]: WidgetData<unknown>;
+};

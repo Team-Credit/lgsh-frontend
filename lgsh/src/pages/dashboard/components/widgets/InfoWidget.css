@@ -34,18 +34,18 @@
 }
 
 /* 다크모드 */
-:root[data-theme='dark'] .info-widget-name {
+:root.dark .info-widget-name {
   color: var(--text, #e5e7eb);
 }
 
-:root[data-theme='dark'] .info-widget-details .ant-descriptions-item-label {
+:root.dark .info-widget-details .ant-descriptions-item-label {
   color: var(--muted, #94a3b8);
 }
 
-:root[data-theme='dark'] .info-widget-details .ant-descriptions-item-content {
+:root.dark .info-widget-details .ant-descriptions-item-content {
   color: var(--text, #e5e7eb);
 }
 
-:root[data-theme='dark'] .info-widget .ant-typography {
+:root.dark .info-widget .ant-typography {
   color: var(--text, #e5e7eb);
 }

@@ -274,14 +274,11 @@ const CreditEvaluatePage: React.FC = () => {
 
   const gradeInfo = useMemo(() => {
     const score = result?.creditScore ?? 0;
-    if (score >= 850) return { grade: 'AAA', label: '최우수', color: '#4CAF50' };
-    if (score >= 800) return { grade: 'AA', label: '우수', color: '#4CAF50' };
-    if (score >= 750) return { grade: 'A', label: '양호', color: '#4CAF50' };
-    if (score >= 700) return { grade: 'BBB', label: '보통', color: '#2196F3' };
-    if (score >= 650) return { grade: 'BB', label: '주의', color: '#FF9800' };
-    if (score >= 600) return { grade: 'B', label: '위험', color: '#FF5722' };
-    if (score >= 550) return { grade: 'C', label: '매우위험', color: '#F44336' };
-    return { grade: 'D', label: '부실', color: '#F44336' };
+    if (score >= 900) return { grade: 'A', label: '최우수', color: '#4CAF50' };
+    if (score >= 800) return { grade: 'B', label: '우수', color: '#2196F3' };
+    if (score >= 700) return { grade: 'C', label: '양호', color: '#FF9800' };
+    if (score >= 600) return { grade: 'D', label: '보통', color: '#FF5722' };
+    return { grade: 'E', label: '주의', color: '#F44336' };
   }, [result]);
 
   const gradeDisplay = useMemo(() => {
