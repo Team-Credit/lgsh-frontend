@@ -71,20 +71,20 @@
 }
 
 /* 다크모드 */
-:root[data-theme='dark'] .widget-selector-header {
+:root.dark .widget-selector-header {
   border-bottom-color: var(--line, #1c2a46);
 }
 
-:root[data-theme='dark'] .widget-selector-card.selected {
+:root.dark .widget-selector-card.selected {
   background: rgba(59, 130, 246, 0.1);
   border-color: var(--primary, #3b82f6);
 }
 
-:root[data-theme='dark'] .widget-selector-icon {
+:root.dark .widget-selector-icon {
   background: var(--panel2, #0b1424);
   color: var(--primary, #3b82f6);
 }
 
-:root[data-theme='dark'] .widget-selector-name {
+:root.dark .widget-selector-name {
   color: var(--text, #e5e7eb);
 }

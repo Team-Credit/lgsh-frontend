@@ -58,38 +58,62 @@
 }
 
 /* 다크모드 */
-:root[data-theme='dark'] .list-widget .ant-list-item {
+:root.dark .list-widget .ant-list-item {
   border-bottom-color: var(--line, #1c2a46);
 }
 
-:root[data-theme='dark'] .list-widget .ant-list-item:hover {
+:root.dark .list-widget .ant-list-item:hover {
   background: var(--panel2, #0b1424);
 }
 
-:root[data-theme='dark'] .list-item-title {
-  color: var(--text, #e5e7eb);
+:root.dark .list-item-title {
+  color: var(--text, #e5e7eb) !important;
 }
 
-:root[data-theme='dark'] .list-item-title .notice-title {
-  color: var(--text, #e5e7eb);
+:root.dark .list-item-title span {
+  color: var(--text, #e5e7eb) !important;
 }
 
-:root[data-theme='dark'] .list-item-desc {
-  color: var(--muted, #94a3b8);
+:root.dark .list-item-title .notice-title {
+  color: var(--text, #e5e7eb) !important;
 }
 
-:root[data-theme='dark'] .list-widget .ant-list-item-meta-title {
-  color: var(--text, #e5e7eb);
+:root.dark .list-item-desc {
+  color: var(--muted, #94a3b8) !important;
 }
 
-:root[data-theme='dark'] .list-widget .ant-list-item-meta-description {
-  color: var(--muted, #94a3b8);
+:root.dark .list-item-desc span {
+  color: var(--muted, #94a3b8) !important;
 }
 
-:root[data-theme='dark'] .list-widget .ant-typography {
-  color: var(--text, #e5e7eb);
+:root.dark .list-widget .ant-list-item-meta-title {
+  color: var(--text, #e5e7eb) !important;
 }
 
-:root[data-theme='dark'] .list-widget .ant-typography-secondary {
+:root.dark .list-widget .ant-list-item-meta-title span {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-widget .ant-list-item-meta-description {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .list-widget .ant-list-item-meta-description span {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .list-widget .ant-typography {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-widget .ant-typography-secondary {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .list-widget-item .ant-list-item-meta-title {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-widget-item .ant-list-item-meta-description {
   color: var(--muted, #94a3b8) !important;
 }

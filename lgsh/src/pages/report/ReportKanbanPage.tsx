@@ -106,6 +106,7 @@ const ReportKanbanPage: React.FC = () => {
   // 생성 모달
   const [generateOpen, setGenerateOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generateChecking, setGenerateChecking] = useState(false);  // PDF 생성 버튼 마감 체크 로딩
   const [reportTitle, setReportTitle] = useState('');
   const [includeAiSummary, setIncludeAiSummary] = useState(true);
 
@@ -128,8 +129,8 @@ const ReportKanbanPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // 1. 항목 목록 조회
-      const itemsResponse = await reportService.getItems(userCompanyId);
+      // 1. 항목 목록 조회 (사용중인 항목만)
+      const itemsResponse = await reportService.getItems('Y');
       if (!itemsResponse.success || !itemsResponse.data) {
         message.error(itemsResponse.message || '레포트 항목을 불러오지 못했습니다.');
         return;
@@ -197,7 +198,9 @@ const ReportKanbanPage: React.FC = () => {
 
     items.forEach((item) => {
       let columnId: KanbanColumnType = 'available';
-      if (item.status === 'REQUIRED' || item.isRequired) {
+      // 필수 항목 (DEFAULT_STATUS가 REQUIRED이거나 isRequired가 true) 또는 사용자 선택이 REQUIRED/SELECTED인 경우
+      const isRequired = item.isRequired === true || item.defaultStatus === 'REQUIRED';
+      if (item.status === 'REQUIRED' || isRequired) {
         columnId = 'required';
       } else if (item.status === 'EXCLUDED') {
         columnId = 'excluded';
@@ -211,18 +214,38 @@ const ReportKanbanPage: React.FC = () => {
       }
     });
 
-    // 정렬
+    // 정렬 - 포함 항목 컬럼에서는 필수 항목이 항상 맨 위에 오도록 정렬
     newColumns.forEach((col) => {
-      col.items.sort((a, b) => a.displayOrder - b.displayOrder);
+      if (col.id === 'required') {
+        // 포함 항목 컬럼: 필수 항목이 맨 위, 그 다음 선택 항목
+        col.items.sort((a, b) => {
+          const aRequired = a.isRequired === true || a.defaultStatus === 'REQUIRED';
+          const bRequired = b.isRequired === true || b.defaultStatus === 'REQUIRED';
+
+          // 둘 다 필수이거나 둘 다 선택이면 displayOrder로 정렬
+          if (aRequired === bRequired) {
+            return a.displayOrder - b.displayOrder;
+          }
+          // 필수 항목이 위로
+          return aRequired ? -1 : 1;
+        });
+      } else {
+        col.items.sort((a, b) => a.displayOrder - b.displayOrder);
+      }
     });
 
     setColumns(newColumns);
   };
 
+  // 필수 항목 여부 확인 (DEFAULT_STATUS가 REQUIRED이거나 isRequired가 true인 경우)
+  const isRequiredItem = (item: ReportItem): boolean => {
+    return item.isRequired === true || item.defaultStatus === 'REQUIRED';
+  };
+
   // 드래그 시작
   const handleDragStart = (e: React.DragEvent, item: ReportItem) => {
     // 필수 항목은 드래그 불가
-    if (item.isRequired) {
+    if (isRequiredItem(item)) {
       e.preventDefault();
       message.warning('필수 항목은 이동할 수 없습니다.');
       return;
@@ -277,6 +300,25 @@ const ReportKanbanPage: React.FC = () => {
             : targetColumnId === 'excluded'
             ? 'EXCLUDED'
             : 'SELECTED';
+
+        // 포함 항목 컬럼인 경우, 필수 항목 아래에 추가
+        if (targetColumnId === 'required') {
+          const requiredItems = col.items.filter(
+            (item) => item.isRequired === true || item.defaultStatus === 'REQUIRED'
+          );
+          const nonRequiredItems = col.items.filter(
+            (item) => !(item.isRequired === true || item.defaultStatus === 'REQUIRED')
+          );
+          return {
+            ...col,
+            items: [
+              ...requiredItems,
+              ...nonRequiredItems,
+              { ...draggedItem, status: newStatus as any },
+            ],
+          };
+        }
+
         return {
           ...col,
           items: [...col.items, { ...draggedItem, status: newStatus as any }],
@@ -305,7 +347,18 @@ const ReportKanbanPage: React.FC = () => {
       const selections: { itemId: string; status: string; displayOrder: number }[] = [];
 
       columns.forEach((col) => {
-        col.items.forEach((item, index) => {
+        // 포함 항목 컬럼인 경우 필수 항목이 맨 위에 오도록 정렬 후 저장
+        let sortedItems = col.items;
+        if (col.id === 'required') {
+          sortedItems = [...col.items].sort((a, b) => {
+            const aRequired = a.isRequired === true || a.defaultStatus === 'REQUIRED';
+            const bRequired = b.isRequired === true || b.defaultStatus === 'REQUIRED';
+            if (aRequired === bRequired) return 0;
+            return aRequired ? -1 : 1;
+          });
+        }
+
+        sortedItems.forEach((item, index) => {
           let status = 'SELECTED';
           if (col.id === 'excluded') status = 'EXCLUDED';
           else if (col.id === 'required') status = 'SELECTED';
@@ -342,7 +395,6 @@ const ReportKanbanPage: React.FC = () => {
       return;
     }
 
-    setPreviewOpen(true);
     setPreviewLoading(true);
     setEditedAiSummary(null);
     try {
@@ -358,7 +410,9 @@ const ReportKanbanPage: React.FC = () => {
 
       if (response.success && response.data) {
         setPreviewData(response.data);
+        setPreviewOpen(true);  // API 성공 시에만 모달 열기
       } else {
+        // 마감 에러 등 처리
         message.error(response.message || '미리보기 데이터 조회에 실패했습니다.');
       }
     } catch (error) {
@@ -368,7 +422,34 @@ const ReportKanbanPage: React.FC = () => {
     }
   };
 
-  // PDF 생성
+  // 마감 상태 체크 (해당 월 이후에 마감된 월이 있으면 차단)
+  const checkCloseStatus = async (): Promise<boolean> => {
+    try {
+      // 선택한 연도와 다음 연도의 마감 상태 조회
+      const selectedMonthValue = year * 12 + month;
+      const responses = await Promise.all([
+        reportService.getCloseStatus(userCompanyId, year),
+        reportService.getCloseStatus(userCompanyId, year + 1),  // 다음 연도도 체크
+      ]);
+
+      // 선택한 월 이후로 마감된 월이 있는지 확인
+      for (const response of responses) {
+        if (response.success && response.data) {
+          const hasClosedMonth = response.data.some((closeData) => {
+            const closeMonthValue = closeData.year * 12 + closeData.month;
+            return closeMonthValue >= selectedMonthValue && closeData.closeStatus === 'CLOSED';
+          });
+          if (hasClosedMonth) return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.warn('마감 상태 조회 실패:', error);
+      return false;  // 조회 실패 시 허용
+    }
+  };
+
+  // PDF 생성 (마감 상태 체크 후 모달 열기)
   const handleGenerate = async () => {
     const requiredItems = columns.find((c) => c.id === 'required')?.items || [];
     if (requiredItems.length === 0) {
@@ -376,12 +457,35 @@ const ReportKanbanPage: React.FC = () => {
       return;
     }
 
-    setReportTitle(`${year}년 ${month}월 신용평가 월간 레포트`);
-    setGenerateOpen(true);
+    // 마감 상태 체크 (가벼운 API 호출, Django 실행 안함)
+    setGenerateChecking(true);
+    try {
+      const isClosed = await checkCloseStatus();
+      if (isClosed) {
+        message.error('해당 월은 마감되어 레포트를 생성할 수 없습니다.');
+        return;
+      }
+
+      // 마감 체크 통과 - 모달 열기
+      setReportTitle(`${year}년 ${month}월 신용평가 월간 레포트`);
+      setGenerateOpen(true);
+    } catch (error) {
+      message.error('마감 상태 확인 중 오류가 발생했습니다.');
+    } finally {
+      setGenerateChecking(false);
+    }
   };
 
   const handleGenerateConfirm = async () => {
     const requiredItems = columns.find((c) => c.id === 'required')?.items || [];
+
+    // 필수 항목이 맨 위에 오도록 정렬
+    const sortedItems = [...requiredItems].sort((a, b) => {
+      const aRequired = a.isRequired === true || a.defaultStatus === 'REQUIRED';
+      const bRequired = b.isRequired === true || b.defaultStatus === 'REQUIRED';
+      if (aRequired === bRequired) return 0;
+      return aRequired ? -1 : 1;
+    });
 
     // 디버깅: 편집된 AI 요약 확인
     console.log('PDF 생성 요청 - editedAiSummary:', editedAiSummary);
@@ -392,7 +496,7 @@ const ReportKanbanPage: React.FC = () => {
         year,
         month,
         title: reportTitle,
-        selectedItems: requiredItems.map((item, index) => ({
+        selectedItems: sortedItems.map((item, index) => ({
           itemId: item.itemId,
           status: 'SELECTED' as const,
           order: index + 1,
@@ -409,7 +513,9 @@ const ReportKanbanPage: React.FC = () => {
         message.success('레포트 생성이 요청되었습니다.');
         setGenerateOpen(false);
       } else {
+        // 마감 에러 등의 경우 모달 닫고 에러 메시지 표시
         message.error(response.message || '레포트 생성에 실패했습니다.');
+        setGenerateOpen(false);
       }
     } catch (error) {
       message.error('레포트 생성 중 오류가 발생했습니다.');
@@ -433,6 +539,9 @@ const ReportKanbanPage: React.FC = () => {
   // 포함된 항목 수
   const selectedCount = columns.find((c) => c.id === 'required')?.items.length || 0;
 
+  // 작업 진행 중 여부 (버튼 비활성화용)
+  const isAnyOperationInProgress = loading || saving || previewLoading || generateChecking;
+
   return (
     <div className="report-kanban-page">
       <Card
@@ -451,20 +560,28 @@ const ReportKanbanPage: React.FC = () => {
               onChange={setYear}
               options={yearOptions}
               style={{ width: 100 }}
+              disabled={isAnyOperationInProgress}
             />
             <Select
               value={month}
               onChange={setMonth}
               options={monthOptions}
               style={{ width: 80 }}
+              disabled={isAnyOperationInProgress}
             />
-            <Button icon={<ReloadOutlined />} onClick={loadItems} loading={loading}>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={loadItems}
+              loading={loading}
+              disabled={!loading && isAnyOperationInProgress}
+            >
               새로고침
             </Button>
             <Button
               icon={<EyeOutlined />}
               onClick={handlePreview}
-              disabled={selectedCount === 0}
+              disabled={selectedCount === 0 || (!previewLoading && isAnyOperationInProgress)}
+              loading={previewLoading}
             >
               미리보기
             </Button>
@@ -472,7 +589,8 @@ const ReportKanbanPage: React.FC = () => {
               type="primary"
               icon={<FilePdfOutlined />}
               onClick={handleGenerate}
-              disabled={selectedCount === 0}
+              disabled={selectedCount === 0 || (!generateChecking && isAnyOperationInProgress)}
+              loading={generateChecking}
             >
               PDF 생성
             </Button>
@@ -481,7 +599,7 @@ const ReportKanbanPage: React.FC = () => {
               icon={<SaveOutlined />}
               onClick={handleSave}
               loading={saving}
-              disabled={!hasChanges}
+              disabled={!hasChanges || (!saving && isAnyOperationInProgress)}
             >
               저장
             </Button>
@@ -541,10 +659,10 @@ const ReportKanbanPage: React.FC = () => {
                     column.items.map((item) => (
                       <div
                         key={item.itemId}
-                        className={`kanban-item ${item.isRequired ? 'required' : ''} ${
+                        className={`kanban-item ${isRequiredItem(item) ? 'required' : ''} ${
                           draggedItem?.itemId === item.itemId ? 'dragging' : ''
                         }`}
-                        draggable={!item.isRequired}
+                        draggable={!isRequiredItem(item)}
                         onDragStart={(e) => handleDragStart(e, item)}
                         onDragEnd={handleDragEnd}
                       >
@@ -553,7 +671,7 @@ const ReportKanbanPage: React.FC = () => {
                             {item.chartType && CHART_ICONS[item.chartType]}
                             <Text strong>{item.itemNm}</Text>
                           </Space>
-                          {item.isRequired && (
+                          {isRequiredItem(item) && (
                             <Tooltip title="필수 항목">
                               <Tag color="red" size="small">
                                 필수
@@ -899,49 +1017,56 @@ const ReportKanbanPage: React.FC = () => {
           </Space>
         }
         open={generateOpen}
-        onCancel={() => setGenerateOpen(false)}
+        onCancel={() => !generating && setGenerateOpen(false)}
         onOk={handleGenerateConfirm}
         confirmLoading={generating}
         okText="생성"
         cancelText="취소"
+        cancelButtonProps={{ disabled: generating }}
+        closable={!generating}
+        maskClosable={!generating}
       >
-        <div style={{ marginBottom: 16 }}>
-          <Text>레포트 제목</Text>
-          <input
-            type="text"
-            value={reportTitle}
-            onChange={(e) => setReportTitle(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              marginTop: 8,
-              border: '1px solid #d9d9d9',
-              borderRadius: 6,
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <Space>
-            <RobotOutlined />
-            <Text>AI 요약 포함</Text>
-          </Space>
-          <div style={{ marginTop: 8 }}>
-            <Select
-              value={includeAiSummary}
-              onChange={setIncludeAiSummary}
-              style={{ width: '100%' }}
-              options={[
-                { value: true, label: '포함' },
-                { value: false, label: '제외' },
-              ]}
+        <Spin spinning={generating} tip="레포트 생성 중...">
+          <div style={{ marginBottom: 16 }}>
+            <Text>레포트 제목</Text>
+            <input
+              type="text"
+              value={reportTitle}
+              onChange={(e) => setReportTitle(e.target.value)}
+              disabled={generating}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                marginTop: 8,
+                border: '1px solid #d9d9d9',
+                borderRadius: 6,
+              }}
             />
           </div>
-        </div>
-        <Alert
-          message={`${selectedCount}개 항목이 레포트에 포함됩니다.`}
-          type="info"
-          showIcon
-        />
+          <div style={{ marginBottom: 16 }}>
+            <Space>
+              <RobotOutlined />
+              <Text>AI 요약 포함</Text>
+            </Space>
+            <div style={{ marginTop: 8 }}>
+              <Select
+                value={includeAiSummary}
+                onChange={setIncludeAiSummary}
+                style={{ width: '100%' }}
+                disabled={generating}
+                options={[
+                  { value: true, label: '포함' },
+                  { value: false, label: '제외' },
+                ]}
+              />
+            </div>
+          </div>
+          <Alert
+            message={`${selectedCount}개 항목이 레포트에 포함됩니다.`}
+            type="info"
+            showIcon
+          />
+        </Spin>
       </Modal>
     </div>
   );

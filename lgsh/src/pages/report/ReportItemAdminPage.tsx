@@ -2,7 +2,7 @@
  * 레포트 항목 관리 페이지 (관리자 전용)
  * 커스텀 SP 기반 레포트 항목 등록/수정/삭제
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   Table,
@@ -11,6 +11,7 @@ import {
   Modal,
   Form,
   Input,
+  InputNumber,
   Select,
   Switch,
   Tag,
@@ -21,7 +22,13 @@ import {
   Descriptions,
   Alert,
   Tabs,
+  Popover,
+  Checkbox,
+  Divider,
 } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import type { ResizeCallbackData } from 'react-resizable';
+import { Resizable } from 'react-resizable';
 import {
   PlusOutlined,
   EditOutlined,
@@ -36,10 +43,11 @@ import {
   LineChartOutlined,
   TableOutlined,
   FileTextOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
 import reportService from '@/services/reportService';
 import type { ReportItem, ReportItemCreateRequest, ReportItemUpdateRequest } from '@/types/report';
+import 'react-resizable/css/styles.css';
 import './ReportItemAdminPage.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -77,6 +85,37 @@ const DEFAULT_STATUS_OPTIONS = [
   { value: 'EXCLUDED', label: '제외', color: 'default' },
 ];
 
+// Resizable 컬럼 헤더 컴포넌트
+const ResizableTitle = (
+  props: React.HTMLAttributes<any> & {
+    onResize: (e: React.SyntheticEvent<Element>, data: ResizeCallbackData) => void;
+    width: number;
+  }
+) => {
+  const { onResize, width, ...restProps } = props;
+
+  if (!width) {
+    return <th {...restProps} />;
+  }
+
+  return (
+    <Resizable
+      width={width}
+      height={0}
+      handle={
+        <span
+          className="react-resizable-handle"
+          onClick={(e) => e.stopPropagation()}
+        />
+      }
+      onResize={onResize}
+      draggableOpts={{ enableUserSelectHack: false }}
+    >
+      <th {...restProps} />
+    </Resizable>
+  );
+};
+
 const ReportItemAdminPage: React.FC = () => {
   const [items, setItems] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -84,6 +123,63 @@ const ReportItemAdminPage: React.FC = () => {
   const [editingItem, setEditingItem] = useState<ReportItem | null>(null);
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState('basic');
+
+  // 컬럼 너비
+  const defaultColumnWidths = {
+    itemOrder: 70,
+    itemId: 160,
+    itemNm: 180,
+    dataSource: 100,
+    spName: 200,
+    chartType: 100,
+    defaultStatus: 100,
+    useYn: 70,
+    action: 100,
+  };
+
+  const getStoredColumnWidths = () => {
+    try {
+      const stored = localStorage.getItem('reportItemAdminColumnWidths');
+      if (stored) {
+        return { ...defaultColumnWidths, ...JSON.parse(stored) };
+      }
+    } catch (error) {
+      console.error('컬럼 너비 불러오기 실패:', error);
+    }
+    return defaultColumnWidths;
+  };
+
+  const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>(
+    getStoredColumnWidths()
+  );
+
+  // 컬럼 표시 설정
+  const defaultVisibleColumns = {
+    itemOrder: true,
+    itemId: true,
+    itemNm: true,
+    dataSource: true,
+    spName: true,
+    chartType: true,
+    defaultStatus: true,
+    useYn: true,
+  };
+
+  const getStoredVisibleColumns = () => {
+    try {
+      const stored = localStorage.getItem('reportItemAdminVisibleColumns');
+      if (stored) {
+        return { ...defaultVisibleColumns, ...JSON.parse(stored) };
+      }
+    } catch (error) {
+      console.error('컬럼 표시 설정 불러오기 실패:', error);
+    }
+    return defaultVisibleColumns;
+  };
+
+  const [visibleColumns, setVisibleColumns] = useState<{ [key: string]: boolean }>(
+    getStoredVisibleColumns()
+  );
 
   // 항목 목록 조회
   const fetchItems = useCallback(async () => {
@@ -138,8 +234,27 @@ const ReportItemAdminPage: React.FC = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
+
+      // 요청 데이터 구성 (타입 변환 포함)
       const request = {
-        ...values,
+        itemId: values.itemId?.toUpperCase(), // 대문자 변환
+        itemNm: values.itemNm,
+        itemNmEng: values.itemNmEng || null,
+        itemDesc: values.itemDesc || null,
+        defaultStatus: values.defaultStatus || 'AVAILABLE',
+        chartType: values.chartType || null,
+        itemOrder: values.itemOrder ? Number(values.itemOrder) : null,
+        iconClass: values.iconClass || null,
+        dataSource: values.dataSource || 'SP',
+        spName: values.spName || null,
+        spParams: values.spParams || null,
+        outputFormat: values.outputFormat || 'CHART',
+        xAxisColumn: values.xAxisColumn || null,
+        yAxisColumn: values.yAxisColumn || null,
+        seriesColumn: values.seriesColumn || null,
+        labelFormat: values.labelFormat || null,
+        colorScheme: values.colorScheme || null,
+        customConfig: values.customConfig || null,
         useYn: values.useYn ? 'Y' : 'N',
       };
 
@@ -165,8 +280,13 @@ const ReportItemAdminPage: React.FC = () => {
         }
       }
     } catch (error: any) {
+      console.error('항목 저장 실패:', error);
       if (error.errorFields) {
         message.error('필수 항목을 확인해주세요.');
+      } else if (error.response?.status === 403) {
+        message.error('권한이 없습니다. 관리자 권한이 필요합니다.');
+      } else if (error.response?.data?.message) {
+        message.error(error.response.data.message);
       } else {
         message.error('저장에 실패했습니다.');
       }
@@ -188,25 +308,54 @@ const ReportItemAdminPage: React.FC = () => {
     }
   };
 
+  // 컬럼 리사이즈 핸들러
+  const handleResize =
+    (key: string) =>
+    (_: any, { size }: ResizeCallbackData) => {
+      const newWidths = { ...columnWidths, [key]: size.width };
+      setColumnWidths(newWidths);
+      localStorage.setItem('reportItemAdminColumnWidths', JSON.stringify(newWidths));
+    };
+
+  // 컬럼 표시 변경
+  const handleColumnVisibilityChange = (key: string, checked: boolean) => {
+    const newVisible = { ...visibleColumns, [key]: checked };
+    setVisibleColumns(newVisible);
+    localStorage.setItem('reportItemAdminVisibleColumns', JSON.stringify(newVisible));
+  };
+
+  // 컬럼 초기화
+  const handleResetColumns = () => {
+    setColumnWidths(defaultColumnWidths);
+    setVisibleColumns(defaultVisibleColumns);
+    localStorage.removeItem('reportItemAdminColumnWidths');
+    localStorage.removeItem('reportItemAdminVisibleColumns');
+    message.success('컬럼 설정이 초기화되었습니다.');
+  };
+
   // 테이블 컬럼 정의
-  const columns: ColumnsType<ReportItem> = [
+  const baseColumns: ColumnsType<ReportItem> = [
     {
       title: '순서',
       dataIndex: 'itemOrder',
       key: 'itemOrder',
-      width: 60,
+      width: columnWidths.itemOrder,
       align: 'center',
+      sorter: (a, b) => (a.itemOrder || 0) - (b.itemOrder || 0),
     },
     {
       title: '항목 ID',
       dataIndex: 'itemId',
       key: 'itemId',
-      width: 150,
+      width: columnWidths.itemId,
+      sorter: (a, b) => a.itemId.localeCompare(b.itemId),
       render: (value: string, record: ReportItem) => (
         <Space>
           <Text code>{value}</Text>
           {record.systemYn === 'Y' && (
-            <Tag color="blue" style={{ marginLeft: 4 }}>시스템</Tag>
+            <Tooltip title="시스템 항목은 수정/삭제가 제한됩니다">
+              <Tag color="blue" icon={<LockOutlined />} style={{ marginLeft: 4 }}>시스템</Tag>
+            </Tooltip>
           )}
         </Space>
       ),
@@ -215,32 +364,45 @@ const ReportItemAdminPage: React.FC = () => {
       title: '항목명',
       dataIndex: 'itemNm',
       key: 'itemNm',
-      width: 180,
+      width: columnWidths.itemNm,
+      sorter: (a, b) => (a.itemNm || '').localeCompare(b.itemNm || ''),
+      filterSearch: true,
+      filters: [...new Set(items.map((item) => item.itemNm))].map((nm) => ({
+        text: nm,
+        value: nm,
+      })),
+      onFilter: (value, record) => record.itemNm === value,
     },
     {
       title: '데이터 소스',
       dataIndex: 'dataSource',
       key: 'dataSource',
-      width: 120,
+      width: columnWidths.dataSource,
       align: 'center',
       render: (value: string) => (
         <Tag color={value === 'SP' ? 'purple' : 'default'} icon={value === 'SP' ? <DatabaseOutlined /> : null}>
           {value === 'SP' ? 'SP' : '고정'}
         </Tag>
       ),
+      filters: [
+        { text: 'SP', value: 'SP' },
+        { text: '고정', value: 'FIXED' },
+      ],
+      onFilter: (value, record) => record.dataSource === value,
     },
     {
       title: 'SP 이름',
       dataIndex: 'spName',
       key: 'spName',
-      width: 200,
+      width: columnWidths.spName,
+      ellipsis: true,
       render: (value: string) => value ? <Text code>{value}</Text> : '-',
     },
     {
       title: '차트 유형',
       dataIndex: 'chartType',
       key: 'chartType',
-      width: 100,
+      width: columnWidths.chartType,
       align: 'center',
       render: (value: string) => {
         const option = CHART_TYPE_OPTIONS.find(o => o.value === value);
@@ -251,46 +413,61 @@ const ReportItemAdminPage: React.FC = () => {
           </Space>
         ) : value;
       },
+      filters: CHART_TYPE_OPTIONS.map((o) => ({ text: o.label, value: o.value })),
+      onFilter: (value, record) => record.chartType === value,
     },
     {
       title: '기본 상태',
       dataIndex: 'defaultStatus',
       key: 'defaultStatus',
-      width: 100,
+      width: columnWidths.defaultStatus,
       align: 'center',
       render: (value: string) => {
         const option = DEFAULT_STATUS_OPTIONS.find(o => o.value === value);
         return option ? <Tag color={option.color}>{option.label}</Tag> : value;
       },
+      filters: DEFAULT_STATUS_OPTIONS.map((o) => ({ text: o.label, value: o.value })),
+      onFilter: (value, record) => record.defaultStatus === value,
     },
     {
       title: '사용',
       dataIndex: 'useYn',
       key: 'useYn',
-      width: 60,
+      width: columnWidths.useYn,
       align: 'center',
       render: (value: string) => (
         <Tag color={value === 'Y' ? 'success' : 'default'}>
           {value === 'Y' ? '사용' : '미사용'}
         </Tag>
       ),
+      filters: [
+        { text: '사용', value: 'Y' },
+        { text: '미사용', value: 'N' },
+      ],
+      onFilter: (value, record) => record.useYn === value,
     },
-    {
-      title: '관리',
-      key: 'actions',
-      width: 100,
-      align: 'center',
-      fixed: 'right',
-      render: (_: any, record: ReportItem) => (
+  ];
+
+  // 액션 컬럼
+  const actionColumn: ColumnsType<ReportItem>[0] = {
+    title: '관리',
+    key: 'action',
+    width: columnWidths.action,
+    align: 'center',
+    fixed: 'right',
+    render: (_: any, record: ReportItem) => {
+      const isSystem = record.systemYn === 'Y';
+      return (
         <Space>
-          <Tooltip title="수정">
+          <Tooltip title={isSystem ? '시스템 항목은 수정할 수 없습니다' : '수정'}>
             <Button
               type="text"
               icon={<EditOutlined />}
               onClick={() => openModal(record)}
+              disabled={isSystem}
             />
           </Tooltip>
-          {record.systemYn !== 'Y' && (
+          {!isSystem ? (
             <Popconfirm
               title="삭제 확인"
               description="이 항목을 삭제하시겠습니까?"
@@ -302,23 +479,85 @@ const ReportItemAdminPage: React.FC = () => {
                 <Button type="text" danger icon={<DeleteOutlined />} />
               </Tooltip>
             </Popconfirm>
+          ) : (
+            <Tooltip title="시스템 항목은 삭제할 수 없습니다">
+              <Button type="text" danger icon={<DeleteOutlined />} disabled />
+            </Tooltip>
           )}
         </Space>
-      ),
+      );
     },
-  ];
+  };
+
+  // 표시할 컬럼
+  const columns = useMemo(() => {
+    const visibleCols = baseColumns
+      .filter((col) => visibleColumns[col.key as string])
+      .map((col) => ({
+        ...col,
+        onHeaderCell: () => ({
+          width: columnWidths[col.key as string],
+          onResize: handleResize(col.key as string),
+        }),
+      }));
+    return [...visibleCols, actionColumn];
+  }, [visibleColumns, columnWidths, items]);
+
+  // 컬럼명 매핑
+  const columnNameMap: Record<string, string> = {
+    itemOrder: '순서',
+    itemId: '항목 ID',
+    itemNm: '항목명',
+    dataSource: '데이터 소스',
+    spName: 'SP 이름',
+    chartType: '차트 유형',
+    defaultStatus: '기본 상태',
+    useYn: '사용',
+  };
+
+  // 컬럼 설정 팝오버 내용
+  const columnSettingContent = (
+    <div style={{ width: 200 }}>
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text strong>컬럼 표시 설정</Text>
+        <Button type="link" size="small" onClick={handleResetColumns}>
+          초기화
+        </Button>
+      </div>
+      <Divider style={{ margin: '8px 0' }} />
+      {Object.entries(defaultVisibleColumns).map(([key]) => (
+        <div key={key} style={{ marginBottom: 4 }}>
+          <Checkbox
+            checked={visibleColumns[key]}
+            onChange={(e) => handleColumnVisibilityChange(key, e.target.checked)}
+          >
+            {columnNameMap[key] || key}
+          </Checkbox>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="report-item-admin-page">
       <Card
         title={
           <Space>
-            <SettingOutlined />
-            <span>레포트 항목 관리</span>
+            <SettingOutlined style={{ fontSize: 20, color: '#1890ff' }} />
+            <Title level={4} style={{ margin: 0 }}>
+              레포트 항목 관리
+            </Title>
           </Space>
         }
         extra={
           <Space>
+            <Popover
+              content={columnSettingContent}
+              trigger="click"
+              placement="bottomRight"
+            >
+              <Button icon={<SettingOutlined />}>컬럼 설정</Button>
+            </Popover>
             <Button icon={<ReloadOutlined />} onClick={fetchItems}>
               새로고침
             </Button>
@@ -330,23 +569,36 @@ const ReportItemAdminPage: React.FC = () => {
       >
         <Alert
           message="커스텀 SP 기반 레포트 항목"
-          description="관리자가 저장 프로시저(SP)를 등록하면 월간 레포트에 동적으로 항목을 추가할 수 있습니다. SP는 표준 출력 형식을 따라야 합니다."
+          description={
+            <span>
+              관리자가 저장 프로시저(SP)를 등록하면 월간 레포트에 동적으로 항목을 추가할 수 있습니다.{' '}
+              <Text type="warning">
+                <LockOutlined /> 시스템 항목은 수정/삭제가 제한됩니다.
+              </Text>
+            </span>
+          }
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
         />
 
         <Table
-          columns={columns}
+          columns={columns as any}
           dataSource={items}
           rowKey="itemId"
           loading={loading}
           size="middle"
           scroll={{ x: 1200 }}
+          components={{
+            header: {
+              cell: ResizableTitle,
+            },
+          }}
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `총 ${total}개`,
+            pageSizeOptions: ['10', '20', '50'],
           }}
         />
       </Card>
@@ -411,7 +663,7 @@ const ReportItemAdminPage: React.FC = () => {
                 </Form.Item>
 
                 <Form.Item name="itemOrder" label="정렬 순서">
-                  <Input type="number" placeholder="숫자가 작을수록 먼저 표시" />
+                  <InputNumber min={1} placeholder="숫자가 작을수록 먼저 표시" style={{ width: '100%' }} />
                 </Form.Item>
 
                 <Form.Item name="useYn" label="사용 여부" valuePropName="checked">
