@@ -66,7 +66,22 @@ export const dashboardService = {
 
     const queryString = params.toString();
     const url = `${BASE_URL}/widgets/${widgetId}/data${queryString ? `?${queryString}` : ''}`;
-    const response = await api.get(url);
+    const batchRunning = (() => {
+      try {
+        const raw = localStorage.getItem('credit_batch_in_progress');
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        const batch = saved?.batchResult;
+        return !!(batch && batch.batchId && batch.runId);
+      } catch {
+        return false;
+      }
+    })();
+    const response = await api.get(url, {
+      headers: {
+        'X-Credit-Batch-Running': batchRunning ? 'true' : 'false',
+      },
+    });
     return response.data.data;
   },
 

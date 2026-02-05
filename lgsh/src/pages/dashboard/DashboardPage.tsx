@@ -9,7 +9,7 @@ import { ExclamationCircleOutlined } from '@ant-design/icons';
 import GridLayout, { Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { useDashboardStore } from '@/stores/dashboardStore';
+import { useDashboardStore, isCreditBatchRunning } from '@/stores/dashboardStore';
 import DashboardToolbar from './components/DashboardToolbar';
 import WidgetContainer from './components/WidgetContainer';
 import WidgetSelector from './components/WidgetSelector';
@@ -48,6 +48,10 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     if (!config) return;
 
+    if (isCreditBatchRunning()) {
+      return;
+    }
+
     // 초기 데이터 로드
     refreshAllWidgets();
 
@@ -58,7 +62,7 @@ const DashboardPage: React.FC = () => {
 
     // 환경설정에서 가져온 주기로 자동 갱신 (초 단위 -> 밀리초 변환)
     const interval = setInterval(() => {
-      if (!isEditMode) {
+      if (!isEditMode && !isCreditBatchRunning()) {
         refreshAllWidgets();
       }
     }, settings.refreshInterval * 1000);
@@ -150,6 +154,11 @@ const DashboardPage: React.FC = () => {
 
   // 새로고침 핸들러
   const handleRefresh = () => {
+    if (isCreditBatchRunning()) {
+      message.info('평가 진행 중에는 대시보드 갱신을 잠시 중단합니다.');
+      return;
+    }
+
     refreshAllWidgets();
     message.success('데이터가 새로고침되었습니다.');
   };

@@ -1,5 +1,5 @@
 /**
- * 대시보드 상태 관리 (Zustand)
+ * 대시보드 상태 관리(Zustand)
  */
 import { create } from 'zustand';
 import type {
@@ -24,6 +24,20 @@ const FALLBACK_CONFIG: DashboardConfig = {
   isCustomized: false,
   layout: [],
   refreshInterval: DEFAULT_SETTINGS.refreshInterval,
+};
+
+const CREDIT_BATCH_STORAGE_KEY = 'credit_batch_in_progress';
+
+export const isCreditBatchRunning = (): boolean => {
+  try {
+    const raw = localStorage.getItem(CREDIT_BATCH_STORAGE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    const batch = saved?.batchResult;
+    return !!(batch && batch.batchId && batch.runId);
+  } catch {
+    return false;
+  }
 };
 
 
@@ -53,7 +67,7 @@ interface DashboardState {
   autoArrangeWidgets: () => void;
 }
 
-// 원본 레이아웃 저장 (취소 시 복원용)
+// 원본 레이아웃 저장(취소 시 복원용)
 let originalLayout: DashboardLayoutItem[] | null = null;
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -88,7 +102,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const settings = await dashboardService.getSettings();
       set({ settings });
     } catch (error) {
-      console.error('대시보드 시스템 설정 로드 실패:', error);
+      console.error('대시보드 설정 로드 실패:', error);
       // 실패 시 기본값 유지
     }
   },
@@ -206,6 +220,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   loadWidgetData: async (widgetId, yearMonth, refresh = false) => {
+    if (isCreditBatchRunning()) return;
     set((state) => ({
       widgetDataCache: {
         ...state.widgetDataCache,
@@ -250,11 +265,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   refreshAllWidgets: async () => {
     const { config } = get();
     if (!config) return;
+    if (isCreditBatchRunning()) return;
 
     const visibleWidgets = config.layout.filter((item) => item.visible);
+    const refresh = !isCreditBatchRunning();
     // refresh=true로 캐시를 무시하고 새로 조회
     await Promise.all(
-      visibleWidgets.map((widget) => get().loadWidgetData(widget.widgetId, undefined, true))
+      visibleWidgets.map((widget) => get().loadWidgetData(widget.widgetId, undefined, refresh))
     );
   },
 
@@ -262,7 +279,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
    * 특정 위젯 데이터 새로고침 (캐시 갱신)
    */
   refreshWidgetData: async (widgetId, yearMonth) => {
-    await get().loadWidgetData(widgetId, yearMonth, true);
+    if (isCreditBatchRunning()) return;
+    const refresh = !isCreditBatchRunning();
+    await get().loadWidgetData(widgetId, yearMonth, refresh);
   },
 
   cancelEdit: () => {
@@ -300,7 +319,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const defaultW = widget.minW ?? Math.min(widget.w, 4);
       const defaultH = widget.minH ?? Math.min(widget.h, 2);
 
-      // 현재 행에 들어갈 수 없으면 다음 행으로
+      // 현재 행에 안들어가면 다음 행으로
       if (currentX + defaultW > GRID_COLS) {
         currentX = 0;
         currentY += rowMaxHeight;
