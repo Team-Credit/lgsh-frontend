@@ -13,6 +13,10 @@ export interface CreditPredictRequest {
   chunkSize?: number;
   useCelery?: boolean;
   algorithmType?: string;
+  snapshotMonth?: string;
+  fromMonth?: string;
+  toMonth?: string;
+  rawDataId?: string;
 }
 
 export interface CreditPredictResult {
@@ -29,6 +33,10 @@ export interface CreditBatchRunResult {
   userId: string;
   personGrp?: string | null;
   runId: string;
+  snapshotMonth?: string | null;
+  fromMonth?: string | null;
+  toMonth?: string | null;
+  rawDataId?: string | null;
   modelMetrics?: {
     auc?: number;
     ks_stat?: number;

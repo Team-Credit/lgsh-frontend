@@ -23,6 +23,7 @@ const CreditEvaluatePage = lazy(() => import('@/pages/credit/CreditEvaluatePage'
 const CreditDistributionPage = lazy(() => import('@/pages/credit/CreditDistributionPage'));
 const EdaAnalysisPage = lazy(() => import('@/pages/analysis/EdaAnalysisPage'));
 const ModelSelectPage = lazy(() => import('@/pages/analysis/ModelSelectPage'));
+const TimeSeriesPage = lazy(() => import('@/pages/analysis/TimeSeriesPage'));
 const ModelListPage = lazy(() => import('@/pages/model/ModelListPage'));
 const VariableListPage = lazy(() => import('@/pages/variable/VariableListPage'));
 const MessageCodePage = lazy(() => import('@/pages/system/MessageCodePage'));
@@ -140,12 +141,18 @@ export const routes: RouteConfig[] = [
     title: '데이터 분석',
     menuId: 'M0301',
   },
+  {
+    path: 'analysis/time-series',
+    element: TimeSeriesPage,
+    title: '시계열 분석',
+    menuId: 'M0405',
+  },
   // Analysis > Model Select
   {
     path: 'analysis/model-select',
     element: ModelSelectPage,
-    title: '\uBAA8\uB378 \uC120\uD0DD',
-    menuId: 'M0303',
+    title: '모델 선택',
+    menuId: 'M0406',
   },
 
 

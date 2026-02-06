@@ -30,6 +30,13 @@ interface PersonDetailDataProps {
   personId?: string;
 }
 
+const formatDate = (value?: string | null): string => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value.substring(0, 10) || '-';
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+};
+
 const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
   const navigate = useNavigate();
   const params = useParams();
@@ -267,7 +274,7 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
           <div className="grade-badge">{data.creditGrade || '-'}</div>
           <div className="card-row">
             <span className="label">평가일</span>
-            <span className="value">{data.scoreDt || '-'}</span>
+            <span className="value">{formatDate(data.scoreDt)}</span>
           </div>
         </div>
       </div>
@@ -305,7 +312,7 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
             </thead>
             <tbody>
               <tr>
-                <td>{data.scoreDt || '-'}</td>
+                <td>{formatDate(data.scoreDt)}</td>
                 <td>{data.creditScore ?? '-'}</td>
                 <td>{data.creditGrade || '-'}</td>
               </tr>

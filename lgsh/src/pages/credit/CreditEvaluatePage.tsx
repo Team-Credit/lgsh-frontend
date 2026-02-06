@@ -1,11 +1,13 @@
 /**
  * 신용평가 실행 화면 (개인/그룹/전체 모드 지원)
+ * - 기간 선택 시 월별로 분리하여 진행률/완료 표시
  */
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   Card,
   Form,
   Input,
+  Select,
   Button,
   Space,
   message,
@@ -16,7 +18,10 @@ import {
   Descriptions,
   Spin,
   Alert,
+  DatePicker,
 } from 'antd';
+import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import {
   CalculatorOutlined,
   ThunderboltOutlined,
@@ -46,9 +51,12 @@ import type {
   CreditBatchStatus,
 } from '@/types';
 import { creditService, personService } from '@/services';
+import { modelService } from '@/services/modelService';
+import type { ModelListResponse } from '@/types';
 import './CreditEvaluatePage.css';
 
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
 const STORAGE_KEY = 'credit_batch_in_progress';
 
@@ -78,18 +86,42 @@ const modeLabels: Record<CreditRunMode, { label: string; icon: React.ReactNode; 
   all: { label: '전체 평가', icon: <DatabaseOutlined />, desc: '시스템의 모든 개인을 평가합니다.' },
 };
 
+/** 월별 배치 추적 */
+interface MonthlyBatch {
+  month: string;
+  batchResult: CreditBatchRunResult | null;
+  batchStatus: CreditBatchStatus | null;
+}
+
+/** 두 Dayjs 사이의 월 목록 생성 */
+const generateMonths = (from: Dayjs, to: Dayjs): string[] => {
+  const months: string[] = [];
+  let cursor = from.startOf('month');
+  const end = to.startOf('month');
+  while (cursor.isBefore(end) || cursor.isSame(end, 'month')) {
+    months.push(cursor.format('YYYY-MM'));
+    cursor = cursor.add(1, 'month');
+  }
+  return months;
+};
+
 const CreditEvaluatePage: React.FC = () => {
-  const [form] = Form.useForm<CreditPredictRequest>();
+  const [form] = Form.useForm<CreditPredictRequest & { evalRange?: [Dayjs, Dayjs] }>();
   const [mode, setMode] = useState<CreditRunMode>('single');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CreditPredictResult | null>(null);
-  const [batchResult, setBatchResult] = useState<CreditBatchRunResult | null>(null);
-  const [batchStatus, setBatchStatus] = useState<CreditBatchStatus | null>(null);
+  const [models, setModels] = useState<ModelListResponse[]>([]);
+
+  // 월별 배치 추적 (단일 월이면 length=1, 복수 월이면 length=N)
+  const [monthlyBatches, setMonthlyBatches] = useState<MonthlyBatch[]>([]);
   const [statusPolling, setStatusPolling] = useState(false);
   const [evalTime, setEvalTime] = useState<string>('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfMode, setPdfMode] = useState(false);
   const pdfRef = React.useRef<HTMLDivElement | null>(null);
+  const [batchPdfLoading, setBatchPdfLoading] = useState(false);
+  const [batchPdfMode, setBatchPdfMode] = useState(false);
+  const batchPdfRef = React.useRef<HTMLDivElement | null>(null);
   const personId = Form.useWatch('personId', form);
   const [personName, setPersonName] = useState('');
   const [personLookupStatus, setPersonLookupStatus] = useState<LookupStatus>('idle');
@@ -98,26 +130,77 @@ const CreditEvaluatePage: React.FC = () => {
   const [batchStarting, setBatchStarting] = useState(false);
   const [celeryRunning, setCeleryRunning] = useState<boolean | null>(null);
   const [celeryWarned, setCeleryWarned] = useState(false);
+  const [latestRawDataId, setLatestRawDataId] = useState<string | null>(null);
+  const monthlyBatchesRef = useRef<MonthlyBatch[]>([]);
 
+  // Derived
+  const firstBatchResult = monthlyBatches[0]?.batchResult ?? null;
+  const isMultiMonth = monthlyBatches.length > 1;
   const isBatchRunning = batchStarting || statusPolling || batchProgressModal;
 
+  // ref 동기화 (폴링 클로저용)
+  useEffect(() => {
+    monthlyBatchesRef.current = monthlyBatches;
+  }, [monthlyBatches]);
+
+  // 모델 목록 로드
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const res = await modelService.list({ page: 0, size: 200 });
+        if (res.data?.success && res.data?.data?.content) {
+          const list = res.data.data.content;
+          setModels(list);
+          if (list.length > 0 && !form.getFieldValue('modelId')) {
+            form.setFieldsValue({ modelId: list[0].modelId });
+          }
+        }
+      } catch {
+        // 모델 목록 로드 실패 시 수동 입력 가능
+      }
+    };
+    loadModels();
+  }, []);
+
+  // localStorage 복원
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
-      if (!saved || !saved.batchResult || !saved.mode) return;
-      const { batchResult: savedBatch, mode: savedMode } = saved;
-      if (!savedBatch.batchId || !savedBatch.runId) return;
-      setMode(savedMode);
-      setBatchResult(savedBatch);
-      setStatusPolling(true);
-      setBatchProgressModal(true);
+      if (!saved || !saved.mode) return;
+
+      if (saved.monthlyBatches && Array.isArray(saved.monthlyBatches) && saved.monthlyBatches.length > 0) {
+        const restored: MonthlyBatch[] = saved.monthlyBatches
+          .filter((mb: any) => mb.batchResult?.batchId && mb.batchResult?.runId)
+          .map((mb: any) => ({
+            month: mb.month || '',
+            batchResult: mb.batchResult,
+            batchStatus: null,
+          }));
+        if (restored.length > 0) {
+          setMode(saved.mode);
+          setMonthlyBatches(restored);
+          setStatusPolling(true);
+          setBatchProgressModal(true);
+        }
+      } else if (saved.batchResult?.batchId && saved.batchResult?.runId) {
+        // 이전 형식 호환
+        setMode(saved.mode);
+        setMonthlyBatches([{
+          month: saved.batchFilters?.fromMonth || '',
+          batchResult: saved.batchResult,
+          batchStatus: null,
+        }]);
+        setStatusPolling(true);
+        setBatchProgressModal(true);
+      }
     } catch {
       // ignore storage errors
     }
   }, []);
 
+  // Celery 상태 확인
   useEffect(() => {
     let isMounted = true;
 
@@ -147,79 +230,156 @@ const CreditEvaluatePage: React.FC = () => {
     };
   }, [celeryWarned]);
 
-  // 배치 상태 폴링
+  // 최신 RAW_DATA_ID 조회 (기간이 단일 월일 때만)
+  const evalRangeWatch = Form.useWatch('evalRange', form) as [Dayjs, Dayjs] | undefined;
+  const rawDataIdWatch = Form.useWatch('rawDataId', form) as string | undefined;
+
   useEffect(() => {
-    if (!batchResult || !statusPolling || mode === 'single') return;
+    let cancelled = false;
+
+    const fetchLatest = async (month: string) => {
+      try {
+        const res = await creditService.getLatestRawDataId(month);
+        if (cancelled) return;
+        if (res.success) {
+          setLatestRawDataId(res.data?.rawDataId ?? null);
+        } else {
+          setLatestRawDataId(null);
+        }
+      } catch {
+        if (!cancelled) setLatestRawDataId(null);
+      }
+    };
+
+    if (mode !== 'group' && mode !== 'all') {
+      setLatestRawDataId(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!evalRangeWatch || !evalRangeWatch[0] || !evalRangeWatch[1]) {
+      setLatestRawDataId(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const m1 = evalRangeWatch[0].format('YYYY-MM');
+    const m2 = evalRangeWatch[1].format('YYYY-MM');
+    if (m1 !== m2) {
+      setLatestRawDataId(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    fetchLatest(m1);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, evalRangeWatch?.[0]?.valueOf(), evalRangeWatch?.[1]?.valueOf()]);
+
+  // 배치 상태 폴링 (월별)
+  useEffect(() => {
+    if (!statusPolling || mode === 'single') return;
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const fetchStatus = async () => {
+    const fetchStatuses = async () => {
       if (cancelled) return;
-      let finished = false;
-      try {
-        const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId, {
-          mode: batchResult.mode,
-          userId: batchResult.userId,
-        });
-        if (response.success && response.data) {
-          setBatchStatus(response.data);
+      const current = [...monthlyBatchesRef.current];
+      if (current.length === 0) {
+        if (!cancelled) timer = setTimeout(fetchStatuses, 1500);
+        return;
+      }
 
-          if (['SUCCESS', 'PARTIAL', 'FAILED'].includes(response.data.status)) {
-            finished = true;
-            setStatusPolling(false);
-            setBatchProgressModal(false);
-            try {
-              localStorage.removeItem(STORAGE_KEY);
-            } catch {
-              // ignore storage errors
-            }
-            if (response.data.status === 'SUCCESS') {
-              setBatchSummaryModal(true);
-            } else if (response.data.status === 'PARTIAL') {
-              message.warning('평가가 부분적으로 완료되었습니다.');
-              setBatchSummaryModal(true);
-            } else {
-              message.error('평가가 실패했습니다.');
-            }
-          }
-        } else {
-          setBatchStatus((prev) =>
-            prev ?? {
-              batchId: batchResult.batchId,
-              status: 'RUNNING',
-              totalCount: 0,
-              processedCount: 0,
-              successCount: 0,
-              failCount: 0,
+      let allFinished = true;
+
+      for (let i = 0; i < current.length; i++) {
+        if (cancelled) return;
+        const mb = current[i];
+        if (!mb.batchResult) continue;
+        if (mb.batchStatus && ['SUCCESS', 'PARTIAL', 'FAILED'].includes(mb.batchStatus.status)) {
+          continue;
+        }
+
+        try {
+          const response = await creditService.getBatchStatus(
+            mb.batchResult.batchId,
+            mb.batchResult.runId,
+            {
+              mode: mb.batchResult.mode,
+              userId: mb.batchResult.userId,
+              fromMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
+              toMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
             }
           );
-        }
-      } catch (error) {
-        console.error('Status polling error:', error);
-        setBatchStatus((prev) =>
-          prev ?? {
-            batchId: batchResult.batchId,
-            status: 'RUNNING',
-            totalCount: 0,
-            processedCount: 0,
-            successCount: 0,
-            failCount: 0,
+          if (response.success && response.data) {
+            current[i] = { ...mb, batchStatus: response.data };
+            if (!['SUCCESS', 'PARTIAL', 'FAILED'].includes(response.data.status)) {
+              allFinished = false;
+            }
+          } else {
+            allFinished = false;
+            if (!mb.batchStatus) {
+              current[i] = {
+                ...mb,
+                batchStatus: {
+                  batchId: mb.batchResult.batchId,
+                  status: 'RUNNING',
+                  totalCount: 0,
+                  processedCount: 0,
+                  successCount: 0,
+                  failCount: 0,
+                },
+              };
+            }
           }
-        );
+        } catch (error) {
+          allFinished = false;
+          console.error(`Status polling error for ${mb.month}:`, error);
+        }
       }
-      if (cancelled || finished) return;
-      timer = setTimeout(fetchStatus, 1500);
+
+      if (!cancelled) {
+        setMonthlyBatches([...current]);
+
+        if (allFinished && current.some((mb) => mb.batchResult)) {
+          setStatusPolling(false);
+          setBatchProgressModal(false);
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {}
+
+          const hasFailure = current.some((mb) => mb.batchStatus?.status === 'FAILED');
+          const hasPartial = current.some((mb) => mb.batchStatus?.status === 'PARTIAL');
+          const allSuccess = current.every((mb) => mb.batchStatus?.status === 'SUCCESS');
+
+          if (allSuccess) {
+            setBatchSummaryModal(true);
+          } else if (hasFailure && !current.some((mb) => mb.batchStatus?.status === 'SUCCESS')) {
+            message.error('평가가 실패했습니다.');
+          } else if (hasPartial || hasFailure) {
+            message.warning('평가가 부분적으로 완료되었습니다.');
+            setBatchSummaryModal(true);
+          }
+        }
+      }
+
+      if (!cancelled && !allFinished) {
+        timer = setTimeout(fetchStatuses, 1500);
+      }
     };
 
-    fetchStatus();
+    fetchStatuses();
     return () => {
       cancelled = true;
-      if (timer) {
-        clearTimeout(timer);
-      }
+      if (timer) clearTimeout(timer);
     };
-  }, [batchResult, statusPolling, mode]);
+  }, [statusPolling, mode]);
 
   // 개인 ID 조회
   useEffect(() => {
@@ -345,8 +505,6 @@ const CreditEvaluatePage: React.FC = () => {
     };
   }, [itemScoreRows]);
 
-  // 개인 ID 조회
-
   // 평가 실행
   const handleSubmit = async () => {
     if (isBatchRunning) {
@@ -364,15 +522,31 @@ const CreditEvaluatePage: React.FC = () => {
       const values = await form.validateFields();
       setLoading(true);
       setResult(null);
-      setBatchResult(null);
-      setBatchStatus(null);
+      setMonthlyBatches([]);
 
       const payload: CreditPredictRequest = {
         ...values,
         mode,
       };
+      const evalRange = values.evalRange as [Dayjs, Dayjs] | undefined;
+      // Do not send evalRange to backend
+      delete (payload as any).evalRange;
+
+      const rawDataId = (values as any).rawDataId ? String((values as any).rawDataId).trim() : '';
+      const hasRawDataId = rawDataId.length > 0;
+      if (hasRawDataId) {
+        payload.rawDataId = rawDataId;
+        delete (payload as any).snapshotMonth;
+        delete (payload as any).fromMonth;
+        delete (payload as any).toMonth;
+      }
 
       if (mode === 'single') {
+        if (!hasRawDataId && evalRange && evalRange[0] && evalRange[1]) {
+          payload.fromMonth = evalRange[0].format('YYYY-MM');
+          payload.toMonth = evalRange[1].format('YYYY-MM');
+        }
+
         const response = await creditService.predict(payload);
         if (response.success && response.data) {
           setResult(response.data);
@@ -382,42 +556,75 @@ const CreditEvaluatePage: React.FC = () => {
           message.error(response.message || '평가에 실패했습니다.');
         }
       } else {
+        // 배치 모드: 월별 분리 실행
+        let months: string[] = [];
+        if (!hasRawDataId && evalRange && evalRange[0] && evalRange[1]) {
+          months = generateMonths(evalRange[0], evalRange[1]);
+        }
+        if (months.length === 0) {
+          // 기간 미지정 시 단일 배치
+          months = [''];
+        }
+
         setBatchProgressModal(true);
         setBatchStarting(true);
-        const response = await creditService.runBatch(payload);
 
-        if (response.success && response.data) {
-          setBatchResult(response.data);
-          setBatchStatus({
-            batchId: response.data.batchId,
-            status: 'RUNNING',
-            totalCount: 0,
-            processedCount: 0,
-            successCount: 0,
-            failCount: 0,
-            startedAt: response.data.runStart,
-          });
+        const batches: MonthlyBatch[] = [];
+
+        for (const month of months) {
+          const monthPayload: CreditPredictRequest = { ...payload };
+          if (!hasRawDataId && month) {
+            monthPayload.fromMonth = month;
+            monthPayload.toMonth = month;
+          }
+
+          try {
+            const response = await creditService.runBatch(monthPayload);
+            if (response.success && response.data) {
+              batches.push({
+                month: month || (hasRawDataId ? 'RAW_DATA_ID' : '전체'),
+                batchResult: response.data,
+                batchStatus: {
+                  batchId: response.data.batchId,
+                  status: 'RUNNING',
+                  totalCount: 0,
+                  processedCount: 0,
+                  successCount: 0,
+                  failCount: 0,
+                  startedAt: response.data.runStart,
+                },
+              });
+            } else {
+              message.error(`${month || '전체'} 평가 시작 실패: ${response.message || ''}`);
+            }
+          } catch (err) {
+            message.error(`${month || '전체'} 평가 시작 실패`);
+          }
+        }
+
+        if (batches.length > 0) {
+          setMonthlyBatches(batches);
           setStatusPolling(true);
           try {
             localStorage.setItem(
               STORAGE_KEY,
               JSON.stringify({
                 mode,
-                batchResult: response.data,
+                monthlyBatches: batches.map((mb) => ({
+                  month: mb.month,
+                  batchResult: mb.batchResult,
+                })),
               })
             );
-          } catch {
-            // ignore storage errors
-          }
-          message.success(`${modeLabels[mode].label}가 시작되었습니다.`);
+          } catch {}
+          const monthLabel = batches.length > 1 ? ` (${batches.length}개월)` : '';
+          message.success(`${modeLabels[mode].label}가 시작되었습니다.${monthLabel}`);
         } else {
           setBatchProgressModal(false);
           try {
             localStorage.removeItem(STORAGE_KEY);
-          } catch {
-            // ignore storage errors
-          }
-          message.error(response.message || '평가 시작에 실패했습니다.');
+          } catch {}
+          message.error('평가 시작에 실패했습니다.');
         }
       }
     } catch (error: any) {
@@ -436,50 +643,71 @@ const CreditEvaluatePage: React.FC = () => {
     }
   };
 
-
   // 상태 수동 조회
   const handleRefreshStatus = useCallback(async () => {
-    if (!batchResult) return;
+    const current = monthlyBatchesRef.current;
+    if (current.length === 0) return;
     try {
-      const response = await creditService.getBatchStatus(batchResult.batchId, batchResult.runId, {
-        mode: batchResult.mode,
-        userId: batchResult.userId,
-      });
-      if (response.success && response.data) {
-        setBatchStatus(response.data);
-      }
+      const updated = await Promise.all(
+        current.map(async (mb) => {
+          if (!mb.batchResult) return mb;
+          try {
+            const response = await creditService.getBatchStatus(
+              mb.batchResult.batchId,
+              mb.batchResult.runId,
+              {
+                mode: mb.batchResult.mode,
+                userId: mb.batchResult.userId,
+                fromMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
+                toMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
+              }
+            );
+            if (response.success && response.data) {
+              return { ...mb, batchStatus: response.data };
+            }
+          } catch {
+            // keep existing status
+          }
+          return mb;
+        })
+      );
+      setMonthlyBatches(updated);
     } catch (error) {
       message.error('상태 조회에 실패했습니다.');
     }
-  }, [batchResult, mode]);
+  }, []);
 
   const handleStopBatch = useCallback(async () => {
-    if (!batchResult) return;
+    const current = monthlyBatchesRef.current;
+    if (current.length === 0) return;
     try {
-      const response = await creditService.stopBatch({
-        batchId: batchResult.batchId,
-        runId: batchResult.runId,
-        mode: batchResult.mode,
-        userId: batchResult.userId,
-      });
-      if (response.success) {
-        setStatusPolling(false);
-        setBatchProgressModal(false);
-        setBatchStatus(null);
-        setBatchResult(null);
-        try {
-          localStorage.removeItem(STORAGE_KEY);
-        } catch {
-          // ignore storage errors
-        }
-        message.warning('평가가 중지되었습니다. 이미 처리된 건은 저장됩니다.');
-      } else {
-        message.error(response.message || '평가 중지에 실패했습니다.');
-      }
+      await Promise.all(
+        current
+          .filter(
+            (mb) =>
+              mb.batchResult &&
+              (!mb.batchStatus || ['PENDING', 'RUNNING'].includes(mb.batchStatus.status))
+          )
+          .map((mb) =>
+            creditService.stopBatch({
+              batchId: mb.batchResult!.batchId,
+              runId: mb.batchResult!.runId,
+              mode: mb.batchResult!.mode,
+              userId: mb.batchResult!.userId,
+            })
+          )
+      );
+      setStatusPolling(false);
+      setBatchProgressModal(false);
+      setMonthlyBatches([]);
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+      message.warning('평가가 중지되었습니다. 이미 처리된 건은 저장됩니다.');
     } catch (error) {
       message.error('평가 중지에 실패했습니다.');
     }
-  }, [batchResult, handleRefreshStatus]);
+  }, []);
 
   // PDF 저장
   const handleSavePdf = async () => {
@@ -520,6 +748,53 @@ const CreditEvaluatePage: React.FC = () => {
     }
   };
 
+  // Batch summary PDF save (group/all, single/multi-month).
+  const handleSaveBatchPdf = async () => {
+    if (!batchPdfRef.current || batchPdfLoading) return;
+    setBatchPdfLoading(true);
+    try {
+      setBatchPdfMode(true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(batchPdfRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('portrait', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 24;
+      const maxWidth = pageWidth - margin * 2;
+      const maxHeight = pageHeight - margin * 2;
+      const widthRatio = maxWidth / canvas.width;
+      const heightRatio = maxHeight / canvas.height;
+      const scale = Math.min(widthRatio, heightRatio);
+      const imgWidth = canvas.width * scale;
+      const imgHeight = canvas.height * scale;
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+
+      const safeModel = (form.getFieldValue('modelId') || 'model').toString().replace(/[^\w-]+/g, '_');
+      const label = isMultiMonth
+        ? `${monthlyBatches[0]?.month || 'from'}-${monthlyBatches[monthlyBatches.length - 1]?.month || 'to'}`
+        : (monthlyBatches[0]?.month || 'batch');
+      const safeLabel = label.toString().replace(/[^\w-]+/g, '_');
+      const safeRunId = (monthlyBatches[0]?.batchResult?.runId || 'run').toString().replace(/[^\w-]+/g, '_');
+      pdf.save(`credit-evaluation-batch-${safeModel}-${safeLabel}-${safeRunId}.pdf`);
+    } catch (error) {
+      message.error('PDF 저장에 실패했습니다.');
+    } finally {
+      setBatchPdfMode(false);
+      setBatchPdfLoading(false);
+    }
+  };
+
   // 상태 태그 렌더링
   const renderStatusTag = (status?: string) => {
     if (!status) return <Tag>대기중</Tag>;
@@ -540,11 +815,13 @@ const CreditEvaluatePage: React.FC = () => {
     );
   };
 
-  // 진행률 계산
-  const progressPercent = useMemo(() => {
-    if (!batchStatus || batchStatus.totalCount === 0) return 0;
-    return Math.round((batchStatus.processedCount / batchStatus.totalCount) * 100);
-  }, [batchStatus]);
+  // 모드 초기화 핸들러
+  const handleModeChange = (newMode: CreditRunMode) => {
+    setMode(newMode);
+    setResult(null);
+    setMonthlyBatches([]);
+    form.resetFields();
+  };
 
   return (
     <div className="credit-evaluate-page">
@@ -574,39 +851,21 @@ const CreditEvaluatePage: React.FC = () => {
             <div className="mode-label">구분</div>
             <Button
               type={mode === 'single' ? 'primary' : 'default'}
-              onClick={() => {
-                setMode('single');
-                setResult(null);
-                setBatchResult(null);
-                setBatchStatus(null);
-                form.resetFields();
-              }}
+              onClick={() => handleModeChange('single')}
               block
             >
               개인
             </Button>
             <Button
               type={mode === 'group' ? 'primary' : 'default'}
-              onClick={() => {
-                setMode('group');
-                setResult(null);
-                setBatchResult(null);
-                setBatchStatus(null);
-                form.resetFields();
-              }}
+              onClick={() => handleModeChange('group')}
               block
             >
               그룹
             </Button>
             <Button
               type={mode === 'all' ? 'primary' : 'default'}
-              onClick={() => {
-                setMode('all');
-                setResult(null);
-                setBatchResult(null);
-                setBatchStatus(null);
-                form.resetFields();
-              }}
+              onClick={() => handleModeChange('all')}
               block
             >
               전체
@@ -623,6 +882,7 @@ const CreditEvaluatePage: React.FC = () => {
                 modelId: 'MDL_001',
                 batchDesc: 'UI 평가',
                 chunkSize: 500,
+                evalRange: [dayjs('2025-07', 'YYYY-MM'), dayjs('2025-12', 'YYYY-MM')],
               }}
             >
               {/* 개인 평가 */}
@@ -655,11 +915,19 @@ const CreditEvaluatePage: React.FC = () => {
                     <Input value={personName} placeholder="고객명 표시" disabled />
                   </Form.Item>
                   <Form.Item
-                    label="모델 ID"
+                    label="모델"
                     name="modelId"
-                    rules={[{ required: true, message: '모델 ID를 입력해주세요.' }]}
+                    rules={[{ required: true, message: '모델을 선택해주세요.' }]}
                   >
-                    <Input placeholder="예: M0001" maxLength={20} />
+                    <Select
+                      placeholder="모델 선택"
+                      showSearch
+                      optionFilterProp="label"
+                      options={models.map((m) => ({
+                        label: `${m.modelNm} (${m.modelId})`,
+                        value: m.modelId,
+                      }))}
+                    />
                   </Form.Item>
                   <Form.Item
                     label="평가 사유"
@@ -667,6 +935,17 @@ const CreditEvaluatePage: React.FC = () => {
                     rules={[{ required: true, message: '평가 사유를 입력해주세요.' }]}
                   >
                     <Input placeholder="예: UI 평가" maxLength={200} />
+                  </Form.Item>
+                  <Form.Item label="평가 기간" name="evalRange">
+                    <RangePicker
+                      picker="month"
+                      style={{ width: '100%' }}
+                      disabled={Boolean(rawDataIdWatch && rawDataIdWatch.trim())}
+                      defaultPickerValue={[dayjs('2025-01', 'YYYY-MM'), dayjs('2026-01', 'YYYY-MM')]}
+                    />
+                  </Form.Item>
+                  <Form.Item label="RAW_DATA_ID" name="rawDataId">
+                    <Input placeholder={latestRawDataId ? `예: ${latestRawDataId}` : '예: RAW_250731'} maxLength={50} />
                   </Form.Item>
                 </div>
               )}
@@ -682,11 +961,19 @@ const CreditEvaluatePage: React.FC = () => {
                     <Input placeholder="예: user01" maxLength={50} />
                   </Form.Item>
                   <Form.Item
-                    label="모델 ID"
+                    label="모델"
                     name="modelId"
-                    rules={[{ required: true, message: '모델 ID를 입력해주세요.' }]}
+                    rules={[{ required: true, message: '모델을 선택해주세요.' }]}
                   >
-                    <Input placeholder="예: M0001" maxLength={20} />
+                    <Select
+                      placeholder="모델 선택"
+                      showSearch
+                      optionFilterProp="label"
+                      options={models.map((m) => ({
+                        label: `${m.modelNm} (${m.modelId})`,
+                        value: m.modelId,
+                      }))}
+                    />
                   </Form.Item>
                   <Form.Item
                     label="평가 사유"
@@ -694,6 +981,17 @@ const CreditEvaluatePage: React.FC = () => {
                     rules={[{ required: true, message: '평가 사유를 입력해주세요.' }]}
                   >
                     <Input placeholder="예: UI 평가" maxLength={200} />
+                  </Form.Item>
+                  <Form.Item label="평가 기간" name="evalRange">
+                    <RangePicker
+                      picker="month"
+                      style={{ width: '100%' }}
+                      disabled={Boolean(rawDataIdWatch && rawDataIdWatch.trim())}
+                      defaultPickerValue={[dayjs('2025-01', 'YYYY-MM'), dayjs('2026-01', 'YYYY-MM')]}
+                    />
+                  </Form.Item>
+                  <Form.Item label="RAW_DATA_ID" name="rawDataId">
+                    <Input placeholder={latestRawDataId ? `예: ${latestRawDataId}` : '예: RAW_250731'} maxLength={50} />
                   </Form.Item>
                 </div>
               )}
@@ -702,11 +1000,19 @@ const CreditEvaluatePage: React.FC = () => {
               {mode === 'all' && (
                 <div className="form-row">
                   <Form.Item
-                    label="모델 ID"
+                    label="모델"
                     name="modelId"
-                    rules={[{ required: true, message: '모델 ID를 입력해주세요.' }]}
+                    rules={[{ required: true, message: '모델을 선택해주세요.' }]}
                   >
-                    <Input placeholder="예: M0001" maxLength={20} />
+                    <Select
+                      placeholder="모델 선택"
+                      showSearch
+                      optionFilterProp="label"
+                      options={models.map((m) => ({
+                        label: `${m.modelNm} (${m.modelId})`,
+                        value: m.modelId,
+                      }))}
+                    />
                   </Form.Item>
                   <Form.Item
                     label="평가 사유"
@@ -714,6 +1020,17 @@ const CreditEvaluatePage: React.FC = () => {
                     rules={[{ required: true, message: '평가 사유를 입력해주세요.' }]}
                   >
                     <Input placeholder="예: UI 평가" maxLength={200} />
+                  </Form.Item>
+                  <Form.Item label="평가 기간" name="evalRange">
+                    <RangePicker
+                      picker="month"
+                      style={{ width: '100%' }}
+                      disabled={Boolean(rawDataIdWatch && rawDataIdWatch.trim())}
+                      defaultPickerValue={[dayjs('2025-01', 'YYYY-MM'), dayjs('2026-01', 'YYYY-MM')]}
+                    />
+                  </Form.Item>
+                  <Form.Item label="RAW_DATA_ID" name="rawDataId">
+                    <Input placeholder={latestRawDataId ? `예: ${latestRawDataId}` : '예: RAW_250731'} maxLength={50} />
                   </Form.Item>
                 </div>
               )}
@@ -725,14 +1042,13 @@ const CreditEvaluatePage: React.FC = () => {
                   onClick={handleSubmit}
                   loading={loading}
                 >
-                  {isBatchRunning ? '\uD3C9\uAC00 \uC911..' : '\uD3C9\uAC00 \uC2E4\uD589'}
+                  {isBatchRunning ? '평가 중..' : '평가 실행'}
                 </Button>
                 <Button
                   onClick={() => {
                     form.resetFields();
                     setResult(null);
-                    setBatchResult(null);
-                    setBatchStatus(null);
+                    setMonthlyBatches([]);
                   }}
                 >
                   초기화
@@ -743,12 +1059,13 @@ const CreditEvaluatePage: React.FC = () => {
         </div>
 
         {/* 평가 실행 결과 및 상태 */}
-        {batchResult && mode !== 'single' && (
+        {monthlyBatches.length > 0 && mode !== 'single' && (
           <Card
             title={
               <Space>
                 <span>평가 실행 정보</span>
-                {renderStatusTag(batchStatus?.status)}
+                {!isMultiMonth && renderStatusTag(monthlyBatches[0]?.batchStatus?.status)}
+                {isMultiMonth && <Tag color="blue">{monthlyBatches.length}개월</Tag>}
                 {statusPolling && <Spin size="small" />}
               </Space>
             }
@@ -759,48 +1076,139 @@ const CreditEvaluatePage: React.FC = () => {
             }
             style={{ marginTop: 24 }}
           >
-            <Descriptions bordered column={2} size="small">
-              <Descriptions.Item label="실행 ID">{batchResult.batchId}</Descriptions.Item>
-              <Descriptions.Item label="실행 모드">
-                <Tag color="blue">{modeLabels[batchResult.mode].label}</Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Run ID">{batchResult.runId}</Descriptions.Item>
-              <Descriptions.Item label="사용자 ID">{batchResult.userId}</Descriptions.Item>
-              {batchResult.personGrp && (
-                <Descriptions.Item label="그룹">{batchResult.personGrp}</Descriptions.Item>
-              )}
-              <Descriptions.Item label="시작 시간">
-                {formatRunStart(batchResult.runStart)}
-              </Descriptions.Item>
-            </Descriptions>
-
-            {batchResult.modelMetrics && (
-              <div style={{ marginTop: 16 }}>
-                <Title level={5}>모델 성능 지표</Title>
-                <Descriptions bordered column={3} size="small">
-                  <Descriptions.Item label="AUC">
-                    {batchResult.modelMetrics.auc?.toFixed(4) ?? '-'}
+            {/* 단일 월: 기존 레이아웃 */}
+            {!isMultiMonth && firstBatchResult && (
+              <>
+                <Descriptions bordered column={2} size="small">
+                  <Descriptions.Item label="실행 ID">{firstBatchResult.batchId}</Descriptions.Item>
+                  <Descriptions.Item label="실행 모드">
+                    <Tag color="blue">{modeLabels[firstBatchResult.mode].label}</Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="KS 통계량">
-                    {batchResult.modelMetrics.ks_stat?.toFixed(4) ?? '-'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="AR (Accuracy Ratio)">
-                    {batchResult.modelMetrics.ar?.toFixed(4) ?? '-'}
+                  <Descriptions.Item label="Run ID">{firstBatchResult.runId}</Descriptions.Item>
+                  {firstBatchResult.rawDataId && (
+                    <Descriptions.Item label="RAW_DATA_ID">{firstBatchResult.rawDataId}</Descriptions.Item>
+                  )}
+                  <Descriptions.Item label="사용자 ID">{firstBatchResult.userId}</Descriptions.Item>
+                  {firstBatchResult.personGrp && (
+                    <Descriptions.Item label="그룹">{firstBatchResult.personGrp}</Descriptions.Item>
+                  )}
+                  <Descriptions.Item label="시작 시간">
+                    {formatRunStart(firstBatchResult.runStart)}
                   </Descriptions.Item>
                 </Descriptions>
-              </div>
+
+                {firstBatchResult.modelMetrics && (
+                  <div style={{ marginTop: 16 }}>
+                    <Title level={5}>모델 성능 지표</Title>
+                    <Descriptions bordered column={3} size="small">
+                      <Descriptions.Item label="AUC">
+                        {firstBatchResult.modelMetrics.auc?.toFixed(4) ?? '-'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="KS 통계량">
+                        {firstBatchResult.modelMetrics.ks_stat?.toFixed(4) ?? '-'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="AR (Accuracy Ratio)">
+                        {firstBatchResult.modelMetrics.ar?.toFixed(4) ?? '-'}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+                )}
+
+                {monthlyBatches[0]?.batchStatus && (
+                  <div style={{ marginTop: 16 }}>
+                    <Title level={5}>진행 상황</Title>
+                    <Progress
+                      percent={
+                        monthlyBatches[0].batchStatus.totalCount > 0
+                          ? Math.round(
+                              (Math.min(
+                                monthlyBatches[0].batchStatus.processedCount,
+                                monthlyBatches[0].batchStatus.totalCount
+                              ) /
+                                monthlyBatches[0].batchStatus.totalCount) *
+                                100
+                            )
+                          : 0
+                      }
+                      status="active"
+                    />
+                    <Space size="large" style={{ marginTop: 8 }}>
+                      <Text>전체: {monthlyBatches[0].batchStatus.totalCount.toLocaleString()}명</Text>
+                      <Text type="success">
+                        완료:{' '}
+                        {Math.min(
+                          monthlyBatches[0].batchStatus.successCount,
+                          monthlyBatches[0].batchStatus.totalCount
+                        ).toLocaleString()}
+                        명
+                      </Text>
+                      <Text type="danger">
+                        실패: {monthlyBatches[0].batchStatus.failCount.toLocaleString()}명
+                      </Text>
+                      <Text>
+                        처리:{' '}
+                        {Math.min(
+                          monthlyBatches[0].batchStatus.processedCount,
+                          monthlyBatches[0].batchStatus.totalCount
+                        ).toLocaleString()}
+                        명
+                      </Text>
+                    </Space>
+                  </div>
+                )}
+              </>
             )}
 
-            {batchStatus && (
-              <div style={{ marginTop: 16 }}>
-                <Title level={5}>진행 상황</Title>
-                <Progress percent={progressPercent} status="active" />
-                <Space size="large" style={{ marginTop: 8 }}>
-                  <Text>전체: {batchStatus.totalCount.toLocaleString()}명</Text>
-                  <Text type="success">완료: {batchStatus.successCount.toLocaleString()}명</Text>
-                  <Text type="danger">실패: {batchStatus.failCount.toLocaleString()}명</Text>
-                  <Text>처리: {batchStatus.processedCount.toLocaleString()}명</Text>
-                </Space>
+            {/* 복수 월: 월별 진행 현황 */}
+            {isMultiMonth && (
+              <div>
+                <Text strong>월별 진행 현황</Text>
+                <div style={{ marginTop: 12 }}>
+                  {monthlyBatches.map((mb) => {
+                    const st = mb.batchStatus;
+                    const percent =
+                      st && st.totalCount > 0
+                        ? Math.round((Math.min(st.processedCount, st.totalCount) / st.totalCount) * 100)
+                        : 0;
+                    return (
+                      <div
+                        key={mb.month}
+                        style={{
+                          marginBottom: 12,
+                          padding: '8px 12px',
+                          border: '1px solid #f0f0f0',
+                          borderRadius: 6,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: 4,
+                          }}
+                        >
+                          <Text strong>{mb.month}</Text>
+                          <Space>
+                            {renderStatusTag(st?.status)}
+                            <Text type="secondary">
+                              {(st?.totalCount || 0).toLocaleString()}명
+                            </Text>
+                         </Space>
+                        </div>
+                        {mb.batchResult?.runId && (
+                          <div style={{ marginBottom: 4 }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              Run ID: {mb.batchResult.runId}
+                              {mb.batchResult.rawDataId ? ` / RAW_DATA_ID: ${mb.batchResult.rawDataId}` : ''}
+                            </Text>
+                          </div>
+                        )}
+                        <Progress percent={percent} size="small" />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </Card>
@@ -878,13 +1286,18 @@ const CreditEvaluatePage: React.FC = () => {
         footer={null}
         closable={false}
         centered
-        width={600}
+        width={isMultiMonth ? 700 : 600}
         className="batch-progress-modal"
       >
         <div className="batch-progress-header">
           <div className="batch-progress-title">
             {modeLabels[mode].icon}
             <span style={{ marginLeft: 8 }}>{modeLabels[mode].label} 진행중</span>
+            {isMultiMonth && (
+              <Tag color="blue" style={{ marginLeft: 8 }}>
+                {monthlyBatches.length}개월
+              </Tag>
+            )}
           </div>
           <Button
             type="text"
@@ -895,32 +1308,149 @@ const CreditEvaluatePage: React.FC = () => {
           />
         </div>
         <div className="batch-progress-body">
-          {batchResult && (
+          {/* 단일 월: 기존 모달 레이아웃 */}
+          {!isMultiMonth && firstBatchResult && (
             <Descriptions bordered column={1} size="small" style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="실행 ID">{batchResult.batchId}</Descriptions.Item>
+              <Descriptions.Item label="실행 ID">{firstBatchResult.batchId}</Descriptions.Item>
               <Descriptions.Item label="실행 모드">
-                <Tag color="blue">{modeLabels[batchResult.mode].label}</Tag>
+                <Tag color="blue">{modeLabels[firstBatchResult.mode].label}</Tag>
               </Descriptions.Item>
+              <Descriptions.Item label="Run ID">{firstBatchResult.runId}</Descriptions.Item>
+              {firstBatchResult.rawDataId && (
+                <Descriptions.Item label="RAW_DATA_ID">{firstBatchResult.rawDataId}</Descriptions.Item>
+              )}
               <Descriptions.Item label="시작 시간">
-                {formatRunStart(batchResult.runStart)}
+                {formatRunStart(firstBatchResult.runStart)}
               </Descriptions.Item>
             </Descriptions>
           )}
-          {batchStatus && (
+
+          {monthlyBatches.length > 0 && (
             <>
-              <div style={{ marginBottom: 8 }}>
-                <Text strong>진행 상황</Text>
-                <span style={{ marginLeft: 8 }}>{renderStatusTag(batchStatus.status)}</span>
-              </div>
-              <Progress percent={progressPercent} status="active" strokeColor="#1890ff" />
-              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between' }}>
-                <Text>전체: {batchStatus.totalCount.toLocaleString()}명</Text>
-                <Text type="success">완료: {batchStatus.successCount.toLocaleString()}명</Text>
-                <Text type="danger">실패: {batchStatus.failCount.toLocaleString()}명</Text>
-              </div>
+              {isMultiMonth ? (
+                /* 복수 월: 월별 프로그레스 바 */
+                <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                  {monthlyBatches.map((mb) => {
+                    const st = mb.batchStatus;
+                    const percent =
+                      st && st.totalCount > 0
+                        ? Math.round((Math.min(st.processedCount, st.totalCount) / st.totalCount) * 100)
+                        : 0;
+                    const isFinished =
+                      st && ['SUCCESS', 'PARTIAL', 'FAILED'].includes(st.status);
+
+                    return (
+                      <div
+                        key={mb.month}
+                        style={{
+                          marginBottom: 16,
+                          padding: '8px 12px',
+                          border: '1px solid #f0f0f0',
+                          borderRadius: 6,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: 4,
+                          }}
+                        >
+                          <Text strong>{mb.month}</Text>
+                          {renderStatusTag(st?.status)}
+                        </div>
+                        {mb.batchResult?.runId && (
+                          <div style={{ marginBottom: 4 }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              Run ID: {mb.batchResult.runId}
+                              {mb.batchResult.rawDataId ? ` / RAW_DATA_ID: ${mb.batchResult.rawDataId}` : ''}
+                            </Text>
+                          </div>
+                        )}
+                        <Progress
+                          percent={percent}
+                          status={
+                            isFinished
+                              ? st?.status === 'SUCCESS'
+                                ? 'success'
+                                : 'exception'
+                              : 'active'
+                          }
+                          size="small"
+                        />
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginTop: 4,
+                            fontSize: 12,
+                          }}
+                        >
+                          <Text type="secondary">
+                            전체: {(st?.totalCount || 0).toLocaleString()}명
+                          </Text>
+                          <Text type="success">
+                            완료:{' '}
+                            {Math.min(st?.successCount || 0, st?.totalCount || 0).toLocaleString()}명
+                          </Text>
+                          <Text type="danger">
+                            실패: {(st?.failCount || 0).toLocaleString()}명
+                          </Text>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* 단일 월: 기존 프로그레스 */
+                <>
+                  {monthlyBatches[0]?.batchStatus && (
+                    <>
+                      <div style={{ marginBottom: 8 }}>
+                        <Text strong>진행 상황</Text>
+                        <span style={{ marginLeft: 8 }}>
+                          {renderStatusTag(monthlyBatches[0].batchStatus.status)}
+                        </span>
+                      </div>
+                      <Progress
+                        percent={
+                          monthlyBatches[0].batchStatus.totalCount > 0
+                            ? Math.round(
+                                (monthlyBatches[0].batchStatus.processedCount /
+                                  monthlyBatches[0].batchStatus.totalCount) *
+                                  100
+                              )
+                            : 0
+                        }
+                        status="active"
+                        strokeColor="#1890ff"
+                      />
+                      <div
+                        style={{
+                          marginTop: 12,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <Text>
+                          전체: {monthlyBatches[0].batchStatus.totalCount.toLocaleString()}명
+                        </Text>
+                        <Text type="success">
+                          완료: {monthlyBatches[0].batchStatus.successCount.toLocaleString()}명
+                        </Text>
+                        <Text type="danger">
+                          실패: {monthlyBatches[0].batchStatus.failCount.toLocaleString()}명
+                        </Text>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
             </>
           )}
-          {!batchStatus && (
+
+          {monthlyBatches.length === 0 && (
             <div style={{ textAlign: 'center', padding: 24 }}>
               <Spin size="large" />
               <div style={{ marginTop: 12 }}>
@@ -928,17 +1458,12 @@ const CreditEvaluatePage: React.FC = () => {
               </div>
             </div>
           )}
+
           <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 12 }}>
-            <Button
-              danger
-              icon={<StopOutlined />}
-              onClick={handleStopBatch}
-            >
+            <Button danger icon={<StopOutlined />} onClick={handleStopBatch}>
               중지
             </Button>
-            <Button onClick={() => setBatchProgressModal(false)}>
-              백그라운드로 전환
-            </Button>
+            <Button onClick={() => setBatchProgressModal(false)}>백그라운드로 전환</Button>
           </div>
         </div>
       </Modal>
@@ -949,100 +1474,217 @@ const CreditEvaluatePage: React.FC = () => {
         footer={null}
         closable={false}
         centered
-        width={700}
+        width={isMultiMonth ? 800 : 700}
         className="batch-summary-modal"
       >
+        <div className={`batch-summary-capture${batchPdfMode ? ' pdf-mode' : ''}`} ref={batchPdfRef}>
         <div className="batch-summary-header">
           <div className="batch-summary-title">
-            <CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+            <CheckCircleOutlined style={{ marginRight: 8, color: '#16A34A' }} />
             {modeLabels[mode].label} 완료
           </div>
           <Button
             type="text"
             icon={<span style={{ fontSize: 18 }}>×</span>}
             onClick={() => setBatchSummaryModal(false)}
-            className="batch-summary-close"
+            className="batch-summary-close pdf-hide"
           />
         </div>
         <div className="batch-summary-body">
-          {batchStatus && (
-            <>
-              <div className="summary-cards">
+          {isMultiMonth ? (
+            /* 복수 월: 월별 요약 */
+            <div style={{ maxHeight: 500, overflowY: 'auto' }}>
+              {/* 전체 합산 요약 */}
+              <div className="summary-cards" style={{ marginBottom: 16 }}>
                 <div className="summary-card">
-                  <div className="summary-card-title">평균 신용점수</div>
+                  <div className="summary-card-title">전체 평균 점수</div>
                   <div className="summary-card-value">
-                    {batchStatus.avgScore?.toFixed(1) ?? '-'}
+                    {(() => {
+                      const scores = monthlyBatches
+                        .map((mb) => mb.batchStatus?.avgScore)
+                        .filter((s): s is number => s != null);
+                      return scores.length > 0
+                        ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
+                        : '-';
+                    })()}
                   </div>
                   <div className="summary-card-unit">점</div>
                 </div>
                 <div className="summary-card">
-                  <div className="summary-card-title">평가 완료</div>
+                  <div className="summary-card-title">전체 완료</div>
                   <div className="summary-card-value success">
-                    {batchStatus.successCount.toLocaleString()}
+                    {monthlyBatches
+                      .reduce((sum, mb) => sum + (mb.batchStatus?.successCount || 0), 0)
+                      .toLocaleString()}
                   </div>
                   <div className="summary-card-unit">명</div>
                 </div>
                 <div className="summary-card">
-                  <div className="summary-card-title">평가 실패</div>
+                  <div className="summary-card-title">전체 실패</div>
                   <div className="summary-card-value danger">
-                    {batchStatus.failCount.toLocaleString()}
+                    {monthlyBatches
+                      .reduce((sum, mb) => sum + (mb.batchStatus?.failCount || 0), 0)
+                      .toLocaleString()}
                   </div>
                   <div className="summary-card-unit">명</div>
                 </div>
               </div>
 
-              {batchStatus.gradeDistribution && (
-                <div className="summary-distribution">
-                  <Title level={5}>등급 분포</Title>
-                  <div className="grade-bars">
-                    {Object.entries(batchStatus.gradeDistribution).map(([grade, count]) => {
-                      const total = batchStatus.successCount || 1;
-                      const percent = ((count as number) / total) * 100;
-                      const letter = grade.charAt(0);
-                      return (
-                        <div key={grade} className="grade-bar-item">
-                          <div className="grade-bar-label">{grade}</div>
-                          <div className="grade-bar-track">
-                            <div
-                              className="grade-bar-fill"
-                              style={{
-                                width: `${percent}%`,
-                                backgroundColor: gradeColorMap[letter] || '#888',
-                              }}
-                            />
-                          </div>
-                          <div className="grade-bar-count">
-                            {(count as number).toLocaleString()}명 ({percent.toFixed(1)}%)
-                          </div>
-                        </div>
-                      );
-                    })}
+              {/* 월별 상세 */}
+              {monthlyBatches.map((mb) => (
+                <Card
+                  key={mb.month}
+                  size="small"
+                  title={
+                    <span>
+                      {mb.month} {renderStatusTag(mb.batchStatus?.status)}
+                    </span>
+                  }
+                  style={{ marginBottom: 12 }}
+                >
+                  <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                    <div>
+                      <Text type="secondary">평균 점수: </Text>
+                      <Text strong>{mb.batchStatus?.avgScore?.toFixed(1) ?? '-'}점</Text>
+                    </div>
+                    <div>
+                      <Text type="secondary">완료: </Text>
+                      <Text type="success" strong>
+                        {(mb.batchStatus?.successCount || 0).toLocaleString()}명
+                      </Text>
+                    </div>
+                    <div>
+                      <Text type="secondary">실패: </Text>
+                      <Text type="danger" strong>
+                        {(mb.batchStatus?.failCount || 0).toLocaleString()}명
+                      </Text>
+                    </div>
                   </div>
-                </div>
-              )}
+                  {mb.batchStatus?.gradeDistribution &&
+                    Object.keys(mb.batchStatus.gradeDistribution).length > 0 && (
+                      <div className="grade-bars" style={{ marginTop: 8 }}>
+                        {Object.entries(mb.batchStatus.gradeDistribution).map(
+                          ([grade, count]) => {
+                            const total = mb.batchStatus!.successCount || 1;
+                            const percent = ((count as number) / total) * 100;
+                            const letter = grade.charAt(0);
+                            return (
+                              <div key={grade} className="grade-bar-item">
+                                <div className="grade-bar-label">{grade}</div>
+                                <div className="grade-bar-track">
+                                  <div
+                                    className="grade-bar-fill"
+                                    style={{
+                                      width: `${percent}%`,
+                                      backgroundColor: gradeColorMap[letter] || '#888',
+                                    }}
+                                  />
+                                </div>
+                                <div className="grade-bar-count">
+                                  {(count as number).toLocaleString()}명 ({percent.toFixed(1)}%)
+                                </div>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    )}
+                </Card>
+              ))}
+            </div>
+          ) : (
+            /* 단일 월: 기존 요약 */
+            <>
+              {monthlyBatches[0]?.batchStatus && (
+                <>
+                  <div className="summary-cards">
+                    <div className="summary-card">
+                      <div className="summary-card-title">평균 신용점수</div>
+                      <div className="summary-card-value">
+                        {monthlyBatches[0].batchStatus.avgScore?.toFixed(1) ?? '-'}
+                      </div>
+                      <div className="summary-card-unit">점</div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="summary-card-title">평가 완료</div>
+                      <div className="summary-card-value success">
+                        {monthlyBatches[0].batchStatus.successCount.toLocaleString()}
+                      </div>
+                      <div className="summary-card-unit">명</div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="summary-card-title">평가 실패</div>
+                      <div className="summary-card-value danger">
+                        {monthlyBatches[0].batchStatus.failCount.toLocaleString()}
+                      </div>
+                      <div className="summary-card-unit">명</div>
+                    </div>
+                  </div>
 
-              <div className="summary-info">
-                <Descriptions bordered column={2} size="small">
-                  <Descriptions.Item label="실행 ID">{batchResult?.batchId}</Descriptions.Item>
-                  <Descriptions.Item label="실행 모드">
-                    <Tag color="blue">{modeLabels[mode].label}</Tag>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="시작 시간">
-                    {formatRunStart(batchResult?.runStart)}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="완료 시간">
-                    {batchStatus.endedAt ? new Date(batchStatus.endedAt).toLocaleString('ko-KR') : '-'}
-                  </Descriptions.Item>
-                </Descriptions>
-              </div>
+                  {monthlyBatches[0].batchStatus.gradeDistribution && (
+                    <div className="summary-distribution">
+                      <Title level={5}>등급 분포</Title>
+                      <div className="grade-bars">
+                        {Object.entries(monthlyBatches[0].batchStatus.gradeDistribution).map(
+                          ([grade, count]) => {
+                            const total = monthlyBatches[0].batchStatus!.successCount || 1;
+                            const percent = ((count as number) / total) * 100;
+                            const letter = grade.charAt(0);
+                            return (
+                              <div key={grade} className="grade-bar-item">
+                                <div className="grade-bar-label">{grade}</div>
+                                <div className="grade-bar-track">
+                                  <div
+                                    className="grade-bar-fill"
+                                    style={{
+                                      width: `${percent}%`,
+                                      backgroundColor: gradeColorMap[letter] || '#888',
+                                    }}
+                                  />
+                                </div>
+                                <div className="grade-bar-count">
+                                  {(count as number).toLocaleString()}명 ({percent.toFixed(1)}%)
+                                </div>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="summary-info">
+                    <Descriptions bordered column={2} size="small">
+                      <Descriptions.Item label="실행 ID">
+                        {monthlyBatches[0].batchResult?.batchId}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="실행 모드">
+                        <Tag color="blue">{modeLabels[mode].label}</Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="시작 시간">
+                        {formatRunStart(monthlyBatches[0].batchResult?.runStart)}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="완료 시간">
+                        {monthlyBatches[0].batchStatus.endedAt
+                          ? new Date(monthlyBatches[0].batchStatus.endedAt).toLocaleString('ko-KR')
+                          : '-'}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+                </>
+              )}
             </>
           )}
 
           <div className="summary-actions">
-            <Button type="primary" onClick={() => setBatchSummaryModal(false)}>
+            <Button onClick={handleSaveBatchPdf} loading={batchPdfLoading} className="pdf-hide">
+              PDF 저장
+            </Button>
+            <Button type="primary" onClick={() => setBatchSummaryModal(false)} className="pdf-hide">
               확인
             </Button>
           </div>
+        </div>
         </div>
       </Modal>
     </div>
