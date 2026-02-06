@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Drawer, Empty, Input, List, Space, Typography, message } from 'antd';
+import { Badge, Button, DatePicker, Drawer, Empty, Form, Input, List, Modal, Select, Space, Tabs, Typography, message } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { useAppSelector } from '@/store/hooks';
 import { chatService } from '@/services/chatService';
+import { chatAuditService } from '@/services/chatAuditService';
 import { chatSocket } from '@/services/chatSocket';
-import type { ChatMessage, ChatRoom } from '@/types';
+import type { ChatAuditRequestCreate, ChatAuditRequestResponse, ChatMessage, ChatRoom } from '@/types';
 import './ChatFloatingWidget.css';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
+const { RangePicker } = DatePicker;
 
 interface ChatFloatingWidgetProps {
   unreadCount: number;
@@ -26,11 +28,27 @@ const ChatFloatingWidget: React.FC<ChatFloatingWidgetProps> = ({ unreadCount, on
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [auditTab, setAuditTab] = useState<'chat' | 'audit' | 'approve'>('chat');
+  const [auditRequests, setAuditRequests] = useState<ChatAuditRequestResponse[]>([]);
+  const [auditPendingRequests, setAuditPendingRequests] = useState<ChatAuditRequestResponse[]>([]);
+  const [auditSubmitting, setAuditSubmitting] = useState(false);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditApproveOpen, setAuditApproveOpen] = useState(false);
+  const [auditApproveTarget, setAuditApproveTarget] = useState<ChatAuditRequestResponse | null>(null);
+  const [auditApproveAction, setAuditApproveAction] = useState<'approve' | 'reject'>('approve');
+  const [auditForm] = Form.useForm<{ range?: any; keyword?: string; roomId?: string }>();
+  const [auditApproveForm] = Form.useForm<{ comment?: string }>();
 
   const isAdmin = useMemo(() => {
     const roleId = user?.roleId?.toUpperCase() ?? '';
     const roleNm = user?.roleNm?.toUpperCase() ?? '';
     return roleId.includes('ADMIN') || roleNm.includes('ADMIN') || roleNm.includes('관리자');
+  }, [user?.roleId, user?.roleNm]);
+
+  const isManager = useMemo(() => {
+    const roleId = user?.roleId?.toUpperCase() ?? '';
+    const roleNm = user?.roleNm?.toUpperCase() ?? '';
+    return roleId.includes('MANAGER') || roleNm.includes('MANAGER');
   }, [user?.roleId, user?.roleNm]);
 
   const formatTime = (value?: string) => {
@@ -43,6 +61,97 @@ const ChatFloatingWidget: React.FC<ChatFloatingWidgetProps> = ({ unreadCount, on
   const showApiError = (error: unknown, fallback: string) => {
     const err = error as { response?: { data?: { message?: string } } };
     void messageApi.error(err.response?.data?.message || fallback);
+  };
+
+  const loadAuditRequests = useCallback(async () => {
+    if (!isManager) return;
+    setAuditLoading(true);
+    try {
+      const response = await chatAuditService.listRequests();
+      setAuditRequests(response.data.data ?? []);
+    } catch (error) {
+      showApiError(error, '감사 요청 목록을 불러오지 못했습니다.');
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [isManager]);
+
+  const loadAuditPendingRequests = useCallback(async () => {
+    if (!isAdmin) return;
+    setAuditLoading(true);
+    try {
+      const response = await chatAuditService.listRequests('PENDING');
+      setAuditPendingRequests(response.data.data ?? []);
+    } catch (error) {
+      showApiError(error, '승인 대기 목록을 불러오지 못했습니다.');
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [isAdmin]);
+
+  const handleAuditSubmit = async () => {
+    try {
+      const values = await auditForm.validateFields();
+      const [start, end] = values.range ?? [];
+      if (!start || !end) {
+        void messageApi.warning('기간을 선택해주세요.');
+        return;
+      }
+      const payload: ChatAuditRequestCreate = {
+        startDate: start.format('YYYY-MM-DD'),
+        endDate: end.format('YYYY-MM-DD'),
+        keyword: values.keyword?.trim() || undefined,
+        roomId: values.roomId || undefined,
+      };
+      setAuditSubmitting(true);
+      await chatAuditService.createRequest(payload);
+      void messageApi.success('감사 요청이 등록되었습니다.');
+      auditForm.resetFields();
+      await loadAuditRequests();
+    } catch (error) {
+      showApiError(error, '감사 요청 처리에 실패했습니다.');
+    } finally {
+      setAuditSubmitting(false);
+    }
+  };
+
+  const handleAuditDownload = async (req: ChatAuditRequestResponse) => {
+    try {
+      const response = await chatAuditService.downloadRequestPdf(req.requestId);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = req.pdfFileNm || 'chat_audit.pdf';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      showApiError(error, 'PDF 다운로드에 실패했습니다.');
+    }
+  };
+
+  const openApproveModal = (req: ChatAuditRequestResponse, action: 'approve' | 'reject') => {
+    setAuditApproveTarget(req);
+    setAuditApproveAction(action);
+    setAuditApproveOpen(true);
+    auditApproveForm.resetFields();
+  };
+
+  const handleApproveSubmit = async () => {
+    if (!auditApproveTarget) return;
+    try {
+      const values = await auditApproveForm.validateFields();
+      await chatAuditService.approveRequest(auditApproveTarget.requestId, {
+        approve: auditApproveAction === 'approve',
+        comment: values.comment?.trim(),
+      });
+      void messageApi.success(auditApproveAction === 'approve' ? '승인되었습니다.' : '반려되었습니다.');
+      setAuditApproveOpen(false);
+      setAuditApproveTarget(null);
+      await loadAuditPendingRequests();
+    } catch (error) {
+      showApiError(error, '승인/반려 처리에 실패했습니다.');
+    }
   };
 
   const loadRooms = useCallback(async () => {
@@ -83,6 +192,15 @@ const ChatFloatingWidget: React.FC<ChatFloatingWidgetProps> = ({ unreadCount, on
     if (!open) return;
     void loadRooms();
   }, [open, loadRooms]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (auditTab === 'audit') {
+      void loadAuditRequests();
+    } else if (auditTab === 'approve') {
+      void loadAuditPendingRequests();
+    }
+  }, [open, auditTab, loadAuditRequests, loadAuditPendingRequests]);
 
   useEffect(() => {
     if (!open || !selectedRoomId) return;
@@ -136,6 +254,92 @@ const ChatFloatingWidget: React.FC<ChatFloatingWidgetProps> = ({ unreadCount, on
     }
   };
 
+  const auditRoomOptions = useMemo(() => (
+    rooms.map((room) => ({ label: room.roomNm, value: room.roomId }))
+  ), [rooms]);
+
+  const auditStatusLabel = (status?: string) => {
+    if (status === 'APPROVED') return '승인';
+    if (status === 'REJECTED') return '반려';
+    return '대기';
+  };
+
+  const renderAuditRequestList = () => (
+    <List
+      dataSource={auditRequests}
+      loading={auditLoading}
+      locale={{ emptyText: '감사 요청이 없습니다.' }}
+      renderItem={(item) => (
+        <List.Item
+          actions={[
+            item.status === 'APPROVED' ? (
+              <Button type="link" onClick={() => handleAuditDownload(item)}>PDF 다운로드</Button>
+            ) : null,
+          ]}
+        >
+          <List.Item.Meta
+            title={`상태: ${auditStatusLabel(item.status)} | 기간: ${item.startDate} ~ ${item.endDate}`}
+            description={`키워드: ${item.keyword ?? '-'} | 건수: ${item.resultCount ?? 0}건 | ES: ${item.useEs ?? 'N'}`}
+          />
+        </List.Item>
+      )}
+    />
+  );
+
+  const renderAuditApprovalList = () => (
+    <List
+      dataSource={auditPendingRequests}
+      loading={auditLoading}
+      locale={{ emptyText: '승인 대기 요청이 없습니다.' }}
+      renderItem={(item) => (
+        <List.Item
+          actions={[
+            <Button key="approve" type="primary" onClick={() => openApproveModal(item, 'approve')}>승인</Button>,
+            <Button key="reject" danger onClick={() => openApproveModal(item, 'reject')}>반려</Button>,
+          ]}
+        >
+          <List.Item.Meta
+            title={`요청자: ${item.requestUserId} | 기간: ${item.startDate} ~ ${item.endDate}`}
+            description={`키워드: ${item.keyword ?? '-'} | 회사: ${item.companyId}`}
+          />
+        </List.Item>
+      )}
+    />
+  );
+
+  const renderAuditPanel = () => (
+    <div>
+      <Form
+        form={auditForm}
+        layout="vertical"
+        onFinish={handleAuditSubmit}
+      >
+        <Form.Item label="기간" name="range" rules={[{ required: true, message: '기간을 선택해주세요.' }]}>
+          <RangePicker style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item label="키워드" name="keyword">
+          <Input placeholder="키워드 입력 (선택)" />
+        </Form.Item>
+        <Form.Item label="채팅방" name="roomId">
+          <Select allowClear placeholder="채팅방 선택" options={auditRoomOptions} />
+        </Form.Item>
+        <Button type="primary" loading={auditSubmitting} onClick={handleAuditSubmit} disabled={!isManager}>
+          감사 요청
+        </Button>
+      </Form>
+
+      <div style={{ marginTop: 16 }}>
+        {renderAuditRequestList()}
+      </div>
+    </div>
+  );
+
+  const renderApprovePanel = () => (
+    <div>
+      {renderAuditApprovalList()}
+    </div>
+  );
+
   return (
     <>
       {contextHolder}
@@ -187,52 +391,90 @@ const ChatFloatingWidget: React.FC<ChatFloatingWidgetProps> = ({ unreadCount, on
           </div>
 
           <div className="chat-drawer-messages">
-            {loadingMessages ? (
-              <Text type="secondary">메시지 로딩 중...</Text>
-            ) : !selectedRoomId ? (
-              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="채팅방을 선택하세요." />
-            ) : (
-              <>
-                <div className="chat-drawer-message-list">
-                  {messages.length === 0 ? (
-                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="메시지가 없습니다." />
+            <Tabs
+              activeKey={auditTab}
+              onChange={(key) => setAuditTab(key as 'chat' | 'audit' | 'approve')}
+              items={[
+                {
+                  key: 'chat',
+                  label: '채팅',
+                  children: loadingMessages ? (
+                    <Text type="secondary">메시지 로딩 중...</Text>
+                  ) : !selectedRoomId ? (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="채팅방을 선택하세요." />
                   ) : (
-                    messages.map((msg, index) => {
-                      const mine = msg.senderId === user?.userId;
-                      return (
-                        <div key={`${msg.msgId ?? 'new'}-${index}`} className={`chat-drawer-bubble-wrap ${mine ? 'mine' : ''}`}>
-                          <div className={`chat-drawer-bubble ${mine ? 'mine' : ''}`}>
-                            {!mine && <Text className="chat-drawer-sender">{msg.senderId}</Text>}
-                            <Text>{msg.message}</Text>
-                            <Text type="secondary" className="chat-drawer-time">{formatTime(msg.regDt)}</Text>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-                <Space.Compact className="chat-drawer-input-wrap">
-                  <TextArea
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    autoSize={{ minRows: 2, maxRows: 4 }}
-                    placeholder="메시지를 입력하세요."
-                    onPressEnter={(e) => {
-                      if (!e.shiftKey) {
-                        e.preventDefault();
-                        void handleSend();
-                      }
-                    }}
-                  />
-                  <Button type="primary" icon={<SendOutlined />} loading={sending} onClick={handleSend}>
-                    전송
-                  </Button>
-                </Space.Compact>
-              </>
-            )}
+                    <>
+                      <div className="chat-drawer-message-list">
+                        {messages.length === 0 ? (
+                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="메시지가 없습니다." />
+                        ) : (
+                          messages.map((msg, index) => {
+                            const mine = msg.senderId === user?.userId;
+                            return (
+                              <div key={`${msg.msgId ?? 'new'}-${index}`} className={`chat-drawer-bubble-wrap ${mine ? 'mine' : ''}`}>
+                                <div className={`chat-drawer-bubble ${mine ? 'mine' : ''}`}>
+                                  {!mine && <Text className="chat-drawer-sender">{msg.senderId}</Text>}
+                                  <Text>{msg.message}</Text>
+                                  <Text type="secondary" className="chat-drawer-time">{formatTime(msg.regDt)}</Text>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                      <Space.Compact className="chat-drawer-input-wrap">
+                        <TextArea
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          autoSize={{ minRows: 2, maxRows: 4 }}
+                          placeholder="메시지를 입력하세요."
+                          onPressEnter={(e) => {
+                            if (!e.shiftKey) {
+                              e.preventDefault();
+                              void handleSend();
+                            }
+                          }}
+                        />
+                        <Button type="primary" icon={<SendOutlined />} loading={sending} onClick={handleSend}>
+                          전송
+                        </Button>
+                      </Space.Compact>
+                    </>
+                  ),
+                },
+                {
+                  key: 'audit',
+                  label: '감사 요청',
+                  disabled: !isManager,
+                  children: renderAuditPanel(),
+                },
+                {
+                  key: 'approve',
+                  label: '승인',
+                  disabled: !isAdmin,
+                  children: renderApprovePanel(),
+                },
+              ]}
+            />
           </div>
         </div>
       </Drawer>
+
+      <Modal
+        title={auditApproveAction === 'approve' ? '감사 요청 승인' : '감사 요청 반려'}
+        open={auditApproveOpen}
+        onOk={handleApproveSubmit}
+        onCancel={() => setAuditApproveOpen(false)}
+        okText={auditApproveAction === 'approve' ? '승인' : '반려'}
+        cancelText="취소"
+      >
+        <Form form={auditApproveForm} layout="vertical">
+          <Form.Item label="코멘트" name="comment">
+            <Input.TextArea rows={3} placeholder="선택 입력" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
     </>
   );
 };
