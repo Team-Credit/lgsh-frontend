@@ -37,6 +37,7 @@ const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
 
 // AI 챗봇
 const AiChatPage = lazy(() => import('@/pages/ai/AiChatPage'));
+const AiChatLogPage = lazy(() => import('@/pages/ai/AiChatLogPage'));
 
 // 월간레포트
 const ReportKanbanPage = lazy(() => import('@/pages/report/ReportKanbanPage'));
@@ -318,6 +319,14 @@ export const routes: RouteConfig[] = [
     element: AiChatPage,
     title: 'AI 어시스턴트',
     menuId: 'M0901',
+  },
+
+  // AI 채팅 로그
+  {
+    path: 'ai/chatlogs',
+    element: AiChatLogPage,
+    title: 'AI 채팅 로그',
+    menuId: 'M0902',
   },
 
   // 실시간 채팅
