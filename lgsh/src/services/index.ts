@@ -22,3 +22,5 @@ export { default as reportService } from './reportService';
 export { default as chatService } from './chatService';
 export { default as chatAuditService } from './chatAuditService';
 export { default as timeseriesService } from './timeseriesService';
+export { default as rawDataService } from './rawDataService';
+export { default as aiChatLogService } from './aiChatLogService';

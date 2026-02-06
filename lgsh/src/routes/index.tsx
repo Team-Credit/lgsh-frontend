@@ -39,6 +39,10 @@ const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
 const AiChatPage = lazy(() => import('@/pages/ai/AiChatPage'));
 const AiChatLogPage = lazy(() => import('@/pages/ai/AiChatLogPage'));
 
+// 기초 데이터 업로드/조회
+const RawDataUploadPage = lazy(() => import('@/pages/rawdata/RawDataUploadPage'));
+const RawDataListPage = lazy(() => import('@/pages/rawdata/RawDataListPage'));
+
 // 월간레포트
 const ReportKanbanPage = lazy(() => import('@/pages/report/ReportKanbanPage'));
 const ReportHistoryPage = lazy(() => import('@/pages/report/ReportHistoryPage'));
@@ -72,12 +76,12 @@ export const routes: RouteConfig[] = [
   },
 
   // 신용평가 > 대상자 목록
-{
-  path: 'persons',
-  element: CreditEvaluationTargetPage,
-  title: '대상자 목록',
-  menuId: 'M0200',
-},
+  {
+    path: 'persons',
+    element: CreditEvaluationTargetPage,
+    title: '대상자 목록',
+    menuId: 'M0200',
+  },
 
 
   // 신용평가 > 대상자등록
@@ -135,29 +139,7 @@ export const routes: RouteConfig[] = [
     menuId: 'M0207',
   },
 
-  // 분석관리 > 데이터 분석
-  {
-    path: 'analysis',
-    element: EdaAnalysisPage,
-    title: '데이터 분석',
-    menuId: 'M0301',
-  },
-  {
-    path: 'analysis/time-series',
-    element: TimeSeriesPage,
-    title: '시계열 분석',
-    menuId: 'M0405',
-  },
-  // Analysis > Model Select
-  {
-    path: 'analysis/model-select',
-    element: ModelSelectPage,
-    title: '모델 선택',
-    menuId: 'M0406',
-  },
-
-
-  // 분석관리 > 모델관리
+  // 분석관리 > 모델관리 (순번 1)
   {
     path: 'models',
     element: ModelListPage,
@@ -165,12 +147,52 @@ export const routes: RouteConfig[] = [
     menuId: 'M0401',
   },
 
-  // 분석관리 > 변수 메타 관리
+  // 분석관리 > 기초데이터업로드 (순번 2)
+  {
+    path: 'admin/rawdata',
+    element: RawDataUploadPage,
+    title: '기초데이터업로드',
+    menuId: 'M0402',
+  },
+
+  // 분석관리 > 기초데이터조회 (순번 3)
+  {
+    path: 'admin/rawdata-list',
+    element: RawDataListPage,
+    title: '기초데이터조회',
+    menuId: 'M0403',
+  },
+
+  // 분석관리 > 데이터 분석 (순번 4)
+  {
+    path: 'analysis',
+    element: EdaAnalysisPage,
+    title: '데이터 분석',
+    menuId: 'M0404',
+  },
+
+  // 분석관리 > 시계열 분석 (순번 5)
+  {
+    path: 'analysis/time-series',
+    element: TimeSeriesPage,
+    title: '시계열 분석',
+    menuId: 'M0405',
+  },
+
+  // 분석관리 > 모델 선택 (순번 6)
+  {
+    path: 'analysis/model-select',
+    element: ModelSelectPage,
+    title: '모델 선택',
+    menuId: 'M0406',
+  },
+
+  // 분석관리 > 변수 메타 관리 (순번 9)
   {
     path: 'admin/variables',
     element: VariableListPage,
     title: '변수 메타 관리',
-    menuId: 'M0302',
+    menuId: 'M0409',
   },
 
   // 신용평가 > 관리그룹
@@ -335,7 +357,6 @@ export const routes: RouteConfig[] = [
     element: ChatPage,
     title: '실시간 채팅',
   },
-
   // 월간레포트 > 레포트 생성
   {
     path: 'report/create',

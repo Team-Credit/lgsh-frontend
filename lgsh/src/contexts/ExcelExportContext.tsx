@@ -15,8 +15,10 @@ export interface ExportHandler {
   sheetName: string;
   /** 전체 건수 (경고 메시지용) */
   totalCount: number;
-  /** 데이터를 가져오는 함수 */
+  /** 데이터를 가져오는 함수 (일반 방식) */
   fetchAllData: () => Promise<any[]>;
+  /** 데이터를 페이지별로 가져오는 함수 (배치 방식, 대용량용) */
+  fetchDataByPage?: (page: number, size: number) => Promise<any[]>;
   /** 엑셀 컬럼 정의 */
   columns: ExcelColumn[];
 }
@@ -37,7 +39,8 @@ interface ExcelExportContextType {
 
 // 경고 표시 기준 건수
 const WARNING_THRESHOLD = 5000;
-const MAX_EXPORT_LIMIT = 50000;
+const MAX_EXPORT_LIMIT = 200000;  // 배치 분할로 대용량 지원
+const BATCH_SIZE = 50000;  // 배치당 조회 건수
 
 const ExcelExportContext = createContext<ExcelExportContextType | null>(null);
 
@@ -108,6 +111,39 @@ export const ExcelExportProvider: React.FC<ExcelExportProviderProps> = ({ childr
     return performExport(handlers, fileName);
   }, []);
 
+  // 배치 방식으로 데이터 조회 (대용량용)
+  const fetchDataInBatches = async (
+    handler: ExportHandler
+  ): Promise<any[]> => {
+    // fetchDataByPage가 있으면 배치 방식 사용
+    if (handler.fetchDataByPage && handler.totalCount > BATCH_SIZE) {
+      const allData: any[] = [];
+      const totalPages = Math.ceil(handler.totalCount / BATCH_SIZE);
+
+      for (let page = 0; page < totalPages; page++) {
+        message.loading({
+          content: `데이터 조회 중... (${page + 1}/${totalPages})`,
+          key: 'excel-batch-loading',
+          duration: 0,
+        });
+
+        const pageData = await handler.fetchDataByPage(page, BATCH_SIZE);
+        allData.push(...pageData);
+
+        // 메모리 관리를 위한 짧은 딜레이
+        if (page < totalPages - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+
+      message.destroy('excel-batch-loading');
+      return allData;
+    }
+
+    // 기존 방식
+    return handler.fetchAllData();
+  };
+
   // 실제 내보내기 수행
   const performExport = async (
     handlers: [string, ExportHandler][],
@@ -119,12 +155,14 @@ export const ExcelExportProvider: React.FC<ExcelExportProviderProps> = ({ childr
       if (handlers.length === 1) {
         // 단일 시트
         const [, handler] = handlers[0];
-        const data = await handler.fetchAllData();
+        const data = await fetchDataInBatches(handler);
 
         if (data.length === 0) {
           message.warning('내보낼 데이터가 없습니다.');
           return true;
         }
+
+        message.loading({ content: '엑셀 파일 생성 중...', key: 'excel-generating', duration: 0 });
 
         const defaultFileName = `${handler.sheetName}_${new Date().toISOString().slice(0, 10)}`;
         exportToExcel(data, handler.columns, {
@@ -132,12 +170,13 @@ export const ExcelExportProvider: React.FC<ExcelExportProviderProps> = ({ childr
           sheetName: handler.sheetName,
         });
 
+        message.destroy('excel-generating');
         message.success(`${data.length.toLocaleString()}건의 데이터를 내보냈습니다.`);
       } else {
         // 다중 시트
         const sheets = await Promise.all(
           handlers.map(async ([, handler]) => ({
-            data: await handler.fetchAllData(),
+            data: await fetchDataInBatches(handler),
             columns: handler.columns,
             sheetName: handler.sheetName,
           }))
@@ -150,15 +189,20 @@ export const ExcelExportProvider: React.FC<ExcelExportProviderProps> = ({ childr
           return true;
         }
 
+        message.loading({ content: '엑셀 파일 생성 중...', key: 'excel-generating', duration: 0 });
+
         const defaultFileName = `데이터_${new Date().toISOString().slice(0, 10)}`;
         exportMultiSheetExcel(sheets, fileName || defaultFileName);
 
+        message.destroy('excel-generating');
         message.success(`총 ${totalExported.toLocaleString()}건의 데이터를 내보냈습니다.`);
       }
 
       return true;
     } catch (error) {
       console.error('엑셀 내보내기 실패:', error);
+      message.destroy('excel-batch-loading');
+      message.destroy('excel-generating');
       message.error('엑셀 내보내기에 실패했습니다.');
       return true;
     } finally {

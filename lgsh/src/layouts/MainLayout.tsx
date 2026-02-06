@@ -67,7 +67,6 @@ import type { MenuItem, FavoriteItem } from '@/types';
 import { exportAllTablesFromDOM } from '@/utils/excelExport';
 import { useExcelExport } from '@/contexts';
 import { menuService } from '@/services/menuService';
-import { chatService } from '@/services/chatService';
 import { useTokenRefresh } from '@/hooks';
 import SessionTimeoutModal from '@/components/common/SessionTimeoutModal';
 import ContractWarningModal from '@/components/common/ContractWarningModal';
@@ -218,6 +217,76 @@ const MainLayout: React.FC = () => {
   const [favContextMenuOpen, setFavContextMenuOpen] = useState(false);
   const [favContextMenuPosition, setFavContextMenuPosition] = useState({ x: 0, y: 0 });
   const [favContextMenuTargetId, setFavContextMenuTargetId] = useState<string | null>(null);
+
+  // 알림 상태
+  const [alerts, setAlerts] = useState<UserAlert[]>([]);
+  const [alertUnreadCount, setAlertUnreadCount] = useState(0);
+  const [alertLoading, setAlertLoading] = useState(false);
+  const [hideReadAlerts, setHideReadAlerts] = useState(false);  // 읽은 알림 숨기기
+
+  // 알림 조회
+  const fetchAlerts = useCallback(async (hideRead?: boolean) => {
+    try {
+      setAlertLoading(true);
+      const shouldHideRead = hideRead !== undefined ? hideRead : hideReadAlerts;
+      const result = await alertService.getAlertList({
+        page: 0,
+        size: 10,
+        readYn: shouldHideRead ? 'N' : undefined,  // 읽은 알림 숨기기
+      });
+      setAlerts(result.content);
+      const unread = await alertService.getUnreadCount();
+      setAlertUnreadCount(unread);
+    } catch (error) {
+      console.error('알림 조회 실패:', error);
+    } finally {
+      setAlertLoading(false);
+    }
+  }, [hideReadAlerts]);
+
+  // 알림 주기적 조회 (30초마다)
+  useEffect(() => {
+    if (user) {
+      fetchAlerts();
+      const interval = setInterval(fetchAlerts, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, fetchAlerts]);
+
+  // 알림 읽음 처리
+  const handleReadAlert = useCallback(async (alertId: number, linkUrl?: string) => {
+    try {
+      await alertService.readAlert(alertId);
+      setAlertUnreadCount((prev) => Math.max(0, prev - 1));
+      setAlerts((prev) =>
+        prev.map((a) => (a.alertId === alertId ? { ...a, readYn: 'Y' } : a))
+      );
+      if (linkUrl) {
+        navigate(linkUrl);
+      }
+    } catch (error) {
+      console.error('알림 읽음 처리 실패:', error);
+    }
+  }, [navigate]);
+
+  // 전체 읽음 처리
+  const handleReadAllAlerts = useCallback(async () => {
+    try {
+      await alertService.readAllAlerts();
+      setAlertUnreadCount(0);
+      setAlerts((prev) => prev.map((a) => ({ ...a, readYn: 'Y' })));
+      message.success('모든 알림을 읽음 처리했습니다.');
+    } catch (error) {
+      console.error('전체 읽음 처리 실패:', error);
+    }
+  }, []);
+
+  // 읽은 알림 숨기기 토글
+  const handleToggleHideRead = useCallback(() => {
+    const newValue = !hideReadAlerts;
+    setHideReadAlerts(newValue);
+    fetchAlerts(newValue);
+  }, [hideReadAlerts, fetchAlerts]);
 
   // 메뉴 조회 (사용자 변경 시 재조회)
   useEffect(() => {
@@ -686,13 +755,8 @@ const MainLayout: React.FC = () => {
           </Tooltip>
 
           <Tooltip title="알림">
-            <Badge count={chatUnreadCount} size="small" overflowCount={99}>
-              <Button
-                type="text"
-                icon={<BellOutlined />}
-                className="header-icon-btn"
-                onClick={() => navigate('/chat')}
-              />
+            <Badge count={3} size="small">
+              <Button type="text" icon={<BellOutlined />} className="header-icon-btn" />
             </Badge>
           </Tooltip>
 
