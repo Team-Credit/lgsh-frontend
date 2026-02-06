@@ -284,7 +284,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  background: #1890ff;
+  /* A grade blue */
+  background: #1d4ed8;
   color: #ffffff;
 }
 
@@ -325,7 +326,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  background: #52c41a;
+  /* B grade green */
+  background: #16a34a;
   color: #ffffff;
 }
 

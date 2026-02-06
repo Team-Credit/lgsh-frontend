@@ -748,6 +748,53 @@ const CreditEvaluatePage: React.FC = () => {
     }
   };
 
+  // Batch summary PDF save (group/all, single/multi-month).
+  const handleSaveBatchPdf = async () => {
+    if (!batchPdfRef.current || batchPdfLoading) return;
+    setBatchPdfLoading(true);
+    try {
+      setBatchPdfMode(true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(batchPdfRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('portrait', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 24;
+      const maxWidth = pageWidth - margin * 2;
+      const maxHeight = pageHeight - margin * 2;
+      const widthRatio = maxWidth / canvas.width;
+      const heightRatio = maxHeight / canvas.height;
+      const scale = Math.min(widthRatio, heightRatio);
+      const imgWidth = canvas.width * scale;
+      const imgHeight = canvas.height * scale;
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+
+      const safeModel = (form.getFieldValue('modelId') || 'model').toString().replace(/[^\w-]+/g, '_');
+      const label = isMultiMonth
+        ? `${monthlyBatches[0]?.month || 'from'}-${monthlyBatches[monthlyBatches.length - 1]?.month || 'to'}`
+        : (monthlyBatches[0]?.month || 'batch');
+      const safeLabel = label.toString().replace(/[^\w-]+/g, '_');
+      const safeRunId = (monthlyBatches[0]?.batchResult?.runId || 'run').toString().replace(/[^\w-]+/g, '_');
+      pdf.save(`credit-evaluation-batch-${safeModel}-${safeLabel}-${safeRunId}.pdf`);
+    } catch (error) {
+      message.error('PDF 저장에 실패했습니다.');
+    } finally {
+      setBatchPdfMode(false);
+      setBatchPdfLoading(false);
+    }
+  };
+
   // 상태 태그 렌더링
   const renderStatusTag = (status?: string) => {
     if (!status) return <Tag>대기중</Tag>;
@@ -1430,16 +1477,17 @@ const CreditEvaluatePage: React.FC = () => {
         width={isMultiMonth ? 800 : 700}
         className="batch-summary-modal"
       >
+        <div className={`batch-summary-capture${batchPdfMode ? ' pdf-mode' : ''}`} ref={batchPdfRef}>
         <div className="batch-summary-header">
           <div className="batch-summary-title">
-            <CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+            <CheckCircleOutlined style={{ marginRight: 8, color: '#16A34A' }} />
             {modeLabels[mode].label} 완료
           </div>
           <Button
             type="text"
             icon={<span style={{ fontSize: 18 }}>×</span>}
             onClick={() => setBatchSummaryModal(false)}
-            className="batch-summary-close"
+            className="batch-summary-close pdf-hide"
           />
         </div>
         <div className="batch-summary-body">
@@ -1629,10 +1677,14 @@ const CreditEvaluatePage: React.FC = () => {
           )}
 
           <div className="summary-actions">
-            <Button type="primary" onClick={() => setBatchSummaryModal(false)}>
+            <Button onClick={handleSaveBatchPdf} loading={batchPdfLoading} className="pdf-hide">
+              PDF 저장
+            </Button>
+            <Button type="primary" onClick={() => setBatchSummaryModal(false)} className="pdf-hide">
               확인
             </Button>
           </div>
+        </div>
         </div>
       </Modal>
     </div>
