@@ -13,13 +13,19 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 3000,
+    hmr: {
+      protocol: 'ws',
+      host: '192.168.40.63',
+      port: 3000,
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
-      '/ws': {
+      '/ws/': {
         target: 'http://localhost:8080',
         ws: true,
         changeOrigin: true,

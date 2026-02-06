@@ -1,5 +1,5 @@
 /**
- * ???? > ?? ??
+ * 분석관리 > 모델 선택
  */
 import React, { useEffect, useState } from 'react';
 import { Card, Button, Typography, message } from 'antd';
@@ -14,43 +14,43 @@ const modelSelectOrder: ModelType[] = ['MAIN', 'BACKUP', 'REFERENCE'];
 
 const modelSelectLabels: Partial<Record<ModelType, { tag: string; title: string; empty: string; hint: string }>> = {
   MAIN: {
-    tag: "\uC6B4\uC601\uC911",
-    title: "\uC6B4\uC601 \uBAA8\uB378",
-    empty: "\uBAA8\uB378 \uC5C6\uC74C",
-    hint: "\uBAA8\uB378 \uB4F1\uB85D \uD544\uC694",
+    tag: "운영중",
+    title: "운영 모델",
+    empty: "모델 없음",
+    hint: "모델 등록 필요",
   },
   BACKUP: {
-    tag: "\uBC31\uC5C5\uBAA8\uB378",
-    title: "\uBC31\uC5C5 \uBAA8\uB378",
-    empty: "\uBAA8\uB378 \uC5C6\uC74C",
-    hint: "\uBAA8\uB378 \uB4F1\uB85D \uD544\uC694",
+    tag: "백업모델",
+    title: "백업 모델",
+    empty: "모델 없음",
+    hint: "모델 등록 필요",
   },
   REFERENCE: {
-    tag: "\uCC38\uC870\uC6A9",
-    title: "\uCC38\uC870 \uBAA8\uB378",
-    empty: "\uBAA8\uB378 \uC5C6\uC74C",
-    hint: "\uBAA8\uB378 \uB4F1\uB85D \uD544\uC694",
+    tag: "참조용",
+    title: "참조 모델",
+    empty: "모델 없음",
+    hint: "모델 등록 필요",
   },
   CHALLENGER: {
-    tag: "\uCC48\uB9B0\uC800",
-    title: "\uCC48\uB9B0\uC800 \uBAA8\uB378",
-    empty: "\uBAA8\uB378 \uC5C6\uC74C",
-    hint: "\uBAA8\uB378 \uB4F1\uB85D \uD544\uC694",
+    tag: "챌린저",
+    title: "챌린저 모델",
+    empty: "모델 없음",
+    hint: "모델 등록 필요",
   },
   TEST: {
-    tag: "\uD14C\uC2A4\uD2B8",
-    title: "\uD14C\uC2A4\uD2B8 \uBAA8\uB378",
-    empty: "\uBAA8\uB378 \uC5C6\uC74C",
-    hint: "\uBAA8\uB378 \uB4F1\uB85D \uD544\uC694",
+    tag: "테스트",
+    title: "테스트 모델",
+    empty: "모델 없음",
+    hint: "모델 등록 필요",
   },
 };
 
 const modelTypeTags: Record<ModelType, string> = {
-  MAIN: "\uC6B4\uC601\uC911",
-  BACKUP: "\uBC31\uC5C5\uBAA8\uB378",
-  REFERENCE: "\uCC38\uC870\uC6A9",
-  CHALLENGER: "\uCC48\uB9B0\uC800",
-  TEST: "\uD14C\uC2A4\uD2B8",
+  MAIN: "운영중",
+  BACKUP: "백업모델",
+  REFERENCE: "참조용",
+  CHALLENGER: "챌린저",
+  TEST: "테스트",
 };
 
 const algorithmTitles: Record<AlgorithmType, string> = {
@@ -112,11 +112,11 @@ const ModelSelectPage: React.FC = () => {
           return selectable[0].modelId;
         });
       } else {
-        message.error(response.data.message || "\uBAA8\uB378 \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+        message.error(response.data.message || "모델 정보를 불러오지 못했습니다.");
       }
     } catch (error) {
       console.error('Model card fetch error:', error);
-      message.error("\uBAA8\uB378 \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+      message.error("모델 정보를 불러오지 못했습니다.");
     }
   };
 
@@ -128,18 +128,18 @@ const ModelSelectPage: React.FC = () => {
 
   const handleApplySelectedModel = async () => {
     if (!selectedModelId) {
-      message.warning("\uC120\uD0DD\uB41C \uBAA8\uB378\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.");
+      message.warning("선택된 모델이 없습니다.");
       return;
     }
 
     const selected = cardModels.find((item) => item.modelId === selectedModelId);
     if (selected?.algorithmType === 'XGBOOST') {
-      message.warning("\uCC38\uC870\uC6A9 \uBAA8\uB378\uC740 \uC120\uD0DD\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+      message.warning("참조용 모델은 선택할 수 없습니다.");
       return;
     }
     if (!isDeployableStatus(selected?.approvalStatus)) {
-      const statusLabel = selected?.approvalStatusNm || selected?.approvalStatus || "\uC54C \uC218 \uC5C6\uC74C";
-      message.warning(`\uD604\uC7AC \uC0C1\uD0DC(${statusLabel})\uC5D0\uC11C\uB294 \uBAA8\uB378 \uC801\uC6A9\uC744 \uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uC2B9\uC778 \uC644\uB8CC \uBAA8\uB378\uB9CC \uC801\uC6A9 \uAC00\uB2A5\uD569\uB2C8\uB2E4.`);
+      const statusLabel = selected?.approvalStatusNm || selected?.approvalStatus || "알 수 없음";
+      message.warning(`현재 상태(${statusLabel})에서는 모델 적용을 할 수 없습니다. 승인 완료 모델만 적용 가능합니다.`);
       return;
     }
 
@@ -149,18 +149,18 @@ const ModelSelectPage: React.FC = () => {
         deployReason: 'MODEL_SELECT_APPLY',
       });
       if (response.data.success) {
-        message.success("\uC120\uD0DD\uD55C \uBAA8\uB378\uC774 \uC801\uC6A9\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+        message.success("선택한 모델이 적용되었습니다.");
         fetchCardModels();
       } else {
-        message.error(response.data.message || "\uBAA8\uB378 \uC801\uC6A9\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+        message.error(response.data.message || "모델 적용에 실패했습니다.");
       }
     } catch (error: unknown) {
       console.error('Model apply error:', error);
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { data?: { message?: string } } };
-        message.error(axiosError.response?.data?.message || "\uBAA8\uB378 \uC801\uC6A9\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+        message.error(axiosError.response?.data?.message || "모델 적용에 실패했습니다.");
       } else {
-        message.error("\uBAA8\uB378 \uC801\uC6A9 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
+        message.error("모델 적용 중 오류가 발생했습니다.");
       }
     } finally {
       setApplyLoading(false);
@@ -171,10 +171,10 @@ const ModelSelectPage: React.FC = () => {
     <div className="model-select-page fade-in">
       <div className="page-header">
         <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
-          {"\uBAA8\uB378 \uC120\uD0DD"}
+          모델 선택
         </Title>
         <Text type="secondary" style={{ fontSize: 13 }}>
-          {"\uBAA8\uB378 \uC815\uD655\uB3C4\uB97C \uD655\uC778\uD558\uACE0 \uC120\uD0DD한 \uBAA8\uB378을 \uC801\uC6A9하세요."}
+          모델 정확도를 확인하고 선택한 모델을 적용하세요.
         </Text>
       </div>
 
@@ -223,16 +223,16 @@ const ModelSelectPage: React.FC = () => {
             loading={applyLoading}
             onClick={handleApplySelectedModel}
           >
-            {"\uC120\uD0DD \uBAA8\uB378 \uC801\uC6A9"}
+            선택 모델 적용
           </Button>
           {selectedModelId && (
             <Text type="secondary" className="model-select-current">
-              {"\uC120\uD0DD\uB41C \uBAA8\uB378: "} {selectedModelId}
+              선택된 모델: {selectedModelId}
             </Text>
           )}
         </div>
         <Text type="secondary" className="model-select-hint">
-          {"\uC120\uD0DD한 \uBAA8\uB378을 \uAE30\uC900으로 \uC2E4제 적\uC6A9합니다."}
+          선택한 모델을 기준으로 실제 적용합니다.
         </Text>
       </Card>
     </div>

@@ -45,7 +45,7 @@ const creditService = {
   getBatchStatus: async (
     batchId: string,
     runId: string,
-    params?: { mode?: string; userId?: string }
+    params?: { mode?: string; userId?: string; snapshotMonth?: string; fromMonth?: string; toMonth?: string }
   ): Promise<ApiResponse<CreditBatchStatus>> => {
     const response = await api.get<ApiResponse<CreditBatchStatus>>('/credit/run/status', {
       params: { batchId, runId, ...params },
@@ -54,6 +54,12 @@ const creditService = {
   },
   getCeleryStatus: async (): Promise<ApiResponse<CreditCeleryStatus>> => {
     const response = await api.get<ApiResponse<CreditCeleryStatus>>('/credit/celery/status');
+    return response.data;
+  },
+  getLatestRawDataId: async (month: string): Promise<ApiResponse<{ month: string; rawDataId: string | null }>> => {
+    const response = await api.get<ApiResponse<{ month: string; rawDataId: string | null }>>('/credit/raw/latest', {
+      params: { month },
+    });
     return response.data;
   },
   stopBatch: async (payload: {

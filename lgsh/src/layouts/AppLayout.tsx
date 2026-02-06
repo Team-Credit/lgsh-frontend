@@ -133,7 +133,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       icon: <BarChartOutlined />,
       items: [
         { key: 'eda', label: '데이터 분석', path: '/analysis', icon: <BarChartOutlined /> },
-        { key: 'model-select', label: '\uBAA8\uB378 \uC120\uD0DD', path: '/analysis/model-select', icon: <BarChartOutlined /> },
+        { key: 'model-select', label: '모델 선택', path: '/analysis/model-select', icon: <BarChartOutlined /> },
       ],
     },
     {

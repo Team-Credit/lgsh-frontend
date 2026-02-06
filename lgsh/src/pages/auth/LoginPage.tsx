@@ -182,9 +182,9 @@ const LoginPage: React.FC = () => {
         setForgotEmail('');
         setForgotUserId('');
         setForgotCompanyId('');
-        message.error(err?.response?.data?.message || '\uBE44\uBC00\uBC88\uD638 \uCC3E\uAE30 \uC694\uCCAD\uC774 5\uD68C \uC5F0\uC18D\uC73C\uB85C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. 5\uBD84 \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.');
+        message.error(err?.response?.data?.message || '비밀번호 찾기 요청이 5회 연속으로 실패했습니다. 5분 후 다시 시도해 주세요.');
       } else {
-        message.error(err?.response?.data?.message || '\uC694\uCCAD \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.');
+        message.error(err?.response?.data?.message || '요청 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     } finally {
       setForgotLoading(false);
@@ -270,7 +270,7 @@ const LoginPage: React.FC = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     if (resetLockUntil) {
-                      message.warning("\uC5EC\uB7EC \uBC88\uC758 \uC2E4\uD328\uB85C \uC778\uD574 \uB0A8\uC740 \uC2DC\uAC04 \uD6C4\uC5D0 \uB2E4\uC2DC \uC2DC\uB3C4\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB0A8\uC740 \uC2DC\uAC04: \u201C" + formatRemaining(lockRemaining) + "\u201D");
+                      message.warning("여러 번의 실패로 인해 남은 시간 후에 다시 시도할 수 있습니다. 남은 시간: \u201C" + formatRemaining(lockRemaining) + "\u201D");
                       return;
                     }
                     setIsModalOpen(true);
@@ -280,7 +280,7 @@ const LoginPage: React.FC = () => {
                 </a>
                 {resetLockUntil && (
                   <span style={{ marginLeft: '8px', fontSize: '12px', color: '#c0392b' }}>
-                    {"\uB2E4\uC2DC \uC2DC\uB3C4 \uAC00\uB2A5\uD55C \uC2DC\uAC04: " + formatRemaining(lockRemaining)}
+                    {"다시 시도 가능한 시간: " + formatRemaining(lockRemaining)}
                   </span>
                 )}
               </div>
