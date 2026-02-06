@@ -1102,7 +1102,7 @@ const SysConfigPage: React.FC = () => {
                 <Space>
                   <span>소분류 코드</span>
                   {selectedMajor && (
-                    <Tag color="processing">{selectedMajor.majorCode}</Tag>
+                    <Tag color="processing">{selectedMajor.majorCodeNm || selectedMajor.majorCode}</Tag>
                   )}
                   <Tag color="blue">{minorTotal}건</Tag>
                 </Space>
@@ -1197,7 +1197,7 @@ const SysConfigPage: React.FC = () => {
                 <span>환경설정</span>
                 {selectedMajor && selectedMinor && (
                   <>
-                    <Tag color="processing">{selectedMajor.majorCode}</Tag>
+                    <Tag color="processing">{selectedMajor.majorCodeNm || selectedMajor.majorCode}</Tag>
                     <Tag color="processing">{selectedMinor.minorCode}</Tag>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       {selectedMinor.minorCodeNm}

@@ -22,3 +22,4 @@ export * from './variable';
 export * from './simulation';
 export * from './report';
 export * from './chat';
+export * from './chatAudit';
