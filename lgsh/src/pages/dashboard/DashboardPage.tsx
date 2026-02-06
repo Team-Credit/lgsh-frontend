@@ -3,13 +3,14 @@
  * - 사용자별 커스터마이징 가능한 위젯 기반 대시보드
  * - react-grid-layout 사용
  */
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { Spin, Alert, Modal, message } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import GridLayout, { Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { useDashboardStore } from '@/stores/dashboardStore';
+import { useAppSelector } from '@/store/hooks';
 import DashboardToolbar from './components/DashboardToolbar';
 import WidgetContainer from './components/WidgetContainer';
 import WidgetSelector from './components/WidgetSelector';
@@ -39,10 +40,31 @@ const DashboardPage: React.FC = () => {
     autoArrangeWidgets,
     loadLastEvalMonth,
     setSelectedYearMonth,
+    resetStore,
   } = useDashboardStore();
+
+  // 현재 로그인한 유저 정보
+  const user = useAppSelector((state) => state.auth.user);
+  const prevUserIdRef = useRef<string | null>(null);
 
   const [widgetSelectorOpen, setWidgetSelectorOpen] = useState(false);
   const [containerWidth, setContainerWidth] = useState(1200);
+
+  // 유저 변경 감지 및 스토어 초기화
+  useEffect(() => {
+    const currentUserId = user?.userId ?? null;
+
+    // 이전 유저와 현재 유저가 다르면 스토어 초기화 후 새로 로드
+    if (prevUserIdRef.current !== null && prevUserIdRef.current !== currentUserId) {
+      resetStore();
+      // 새 유저 데이터 로드
+      loadConfig();
+      loadSettings();
+      loadLastEvalMonth();
+    }
+
+    prevUserIdRef.current = currentUserId;
+  }, [user?.userId, resetStore, loadConfig, loadSettings, loadLastEvalMonth]);
 
   // 초기 로드
   useEffect(() => {

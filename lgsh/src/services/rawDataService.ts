@@ -18,9 +18,8 @@ import type {
   ErrorSummary,
   RawData,
   RawDataListParams,
-  PageResponse,
 } from '@/types/rawData';
-import type { ApiResponse } from '@/types/common';
+import type { ApiResponse, PageResponse } from '@/types/common';
 
 const BASE_URL = '/admin/rawdata';
 

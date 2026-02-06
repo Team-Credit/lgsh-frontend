@@ -53,6 +53,8 @@ interface DashboardState {
   // 년월 관련 Actions
   loadLastEvalMonth: () => Promise<void>;
   setSelectedYearMonth: (yearMonth: string | null) => void;
+  // 스토어 초기화 (유저 변경 시)
+  resetStore: () => void;
 }
 
 // 원본 레이아웃 저장 (취소 시 복원용)
@@ -439,6 +441,28 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     });
 
     message.success('위젯이 자동 정렬되었습니다.');
+  },
+
+  /**
+   * 스토어 초기화 (유저 변경 시)
+   * - 모든 상태를 초기값으로 리셋
+   * - 유저가 변경되면 이전 유저의 대시보드 데이터가 남아 있으면 안됨
+   */
+  resetStore: () => {
+    originalLayout = null;
+    set({
+      config: null,
+      settings: DEFAULT_SETTINGS,
+      widgetDataCache: {},
+      isEditMode: false,
+      isLoading: false,
+      isSaving: false,
+      error: null,
+      hasUnsavedChanges: false,
+      selectedYearMonth: null,
+      lastEvalMonth: null,
+      isLoadingYearMonth: false,
+    });
   },
 }));
 
