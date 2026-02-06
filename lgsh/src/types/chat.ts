@@ -1,4 +1,4 @@
-export type ChatRoomType = 'COMPANY' | 'SUPPORT' | 'ADMIN';
+export type ChatRoomType = 'COMPANY' | 'SUPPORT' | 'ADMIN' | 'DIRECT';
 
 export interface ChatRoom {
   roomId: string;
@@ -31,6 +31,16 @@ export interface ChatMessageSendRequest {
   roomId: string;
   senderId?: string;
   message: string;
+}
+
+export interface ChatDirectRoomCreateRequest {
+  targetUserId: string;
+}
+
+export interface ChatCompanyUser {
+  userId: string;
+  userNm: string;
+  companyId: string;
 }
 
 export interface ChatUnreadCountResponse {

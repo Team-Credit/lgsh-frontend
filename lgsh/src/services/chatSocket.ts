@@ -11,6 +11,7 @@ interface ChatSocketHandlers {
 
 interface ChatSocketConnectOptions extends ChatSocketHandlers {
   token: string;
+  userId: string;
   roomId?: string;
   isAdmin: boolean;
   companyId?: string;
@@ -84,16 +85,19 @@ class ChatSocket {
   private subscribeScope(options: ChatSocketConnectOptions): void {
     if (!this.client || !this.client.connected) return;
 
-    const scopePath = options.isAdmin
-      ? '/sub/chat/admin/global'
-      : `/sub/chat/company/${options.companyId ?? ''}`;
+    const scopePaths: string[] = [`/sub/chat/user/${options.userId}`];
+    if (options.isAdmin) {
+      scopePaths.push('/sub/chat/admin/global');
+    } else if (options.companyId) {
+      scopePaths.push(`/sub/chat/company/${options.companyId}`);
+    }
 
-    if (!options.isAdmin && !options.companyId) return;
-
-    const scopeSubscription = this.client.subscribe(scopePath, (frame: IMessage) => {
-      options.onScopeMessage?.(this.parseMessage(frame));
+    scopePaths.forEach((scopePath) => {
+      const scopeSubscription = this.client!.subscribe(scopePath, (frame: IMessage) => {
+        options.onScopeMessage?.(this.parseMessage(frame));
+      });
+      this.subscriptions.push(scopeSubscription);
     });
-    this.subscriptions.push(scopeSubscription);
   }
 
   private parseMessage(frame: IMessage): ChatMessage {

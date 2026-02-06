@@ -1,6 +1,8 @@
 import api from './api';
 import type {
   ChatMessage,
+  ChatCompanyUser,
+  ChatDirectRoomCreateRequest,
   ChatMessageSendRequest,
   ChatRoom,
   ChatRoomCreateRequest,
@@ -26,6 +28,12 @@ export const chatService = {
 
   createRoom: (data: ChatRoomCreateRequest) =>
     api.post<ApiResponse<string>>(`${BASE_URL}/rooms`, data),
+
+  createDirectRoom: (data: ChatDirectRoomCreateRequest) =>
+    api.post<ApiResponse<string>>(`${BASE_URL}/rooms/direct`, data),
+
+  getCompanyUsersForDirect: () =>
+    api.get<ApiResponse<ChatCompanyUser[]>>(`${BASE_URL}/company-users`),
 
   getMessages: (roomId: string, params: MessageListParams = {}) =>
     api.get<ApiResponse<ChatMessage[]>>(`${BASE_URL}/rooms/${roomId}/messages`, { params }),

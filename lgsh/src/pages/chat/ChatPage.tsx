@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, DatePicker, Empty, Form, Input, List, Modal, Select, Space, Tabs, Typography, message } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { useAppSelector } from '@/store/hooks';
 import { chatService } from '@/services/chatService';
 import { chatAuditService } from '@/services/chatAuditService';
 import { chatSocket } from '@/services/chatSocket';
-import type { ChatAuditRequestCreate, ChatAuditRequestResponse, ChatMessage, ChatRoom } from '@/types';
+import type { ChatAuditRequestCreate, ChatAuditRequestResponse, ChatCompanyUser, ChatMessage, ChatRoom } from '@/types';
 import './ChatPage.css';
 
 const { Title, Text } = Typography;
@@ -37,6 +37,10 @@ const ChatPage: React.FC = () => {
   const [auditApproveOpen, setAuditApproveOpen] = useState(false);
   const [auditApproveTarget, setAuditApproveTarget] = useState<ChatAuditRequestResponse | null>(null);
   const [auditApproveAction, setAuditApproveAction] = useState<'approve' | 'reject'>('approve');
+  const [directRoomModalOpen, setDirectRoomModalOpen] = useState(false);
+  const [directUsers, setDirectUsers] = useState<ChatCompanyUser[]>([]);
+  const [directTargetUserId, setDirectTargetUserId] = useState<string>();
+  const [creatingDirectRoom, setCreatingDirectRoom] = useState(false);
   const [auditForm] = Form.useForm<{ range?: any; keyword?: string; roomId?: string }>();
   const [auditApproveForm] = Form.useForm<{ comment?: string }>();
 
@@ -139,7 +143,7 @@ const ChatPage: React.FC = () => {
         approve: auditApproveAction === 'approve',
         comment: values.comment?.trim(),
       });
-      message.success(auditApproveAction === 'approve' ? '승인되었습니다.' : '반려되었습니다.');
+      message.success(auditApproveAction === 'approve' ? '승인했습니다.' : '반려했습니다.');
       setAuditApproveOpen(false);
       setAuditApproveTarget(null);
       await loadAuditPendingRequests();
@@ -172,6 +176,39 @@ const ChatPage: React.FC = () => {
       setLoadingRooms(false);
     }
   }, [user]);
+
+  const openDirectRoomModal = async () => {
+    try {
+      const response = await chatService.getCompanyUsersForDirect();
+      setDirectUsers(response.data.data ?? []);
+      setDirectTargetUserId(undefined);
+      setDirectRoomModalOpen(true);
+    } catch (error) {
+      showApiError(error, '1:1 채팅 대상 사용자 목록을 불러오지 못했습니다.');
+    }
+  };
+
+  const handleCreateDirectRoom = async () => {
+    if (!directTargetUserId) {
+      message.warning('대화할 사용자를 선택해주세요.');
+      return;
+    }
+    try {
+      setCreatingDirectRoom(true);
+      const response = await chatService.createDirectRoom({ targetUserId: directTargetUserId });
+      const createdRoomId = response.data.data;
+      setDirectRoomModalOpen(false);
+      await loadRooms();
+      if (createdRoomId) {
+        setSelectedRoomId(createdRoomId);
+      }
+      message.success('1:1 채팅방이 준비되었습니다.');
+    } catch (error) {
+      showApiError(error, '1:1 채팅방 생성에 실패했습니다.');
+    } finally {
+      setCreatingDirectRoom(false);
+    }
+  };
 
   const loadMessages = useCallback(async (roomId: string) => {
     if (!roomId) return;
@@ -212,6 +249,7 @@ const ChatPage: React.FC = () => {
 
     chatSocket.connect({
       token,
+      userId: user.userId,
       roomId: selectedRoomId || undefined,
       isAdmin,
       companyId: user.companyId,
@@ -262,6 +300,13 @@ const ChatPage: React.FC = () => {
   const auditRoomOptions = useMemo(() => (
     rooms.map((room) => ({ label: room.roomNm, value: room.roomId }))
   ), [rooms]);
+
+  const directUserOptions = useMemo(() => (
+    directUsers.map((member) => ({
+      label: `${member.userNm} (${member.userId})`,
+      value: member.userId,
+    }))
+  ), [directUsers]);
 
   const auditStatusLabel = (status?: string) => {
     if (status === 'APPROVED') return '승인';
@@ -349,7 +394,12 @@ const ChatPage: React.FC = () => {
     <div className="chat-page">
       <Title level={4} className="chat-page-title">실시간 채팅</Title>
       <div className="chat-layout">
-        <Card className="chat-room-panel" loading={loadingRooms} title="채팅방">
+        <Card
+          className="chat-room-panel"
+          loading={loadingRooms}
+          title="채팅방"
+          extra={<Button size="small" className="chat-direct-create-btn" onClick={openDirectRoomModal}>1:1 채팅방 만들기</Button>}
+        >
           {rooms.length === 0 ? (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="채팅방이 없습니다." />
           ) : (
@@ -408,7 +458,7 @@ const ChatPage: React.FC = () => {
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
                         autoSize={{ minRows: 2, maxRows: 4 }}
-                        placeholder="메시지를 입력하세요."
+                        placeholder="메시지를 입력하세요"
                         onPressEnter={(e) => {
                           if (!e.shiftKey) {
                             e.preventDefault();
@@ -422,7 +472,7 @@ const ChatPage: React.FC = () => {
                     </Space.Compact>
                   </>
                 ) : (
-                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="채팅방을 선택하세요." />
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="채팅방을 선택하세요" />
                 ),
               },
               {
@@ -431,16 +481,44 @@ const ChatPage: React.FC = () => {
                 disabled: !isManager,
                 children: renderAuditPanel(),
               },
-              {
+              ...(isAdmin ? [{
                 key: 'approve',
                 label: '승인',
-                disabled: !isAdmin,
                 children: renderApprovePanel(),
-              },
+              }] : []),
             ]}
           />
         </Card>
       </div>
+
+      <Modal
+        className="chat-direct-modal"
+        title="1:1 채팅방 만들기"
+        open={directRoomModalOpen}
+        onOk={handleCreateDirectRoom}
+        onCancel={() => setDirectRoomModalOpen(false)}
+        okText="채팅방 생성"
+        cancelText="취소"
+        confirmLoading={creatingDirectRoom}
+      >
+        <Form layout="vertical">
+          <div className="chat-direct-modal-intro">
+            같은 회사 사용자만 선택할 수 있습니다.
+          </div>
+          <Form.Item label="같은 회사 사용자">
+            <Select
+              className="chat-direct-user-select"
+              popupClassName="chat-direct-user-select-dropdown"
+              showSearch
+              optionFilterProp="label"
+              placeholder="대화할 사용자를 선택하세요"
+              options={directUserOptions}
+              value={directTargetUserId}
+              onChange={setDirectTargetUserId}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         title={auditApproveAction === 'approve' ? '감사 요청 승인' : '감사 요청 반려'}
@@ -452,7 +530,7 @@ const ChatPage: React.FC = () => {
       >
         <Form form={auditApproveForm} layout="vertical">
           <Form.Item label="코멘트" name="comment">
-            <Input.TextArea rows={3} placeholder="선택 입력" />
+            <Input.TextArea rows={3} maxLength={500} showCount placeholder="선택 입력" />
           </Form.Item>
         </Form>
       </Modal>
@@ -461,3 +539,7 @@ const ChatPage: React.FC = () => {
 };
 
 export default ChatPage;
+
+
+
+
