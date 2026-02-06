@@ -30,6 +30,13 @@ const MenuAdminPage = lazy(() => import('@/pages/system/MenuAdminPage'));
 
 // AI 챗봇
 const AiChatPage = lazy(() => import('@/pages/ai/AiChatPage'));
+const AiChatLogPage = lazy(() => import('@/pages/ai/AiChatLogPage'));
+
+// 기초 데이터 업로드
+const RawDataUploadPage = lazy(() => import('@/pages/rawdata/RawDataUploadPage'));
+
+// 기초 데이터 조회
+const RawDataListPage = lazy(() => import('@/pages/rawdata/RawDataListPage'));
 
 // 월간레포트
 const ReportKanbanPage = lazy(() => import('@/pages/report/ReportKanbanPage'));
@@ -118,15 +125,7 @@ export const routes: RouteConfig[] = [
     menuId: 'M0207',
   },
 
-  // 분석관리 > 데이터 분석
-  {
-    path: 'analysis',
-    element: EdaAnalysisPage,
-    title: '데이터 분석',
-    menuId: 'M0301',
-  },
-
-  // 분석관리 > 모델관리
+  // 분석관리 > 모델관리 (순번 1)
   {
     path: 'models',
     element: ModelListPage,
@@ -134,12 +133,36 @@ export const routes: RouteConfig[] = [
     menuId: 'M0401',
   },
 
-  // 분석관리 > 변수 메타 관리
+  // 분석관리 > 기초데이터업로드 (순번 2)
+  {
+    path: 'admin/rawdata',
+    element: RawDataUploadPage,
+    title: '기초데이터업로드',
+    menuId: 'M0402',
+  },
+
+  // 분석관리 > 기초데이터조회 (순번 3)
+  {
+    path: 'admin/rawdata-list',
+    element: RawDataListPage,
+    title: '기초데이터조회',
+    menuId: 'M0403',
+  },
+
+  // 분석관리 > 데이터 분석 (순번 4)
+  {
+    path: 'analysis',
+    element: EdaAnalysisPage,
+    title: '데이터 분석',
+    menuId: 'M0404',
+  },
+
+  // 분석관리 > 변수 메타 관리 (순번 9)
   {
     path: 'admin/variables',
     element: VariableListPage,
     title: '변수 메타 관리',
-    menuId: 'M0302',
+    menuId: 'M0409',
   },
 
   // 신용평가 > 관리그룹
@@ -288,6 +311,14 @@ export const routes: RouteConfig[] = [
     element: AiChatPage,
     title: 'AI 어시스턴트',
     menuId: 'M0901',
+  },
+
+  // AI 채팅 로그
+  {
+    path: 'ai/chatlogs',
+    element: AiChatLogPage,
+    title: 'AI 채팅 로그',
+    menuId: 'M0902',
   },
 
   // 월간레포트 > 레포트 생성

@@ -1,0 +1,462 @@
+/**
+ * 기초데이터조회 페이지 스타일
+ */
+.rawdata-list-page {
+  padding: 16px;
+  background: var(--panel, #ffffff);
+  min-height: 100%;
+}
+
+/* 페이지 헤더 */
+.rawdata-list-page .page-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line, #f0f0f0);
+}
+
+/* 리사이즈 핸들 - 강조 표시 최소화 */
+.rawdata-list-page .react-resizable-handle {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.rawdata-list-page th:hover .react-resizable-handle {
+  opacity: 0.3;
+}
+
+.rawdata-list-page .react-resizable-handle:hover {
+  opacity: 0.6;
+}
+
+/* 테이블 스타일 */
+.rawdata-list-page .ant-table-wrapper {
+  margin-top: 8px;
+  background: var(--panel, #ffffff);
+}
+
+.rawdata-list-page .ant-table {
+  background: var(--panel, #ffffff);
+}
+
+.rawdata-list-page .ant-table-cell {
+  padding: 8px 12px !important;
+}
+
+.rawdata-list-page .ant-table-thead > tr > th {
+  background: var(--bg, #fafafa);
+  color: var(--text, #1e3a8a);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rawdata-list-page .ant-table-tbody > tr > td {
+  color: var(--text);
+}
+
+/* 행 선택 불가능 상태 */
+.rawdata-list-page .ant-table-row-disabled {
+  background-color: var(--bg, #f5f5f5);
+}
+
+.rawdata-list-page .ant-table-row-disabled td {
+  color: var(--muted, #999);
+}
+
+/* 통계 카드 */
+.rawdata-list-page .ant-card {
+  background: var(--panel, #ffffff);
+  border-color: var(--line, #f0f0f0);
+}
+
+.rawdata-list-page .ant-statistic-title {
+  margin-bottom: 4px;
+  color: var(--text-secondary, #475569);
+}
+
+.rawdata-list-page .ant-statistic-content {
+  font-size: 20px;
+  color: var(--text);
+}
+
+.rawdata-list-page .ant-statistic-content-value {
+  color: var(--text);
+}
+
+.rawdata-list-page .ant-statistic-content-suffix {
+  color: var(--muted);
+}
+
+/* 검색 폼 */
+.rawdata-list-page .ant-form-inline .ant-form-item {
+  margin-bottom: 8px;
+}
+
+.rawdata-list-page .ant-form-item-label > label {
+  color: var(--text);
+}
+
+/* 컬럼 설정 팝오버 */
+.rawdata-list-page .ant-popover-inner-content {
+  padding: 12px;
+}
+
+/* 툴바 구분선 */
+.rawdata-list-page .toolbar-separator {
+  color: var(--muted, #999);
+  font-size: 12px;
+}
+
+/* 툴바 정보 텍스트 */
+.rawdata-list-page .toolbar-info {
+  color: var(--text-secondary, #666);
+  font-size: 12px;
+}
+
+/* 페이지 타이틀 */
+.rawdata-list-page .page-header h4,
+.rawdata-list-page .page-header .ant-typography {
+  color: var(--text);
+}
+
+/* 페이지네이션 */
+.rawdata-list-page .ant-pagination-item a {
+  color: var(--text);
+}
+
+.rawdata-list-page .ant-pagination-item-active a {
+  color: var(--primary);
+}
+
+/* 모달 */
+.rawdata-list-page .ant-modal-content {
+  background: var(--panel, #ffffff);
+}
+
+.rawdata-list-page .ant-modal-header {
+  background: var(--panel, #ffffff);
+  border-bottom-color: var(--line);
+}
+
+.rawdata-list-page .ant-modal-title {
+  color: var(--text);
+}
+
+.rawdata-list-page .ant-list-item {
+  border-bottom-color: var(--line);
+}
+
+.rawdata-list-page .ant-list-item:hover {
+  background: var(--bg);
+}
+
+.rawdata-list-page .ant-list-item-meta-title {
+  color: var(--text);
+}
+
+.rawdata-list-page .ant-list-item-meta-description {
+  color: var(--text-secondary);
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .rawdata-list-page {
+  background: var(--panel);
+}
+
+:root.dark .rawdata-list-page .page-header {
+  border-bottom-color: var(--line);
+}
+
+:root.dark .rawdata-list-page .ant-table-wrapper {
+  background: var(--panel);
+}
+
+:root.dark .rawdata-list-page .ant-table {
+  background: var(--panel) !important;
+}
+
+:root.dark .rawdata-list-page .ant-table-thead > tr > th {
+  background: #1f2937 !important;
+  color: var(--text) !important;
+  border-bottom-color: var(--line) !important;
+}
+
+:root.dark .rawdata-list-page .ant-table-tbody > tr > td {
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  border-bottom-color: var(--line) !important;
+}
+
+:root.dark .rawdata-list-page .ant-table-tbody > tr:hover > td {
+  background: #1f2937 !important;
+}
+
+:root.dark .rawdata-list-page .ant-table-row-disabled td {
+  background: #111827 !important;
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .ant-card {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+}
+
+:root.dark .rawdata-list-page .ant-statistic-title {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark .rawdata-list-page .ant-statistic-content,
+:root.dark .rawdata-list-page .ant-statistic-content-value {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-statistic-content-suffix {
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .page-header h4,
+:root.dark .rawdata-list-page .page-header .ant-typography,
+:root.dark .rawdata-list-page .ant-typography {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-form-item-label > label {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-input {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-input::placeholder {
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .ant-select-selector {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-select-selection-placeholder {
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .ant-picker {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+}
+
+:root.dark .rawdata-list-page .ant-picker-input > input {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-picker-input > input::placeholder {
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .ant-picker-suffix,
+:root.dark .rawdata-list-page .ant-picker-separator {
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .ant-pagination-item a {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-pagination-item-active {
+  background: var(--primary-bg) !important;
+  border-color: var(--primary) !important;
+}
+
+:root.dark .rawdata-list-page .ant-pagination-item-active a {
+  color: var(--primary) !important;
+}
+
+:root.dark .rawdata-list-page .ant-pagination-prev button,
+:root.dark .rawdata-list-page .ant-pagination-next button {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-pagination-options-quick-jumper input {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-select-dropdown {
+  background: var(--panel) !important;
+}
+
+:root.dark .rawdata-list-page .ant-select-item {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-select-item-option-selected {
+  background: var(--primary-bg) !important;
+}
+
+:root.dark .rawdata-list-page .ant-modal-content {
+  background: var(--panel) !important;
+}
+
+:root.dark .rawdata-list-page .ant-modal-header {
+  background: var(--panel) !important;
+  border-bottom-color: var(--line) !important;
+}
+
+:root.dark .rawdata-list-page .ant-modal-title {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-modal-close-x {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-list-item {
+  border-bottom-color: var(--line) !important;
+}
+
+:root.dark .rawdata-list-page .ant-list-item:hover {
+  background: #1f2937 !important;
+}
+
+:root.dark .rawdata-list-page .ant-list-item-meta-title {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-list-item-meta-description {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark .rawdata-list-page .ant-checkbox-wrapper {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-popover-inner {
+  background: var(--panel) !important;
+}
+
+:root.dark .rawdata-list-page .ant-popover-title {
+  color: var(--text) !important;
+  border-bottom-color: var(--line) !important;
+}
+
+:root.dark .rawdata-list-page .ant-btn-default {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-btn-default:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+/* 테이블 빈 데이터 */
+:root.dark .rawdata-list-page .ant-table-placeholder {
+  background: var(--panel) !important;
+}
+
+:root.dark .rawdata-list-page .ant-empty-description {
+  color: var(--muted) !important;
+}
+
+/* 로딩 스피너 */
+:root.dark .rawdata-list-page .ant-spin-text {
+  color: var(--text) !important;
+}
+
+/* 페이지네이션 - 이동하기 텍스트 */
+:root.dark .rawdata-list-page .ant-pagination-options-quick-jumper {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-pagination-total-text {
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-pagination-options .ant-select-selector {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+:root.dark .rawdata-list-page .ant-pagination-options .ant-select-selection-item {
+  color: var(--text) !important;
+}
+
+/* 비활성화된 버튼 */
+:root.dark .rawdata-list-page .ant-btn-default:disabled,
+:root.dark .rawdata-list-page .ant-btn-default[disabled] {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #9ca3af !important;
+}
+
+:root.dark .rawdata-list-page .ant-btn-primary:disabled,
+:root.dark .rawdata-list-page .ant-btn-primary[disabled] {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #9ca3af !important;
+}
+
+:root.dark .rawdata-list-page .ant-btn-default:disabled .anticon,
+:root.dark .rawdata-list-page .ant-btn-primary:disabled .anticon {
+  color: #9ca3af !important;
+}
+
+/* 툴바 텍스트 */
+:root.dark .rawdata-list-page .toolbar-separator {
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .toolbar-info {
+  color: var(--text-secondary) !important;
+}
+
+/* 테이블 체크박스 */
+:root.dark .rawdata-list-page .ant-checkbox-inner {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+}
+
+:root.dark .rawdata-list-page .ant-checkbox-checked .ant-checkbox-inner {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* 테이블 정렬 아이콘 */
+:root.dark .rawdata-list-page .ant-table-column-sorter {
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .ant-table-column-sorter-up.active,
+:root.dark .rawdata-list-page .ant-table-column-sorter-down.active {
+  color: var(--primary) !important;
+}
+
+/* 테이블 필터 아이콘 */
+:root.dark .rawdata-list-page .ant-table-filter-trigger {
+  color: var(--muted) !important;
+}
+
+:root.dark .rawdata-list-page .ant-table-filter-trigger.active {
+  color: var(--primary) !important;
+}
+
+/* 필터 드롭다운 */
+:root.dark .rawdata-list-page .ant-table-filter-dropdown {
+  background: var(--panel) !important;
+}
+
+:root.dark .rawdata-list-page .ant-table-filter-dropdown-btns {
+  background: var(--panel) !important;
+  border-top-color: var(--line) !important;
+}
+
+/* 컬럼 설정 체크박스 텍스트 */
+:root.dark .rawdata-list-page .ant-checkbox + span {
+  color: var(--text) !important;
+}
