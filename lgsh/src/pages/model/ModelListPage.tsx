@@ -34,6 +34,7 @@ import {
   RocketOutlined,
   EyeOutlined,
   EditOutlined,
+  DeleteOutlined,
   ExperimentOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -224,7 +225,6 @@ const ModelListPage: React.FC = () => {
     regDt: '등록일시',
   };
 
-  // 데이터 조회
   const fetchData = async (currentPage = page) => {
     setLoading(true);
     try {
@@ -259,6 +259,8 @@ const ModelListPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+
 
   // 검색
   const handleSearch = () => {
@@ -497,6 +499,39 @@ const ModelListPage: React.FC = () => {
     });
   };
 
+  // 삭제
+  const handleDelete = (record: ModelListResponse) => {
+    Modal.confirm({
+      title: '모델 삭제',
+      content: `"${record.modelNm}" 모델을 삭제하시겠습니까? 삭제된 모델은 복구할 수 없습니다.`,
+      okText: '삭제',
+      okType: 'danger',
+      cancelText: '취소',
+      onOk: async () => {
+        setLoading(true);
+        try {
+          const response = await modelService.delete(record.modelId);
+          if (response.data.success) {
+            message.success('모델이 삭제되었습니다.');
+            fetchData();
+          } else {
+            message.error(response.data.message || '삭제에 실패했습니다.');
+          }
+        } catch (error: unknown) {
+          console.error('삭제 오류:', error);
+          if (error && typeof error === 'object' && 'response' in error) {
+            const axiosError = error as { response?: { data?: { message?: string } } };
+            message.error(axiosError.response?.data?.message || '삭제에 실패했습니다.');
+          } else {
+            message.error('삭제 중 오류가 발생했습니다.');
+          }
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  };
+
   // 컬럼 리사이즈 핸들러
   const handleResize = (key: string) => (_: React.SyntheticEvent, { size }: ResizeCallbackData) => {
     setColumnWidths((prevWidths) => {
@@ -692,6 +727,16 @@ const ModelListPage: React.FC = () => {
               />
             </>
           )}
+          {(record.approvalStatus === 'DRAFT' || record.approvalStatus === 'FAILED') && (
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record)}
+              title="삭제"
+            />
+          )}
         </Space>
       ),
     },
@@ -787,6 +832,9 @@ const ModelListPage: React.FC = () => {
           신용평가 모델을 등록하고 관리합니다.
         </Text>
       </div>
+
+      {/* {"\uD3C9\uAC00 \uC2E4\uD589"} ?? */}
+      
 
       {/* 검색 영역 */}
       <Card className="search-card" size="small">

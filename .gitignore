@@ -58,3 +58,9 @@ Desktop.ini
 out/
 .tmp/
 temp/
+# Windows 예약어 무시
+**/nul
+**/NUL
+
+.metadata/
+*.log

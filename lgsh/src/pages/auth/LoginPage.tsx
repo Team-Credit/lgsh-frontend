@@ -6,7 +6,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Spin } from 'antd';
+import { Spin, Modal, message } from 'antd';
+import api from '@/services/api';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginAsync, clearError } from '@/store/slices/authSlice';
 import './LoginPage.css';
@@ -30,6 +31,15 @@ const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [formErrors, setFormErrors] = useState<{ userId?: string; password?: string }>({});
 
+  // 비밀번호 찾기 모달 상태
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotUserId, setForgotUserId] = useState('');
+  const [forgotCompanyId, setForgotCompanyId] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [resetLockUntil, setResetLockUntil] = useState<number | null>(null);
+  const [lockRemaining, setLockRemaining] = useState(0);
+
   // 이미 로그인 상태면 대시보드로 이동
   useEffect(() => {
     if (isAuthenticated) {
@@ -50,6 +60,46 @@ const LoginPage: React.FC = () => {
       setRememberMe(true);
     }
   }, []);
+
+  // ???? ?? ?? ?? ??
+  useEffect(() => {
+    const saved = localStorage.getItem('lgsh_forgot_lock_until');
+    if (saved) {
+      const ts = Number(saved);
+      if (!Number.isNaN(ts) && ts > Date.now()) {
+        setResetLockUntil(ts);
+      } else {
+        localStorage.removeItem('lgsh_forgot_lock_until');
+      }
+    }
+  }, []);
+
+  // ?? ?? ?? ??
+  useEffect(() => {
+    if (!resetLockUntil) {
+      setLockRemaining(0);
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(0, resetLockUntil - Date.now());
+      setLockRemaining(remaining);
+      if (remaining <= 0) {
+        setResetLockUntil(null);
+        localStorage.removeItem('lgsh_forgot_lock_until');
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [resetLockUntil]);
+
+  const formatRemaining = (ms: number) => {
+    const totalSec = Math.ceil(ms / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return `${min}:${sec.toString().padStart(2, '0')}`;
+  };
+
 
   // 폼 유효성 검사
   const validateForm = (): boolean => {
@@ -84,7 +134,7 @@ const LoginPage: React.FC = () => {
 
     // 로그인 요청
     const result = await dispatch(loginAsync({ userId, password }));
-    
+
     if (loginAsync.fulfilled.match(result)) {
       navigate('/dashboard', { replace: true });
     }
@@ -95,6 +145,50 @@ const LoginPage: React.FC = () => {
     setUserId(account.userId);
     setPassword(account.password);
     setFormErrors({});
+  };
+
+  // 비밀번호 재설정 링크 발송
+  const handleSendResetLink = async () => {
+    if (!forgotUserId || !forgotCompanyId || !forgotEmail) {
+      message.error('모든 정보를 입력해주세요.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotEmail)) {
+      message.error('올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      await api.post('/auth/forgot-password', {
+        userId: forgotUserId,
+        companyId: forgotCompanyId,
+        email: forgotEmail
+      });
+      message.success('정보가 일치하면 비밀번호 재설정 링크가 이메일로 발송됩니다.');
+      setIsModalOpen(false);
+      setForgotEmail('');
+      setForgotUserId('');
+      setForgotCompanyId('');
+    } catch (err: any) {
+      console.error(err);
+      const errCode = err?.response?.data?.code;
+      if (errCode === 'ERR_USER_017') {
+        const lockUntil = Date.now() + 5 * 60 * 1000;
+        localStorage.setItem('lgsh_forgot_lock_until', String(lockUntil));
+        setResetLockUntil(lockUntil);
+        setIsModalOpen(false);
+        setForgotEmail('');
+        setForgotUserId('');
+        setForgotCompanyId('');
+        message.error(err?.response?.data?.message || '\uBE44\uBC00\uBC88\uD638 \uCC3E\uAE30 \uC694\uCCAD\uC774 5\uD68C \uC5F0\uC18D\uC73C\uB85C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. 5\uBD84 \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.');
+      } else {
+        message.error(err?.response?.data?.message || '\uC694\uCCAD \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.');
+      }
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   return (
@@ -170,9 +264,25 @@ const LoginPage: React.FC = () => {
                   />
                   아이디 저장
                 </label>
-                <a href="#" className="forgot-password">
+                <a
+                  href="#"
+                  className="forgot-password"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (resetLockUntil) {
+                      message.warning("\uC5EC\uB7EC \uBC88\uC758 \uC2E4\uD328\uB85C \uC778\uD574 \uB0A8\uC740 \uC2DC\uAC04 \uD6C4\uC5D0 \uB2E4\uC2DC \uC2DC\uB3C4\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB0A8\uC740 \uC2DC\uAC04: \u201C" + formatRemaining(lockRemaining) + "\u201D");
+                      return;
+                    }
+                    setIsModalOpen(true);
+                  }}
+                >
                   비밀번호 찾기
                 </a>
+                {resetLockUntil && (
+                  <span style={{ marginLeft: '8px', fontSize: '12px', color: '#c0392b' }}>
+                    {"\uB2E4\uC2DC \uC2DC\uB3C4 \uAC00\uB2A5\uD55C \uC2DC\uAC04: " + formatRemaining(lockRemaining)}
+                  </span>
+                )}
               </div>
 
               {/* 로그인 버튼 */}
@@ -212,15 +322,56 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 푸터 */}
-          <div className="login-footer">
-            <p className="login-footer-text">
-              © 2026 LGSH. All rights reserved.
-            </p>
-          </div>
         </div>
       </div>
-    </div>
+
+
+      {/* 비밀번호 찾기 모달 */}
+      <Modal
+        title="비밀번호 찾기"
+        open={isModalOpen}
+        onOk={handleSendResetLink}
+        onCancel={() => setIsModalOpen(false)}
+        okText="재설정 링크 발송"
+        cancelText="취소"
+        confirmLoading={forgotLoading}
+      >
+        <p>가입 시 등록 정보를 모두 입력해 주세요.</p>
+        <div className="form-group" style={{ marginTop: '16px' }}>
+          <label className="form-label">아이디</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="아이디"
+            value={forgotUserId}
+            onChange={(e) => setForgotUserId(e.target.value)}
+            disabled={forgotLoading}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">회사 ID</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="회사 ID (예: CMP001)"
+            value={forgotCompanyId}
+            onChange={(e) => setForgotCompanyId(e.target.value)}
+            disabled={forgotLoading}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">이메일</label>
+          <input
+            type="email"
+            className="form-input"
+            placeholder="example@email.com"
+            value={forgotEmail}
+            onChange={(e) => setForgotEmail(e.target.value)}
+            disabled={forgotLoading}
+          />
+        </div>
+      </Modal>
+    </div >
   );
 };
 

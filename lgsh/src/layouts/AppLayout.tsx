@@ -1,5 +1,5 @@
-﻿/**
- * LGSH 레이아웃
+/**
+         * LGSH 레이아웃
  * - 상단 헤더 (64px)
  * - 좌측 사이드바 (280px, 접기 가능)
  * - 메인 콘텐츠 영역
@@ -133,6 +133,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       icon: <BarChartOutlined />,
       items: [
         { key: 'eda', label: '데이터 분석', path: '/analysis', icon: <BarChartOutlined /> },
+        { key: 'model-select', label: '\uBAA8\uB378 \uC120\uD0DD', path: '/analysis/model-select', icon: <BarChartOutlined /> },
       ],
     },
     {

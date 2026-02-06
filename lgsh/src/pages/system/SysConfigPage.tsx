@@ -105,9 +105,9 @@ const SysConfigPage: React.FC = () => {
   const [minorPageSize, setMinorPageSize] = useState(20);
 
   // 환경설정값이 있는 코드만 조회 옵션
-  const [onlyMajorWithConfig, setOnlyMajorWithConfig] = useState(false);
+  const [onlyMajorWithConfig, setOnlyMajorWithConfig] = useState(true);
   const [majorCodesWithConfig, setMajorCodesWithConfig] = useState<Set<string>>(new Set());
-  const [onlyWithConfig, setOnlyWithConfig] = useState(false);
+  const [onlyWithConfig, setOnlyWithConfig] = useState(true);
   const [minorCodesWithConfig, setMinorCodesWithConfig] = useState<Set<string>>(new Set());
 
   // 환경설정 상태

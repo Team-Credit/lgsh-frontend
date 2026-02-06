@@ -2,10 +2,17 @@
  * 신용평가 타입 정의
  */
 
+export type CreditRunMode = 'single' | 'group' | 'all';
+
 export interface CreditPredictRequest {
-  personId: string;
+  mode?: CreditRunMode;
+  personId?: string;
+  userId?: string;
   modelId: string;
   batchDesc: string;
+  chunkSize?: number;
+  useCelery?: boolean;
+  algorithmType?: string;
 }
 
 export interface CreditPredictResult {
@@ -13,6 +20,41 @@ export interface CreditPredictResult {
   creditScore: number;
   creditGrade: string;
   itemScores: Record<string, number>;
+}
+
+export interface CreditBatchRunResult {
+  batchId: string;
+  mode: CreditRunMode;
+  runStart: string;
+  userId: string;
+  personGrp?: string | null;
+  runId: string;
+  modelMetrics?: {
+    auc?: number;
+    ks_stat?: number;
+    ar?: number;
+  };
+  trainingDataCnt?: number;
+}
+
+export interface CreditBatchStatus {
+  batchId: string;
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'PARTIAL' | 'FAILED';
+  totalCount: number;
+  processedCount: number;
+  successCount: number;
+  failCount: number;
+  startedAt?: string;
+  endedAt?: string;
+  avgScore?: number;
+  gradeDistribution?: Record<string, number>;
+}
+
+export interface CreditCeleryStatus {
+  running: boolean;
+  workerCount: number;
+  workers?: string[];
+  error?: string;
 }
 
 export interface CreditDistributionStats {

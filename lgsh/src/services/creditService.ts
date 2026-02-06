@@ -5,6 +5,9 @@ import api from './api';
 import type { ApiResponse } from '@/types';
 import type {
   CreditBasicStatsResult,
+  CreditBatchRunResult,
+  CreditBatchStatus,
+  CreditCeleryStatus,
   CreditCorrelationResult,
   CreditDistributionResult,
   CreditMissingPatternResult,
@@ -16,6 +19,50 @@ import type {
 const creditService = {
   predict: async (payload: CreditPredictRequest): Promise<ApiResponse<CreditPredictResult>> => {
     const response = await api.post<ApiResponse<CreditPredictResult>>('/credit/run', payload);
+    return response.data;
+  },
+
+  warmup: async (payload: { modelId: string }): Promise<ApiResponse<{ modelId: string; trainingDataCnt?: number; modelMetrics?: any }>> => {
+    const response = await api.post<ApiResponse<{ modelId: string; trainingDataCnt?: number; modelMetrics?: any }>>(
+      '/credit/model/warmup',
+      payload,
+      { timeout: 300000 }
+    );
+    return response.data;
+  },
+
+  /**
+   * 배치 신용평가 실행 (개인/그룹/전체)
+   */
+  runBatch: async (payload: CreditPredictRequest): Promise<ApiResponse<CreditBatchRunResult>> => {
+    const response = await api.post<ApiResponse<CreditBatchRunResult>>('/credit/run', payload);
+    return response.data;
+  },
+
+  /**
+   * 배치 실행 상태 조회
+   */
+  getBatchStatus: async (
+    batchId: string,
+    runId: string,
+    params?: { mode?: string; userId?: string }
+  ): Promise<ApiResponse<CreditBatchStatus>> => {
+    const response = await api.get<ApiResponse<CreditBatchStatus>>('/credit/run/status', {
+      params: { batchId, runId, ...params },
+    });
+    return response.data;
+  },
+  getCeleryStatus: async (): Promise<ApiResponse<CreditCeleryStatus>> => {
+    const response = await api.get<ApiResponse<CreditCeleryStatus>>('/credit/celery/status');
+    return response.data;
+  },
+  stopBatch: async (payload: {
+    batchId: string;
+    runId: string;
+    mode?: string;
+    userId?: string;
+  }): Promise<ApiResponse<{ revokedCount?: number }>> => {
+    const response = await api.post<ApiResponse<{ revokedCount?: number }>>('/credit/run/stop', payload);
     return response.data;
   },
   distribution: async (): Promise<ApiResponse<CreditDistributionResult>> => {

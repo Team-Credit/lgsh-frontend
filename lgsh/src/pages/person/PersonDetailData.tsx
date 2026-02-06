@@ -12,18 +12,18 @@ interface ApiResponse<T> {
 
 interface PersonDetailResponseDto {
   personId: string;
-  personName: string;
+  personNm: string;
   personNo: string;
   mobileNo: string;
   email: string;
-  groupName: string;
+  personGrpNm: string;
   jobCode: string;
   annualIncome: number | null;
   marriageYn: string;
   address: string;
-  latestScore: number | null;
-  latestGrade: string;
-  evalDt: string;
+  creditScore: number | null;
+  creditGrade: string;
+  scoreDt: string;
 }
 
 interface PersonDetailDataProps {
@@ -77,61 +77,158 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
 
   if (!resolvedPersonId) {
     return (
-      <div className="person-detail-state">
-        <div style={{ marginBottom: 8 }}>대상자 ID를 입력하세요.</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            className="person-detail-input"
-            value={inputPersonId}
-            onChange={(e) => setInputPersonId(e.target.value)}
-            placeholder="예: 1000001"
-          />
-          <button
-            className="person-detail-button"
-            onClick={() => {
-              const trimmed = inputPersonId.trim();
-              if (trimmed) {
-                navigate(`/persons/detail/${trimmed}`);
-              } else {
-                setErrorMessage('대상자 ID를 입력하세요.');
-              }
-            }}
-          >
-            조회
-          </button>
+      <div className="person-detail-container">
+        {/* 페이지 헤더 */}
+        <div className="page-header" style={{ marginBottom: 20 }}>
+          <h2 style={{ margin: 0, marginBottom: 4, fontSize: 18, fontWeight: 600, color: 'var(--text-primary, #1a1a2e)' }}>
+            📋 대상자 상세정보
+          </h2>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary, #666)' }}>
+            선택한 대상자의 기본정보, 신용평가 결과, 상세정보를 한눈에 확인할 수 있습니다.
+          </p>
         </div>
-        {errorMessage && <div className="person-detail-error">{errorMessage}</div>}
+
+        {/* 검색 카드 */}
+        <div className="search-card" style={{
+          background: 'var(--card-background, #fff)',
+          borderRadius: 8,
+          padding: 20,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          marginBottom: 20
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <label style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary, #333)' }}>
+              대상자 ID
+            </label>
+            <input
+              className="person-detail-input"
+              style={{
+                padding: '8px 12px',
+                border: '1px solid var(--border-color, #d9d9d9)',
+                borderRadius: 6,
+                fontSize: 14,
+                width: 200
+              }}
+              value={inputPersonId}
+              onChange={(e) => setInputPersonId(e.target.value)}
+              placeholder="예: 1000001"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const trimmed = inputPersonId.trim();
+                  if (trimmed) {
+                    navigate(`/persons/detail/${trimmed}`);
+                  } else {
+                    setErrorMessage('대상자 ID를 입력하세요.');
+                  }
+                }
+              }}
+            />
+            <button
+              style={{
+                padding: '8px 20px',
+                background: '#1e3a8a',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                const trimmed = inputPersonId.trim();
+                if (trimmed) {
+                  navigate(`/persons/detail/${trimmed}`);
+                } else {
+                  setErrorMessage('대상자 ID를 입력하세요.');
+                }
+              }}
+            >
+              조회
+            </button>
+          </div>
+          {errorMessage && (
+            <div style={{ marginTop: 12, color: 'var(--error-color, #ff4d4f)', fontSize: 13 }}>
+              {errorMessage}
+            </div>
+          )}
+        </div>
+
+        {/* 안내 메시지 */}
+        <div style={{
+          background: 'var(--info-background, #f6f8fa)',
+          borderRadius: 8,
+          padding: 40,
+          textAlign: 'center',
+          color: 'var(--text-secondary, #666)'
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>👤</div>
+          <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>대상자를 조회해 주세요</div>
+          <div style={{ fontSize: 13 }}>
+            상단의 검색창에 대상자 ID를 입력하고 조회 버튼을 클릭하세요.
+          </div>
+        </div>
       </div>
     );
   }
 
+  // 공통 페이지 헤더
+  const pageHeader = (
+    <div className="page-header" style={{ marginBottom: 20 }}>
+      <h2 style={{ margin: 0, marginBottom: 4, fontSize: 18, fontWeight: 600, color: 'var(--text-primary, #1a1a2e)' }}>
+        📋 대상자 상세정보
+      </h2>
+      <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary, #666)' }}>
+        선택한 대상자의 기본정보, 신용평가 결과, 상세정보를 한눈에 확인할 수 있습니다.
+      </p>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="person-detail-state">
-        <div className="spinner" />
-        <span>데이터를 불러오는 중입니다...</span>
+      <div className="person-detail-container">
+        {pageHeader}
+        <div className="person-detail-state">
+          <div className="spinner" />
+          <span>데이터를 불러오는 중입니다...</span>
+        </div>
       </div>
     );
   }
 
   if (errorMessage) {
     return (
-      <div className="person-detail-state error">
-        <span>{errorMessage}</span>
+      <div className="person-detail-container">
+        {pageHeader}
+        <div className="person-detail-state error">
+          <span>{errorMessage}</span>
+        </div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="person-detail-state">
-        <span>대상자 정보가 없습니다.</span>
+      <div className="person-detail-container">
+        {pageHeader}
+        <div className="person-detail-state">
+          <span>대상자 정보가 없습니다.</span>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="person-detail-container">
+      {/* 페이지 헤더 */}
+      <div className="page-header" style={{ marginBottom: 20 }}>
+        <h2 style={{ margin: 0, marginBottom: 4, fontSize: 18, fontWeight: 600, color: 'var(--text-primary, #1a1a2e)' }}>
+          📋 대상자 상세정보
+        </h2>
+        <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary, #666)' }}>
+          선택한 대상자의 기본정보, 신용평가 결과, 상세정보를 한눈에 확인할 수 있습니다.
+        </p>
+      </div>
+
       <div className="person-detail-header">
         <div>
           <div className="person-title">대상자 360° 상세</div>
@@ -145,7 +242,7 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
           <div className="card-title">기본 프로필</div>
           <div className="card-row">
             <span className="label">이름</span>
-            <span className="value">{data.personName || '-'}</span>
+            <span className="value">{data.personNm || '-'}</span>
           </div>
           <div className="card-row">
             <span className="label">연락처</span>
@@ -153,7 +250,7 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
           </div>
           <div className="card-row">
             <span className="label">관리그룹</span>
-            <span className="value">{data.groupName || '-'}</span>
+            <span className="value">{data.personGrpNm || '-'}</span>
           </div>
           <div className="card-row">
             <span className="label">이메일</span>
@@ -164,13 +261,13 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
         <div className="person-card highlight">
           <div className="card-title">최신 신용평가</div>
           <div className="score-box">
-            <div className="score-value">{data.latestScore ?? '-'}</div>
+            <div className="score-value">{data.creditScore ?? '-'}</div>
             <div className="score-unit">점</div>
           </div>
-          <div className="grade-badge">{data.latestGrade || '-'}</div>
+          <div className="grade-badge">{data.creditGrade || '-'}</div>
           <div className="card-row">
             <span className="label">평가일</span>
-            <span className="value">{data.evalDt || '-'}</span>
+            <span className="value">{data.scoreDt || '-'}</span>
           </div>
         </div>
       </div>
@@ -208,9 +305,9 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
             </thead>
             <tbody>
               <tr>
-                <td>{data.evalDt || '-'}</td>
-                <td>{data.latestScore ?? '-'}</td>
-                <td>{data.latestGrade || '-'}</td>
+                <td>{data.scoreDt || '-'}</td>
+                <td>{data.creditScore ?? '-'}</td>
+                <td>{data.creditGrade || '-'}</td>
               </tr>
             </tbody>
           </table>

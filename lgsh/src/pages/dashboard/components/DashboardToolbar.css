@@ -1,0 +1,136 @@
+/**
+ * 대시보드 툴바 스타일
+ */
+
+.dashboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--panel, #ffffff);
+  border-bottom: 1px solid var(--line, #e6ebf5);
+  margin-bottom: 16px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toolbar-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+}
+
+.edit-mode-tag {
+  margin: 0;
+}
+
+.unsaved-tag {
+  margin: 0;
+}
+
+.toolbar-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg, #f8fafc);
+  border-radius: 8px;
+  border: 1px solid var(--line, #e6ebf5);
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+/* 다크모드 */
+:root.dark .dashboard-toolbar {
+  background: var(--panel, #0c1628);
+  border-bottom-color: var(--line, #1c2a46);
+}
+
+:root.dark .toolbar-title {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .toolbar-header .ant-typography {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .toolbar-header .ant-typography-secondary {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .toolbar-header h4.ant-typography {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .toolbar-header span.ant-typography {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .dashboard-toolbar .anticon {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .toolbar-center {
+  background: var(--bg, #1c2a46);
+  border-color: var(--line, #2d3a56);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .dashboard-toolbar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .toolbar-left {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .toolbar-header {
+    width: 100%;
+    text-align: center;
+  }
+
+  .toolbar-tags {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .toolbar-center {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .toolbar-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .toolbar-right .ant-space {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

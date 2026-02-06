@@ -60,11 +60,11 @@ const CreditDistributionPage: React.FC = () => {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            title: (items: any[]) => `${gradeLabels[items[0].dataIndex]} ?깃툒`,
+            title: (items: any[]) => `${gradeLabels[items[0].dataIndex]} 등급`,
             label: (ctx: any) => {
               const count = ctx.parsed.y ?? 0;
               const percent = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
-              return `?몄썝??${count}紐?(鍮꾩쑉 ${percent}%)`;
+              return `인원: ${count}명 (비중 ${percent}%)`;
             },
           },
         },

@@ -259,3 +259,110 @@
 .main-sider .ant-layout-sider-children {
   overflow: visible !important;
 }
+
+/* ========== 다크모드 ========== */
+:root.dark .main-sider {
+  background: var(--panel) !important;
+  border-right-color: var(--border);
+}
+
+:root.dark .sider-toggle {
+  border-bottom-color: var(--border);
+}
+
+:root.dark .toggle-btn {
+  color: var(--text) !important;
+}
+
+:root.dark .sider-menu {
+  background: transparent !important;
+}
+
+:root.dark .sider-menu .ant-menu-item {
+  color: var(--text);
+}
+
+:root.dark .sider-menu .ant-menu-item:hover:not(.ant-menu-item-selected) {
+  background: var(--bg) !important;
+}
+
+:root.dark .sider-menu .ant-menu-submenu-title {
+  color: var(--text);
+}
+
+:root.dark .sider-menu .ant-menu-submenu-title:hover {
+  background: var(--bg) !important;
+}
+
+:root.dark .sider-menu .ant-menu-item-selected {
+  background: rgba(24, 144, 255, 0.15) !important;
+}
+
+:root.dark .ant-menu-submenu-popup .ant-menu {
+  background: var(--panel);
+}
+
+:root.dark .ant-menu-submenu-popup .ant-menu-item {
+  color: var(--text);
+}
+
+:root.dark .ant-menu-submenu-popup .ant-menu-item:hover {
+  background: var(--bg) !important;
+}
+
+/* ========== 즐겨찾기 & 컨텍스트 메뉴 드롭다운 ========== */
+.ant-dropdown .ant-dropdown-menu {
+  min-width: 160px;
+  max-width: 280px;
+}
+
+.ant-dropdown .ant-dropdown-menu-item {
+  max-width: 280px;
+}
+
+.ant-dropdown .ant-dropdown-menu-title-content {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root.dark .ant-dropdown {
+  --antd-arrow-background-color: var(--panel);
+}
+
+:root.dark .ant-dropdown .ant-dropdown-menu {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+:root.dark .ant-dropdown .ant-dropdown-menu-item {
+  color: var(--text);
+}
+
+:root.dark .ant-dropdown .ant-dropdown-menu-item:hover {
+  background: var(--bg) !important;
+}
+
+:root.dark .ant-dropdown .ant-dropdown-menu-item-disabled {
+  color: var(--muted) !important;
+}
+
+:root.dark .ant-dropdown .ant-dropdown-menu-item .anticon {
+  color: var(--text);
+}
+
+/* 사용자 드롭다운 메뉴 다크모드 */
+:root.dark .ant-dropdown .ant-dropdown-menu-item-danger {
+  color: #ff4d4f;
+}
+
+:root.dark .ant-dropdown .ant-dropdown-menu-item-danger:hover {
+  background: rgba(255, 77, 79, 0.1) !important;
+}
+
+/* 즐겨찾기 빈 상태 텍스트 */
+:root.dark .ant-dropdown .ant-dropdown-menu-item-disabled div {
+  color: var(--muted) !important;
+}

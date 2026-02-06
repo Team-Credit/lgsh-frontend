@@ -1,0 +1,119 @@
+/**
+ * 목록 위젯 스타일
+ */
+
+.list-widget {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.list-widget .ant-list {
+  height: 100%;
+}
+
+.list-widget .ant-list-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-light, #f0f3f9);
+}
+
+.list-widget .ant-list-item:last-child {
+  border-bottom: none;
+}
+
+.list-widget .ant-list-item:hover {
+  background: var(--bg, #f6f8fc);
+}
+
+.list-widget-item .ant-list-item-meta {
+  align-items: center;
+}
+
+.list-widget-item .ant-list-item-meta-avatar {
+  margin-right: 12px;
+}
+
+.list-widget-item .ant-list-item-meta-title {
+  margin-bottom: 2px;
+}
+
+.list-item-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.list-item-title .notice-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-item-desc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+/* 다크모드 */
+:root.dark .list-widget .ant-list-item {
+  border-bottom-color: var(--line, #1c2a46);
+}
+
+:root.dark .list-widget .ant-list-item:hover {
+  background: var(--panel2, #0b1424);
+}
+
+:root.dark .list-item-title {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-item-title span {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-item-title .notice-title {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-item-desc {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .list-item-desc span {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .list-widget .ant-list-item-meta-title {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-widget .ant-list-item-meta-title span {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-widget .ant-list-item-meta-description {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .list-widget .ant-list-item-meta-description span {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .list-widget .ant-typography {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-widget .ant-typography-secondary {
+  color: var(--muted, #94a3b8) !important;
+}
+
+:root.dark .list-widget-item .ant-list-item-meta-title {
+  color: var(--text, #e5e7eb) !important;
+}
+
+:root.dark .list-widget-item .ant-list-item-meta-description {
+  color: var(--muted, #94a3b8) !important;
+}

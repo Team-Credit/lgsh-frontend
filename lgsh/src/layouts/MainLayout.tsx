@@ -4,9 +4,9 @@
  * - 좌측 사이드바 (260px, 접기 가능)
  * - 메인 컨텐츠
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Button, Dropdown, Avatar, Badge, Tooltip, Spin, Slider, Popover } from 'antd';
+import { Layout, Menu, Button, Dropdown, Avatar, Badge, Tooltip, Spin, Slider, Popover, message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   MenuFoldOutlined,
@@ -55,18 +55,23 @@ import {
   FileExcelOutlined,
   SunOutlined,
   MoonOutlined,
+  StarOutlined,
+  StarFilled,
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { fetchMenus, setSelectedKeys, setOpenKeys, toggleCollapsed, clearMenus } from '@/store/slices/menuSlice';
 import { setFontSize, resetFontSize, toggleDarkMode } from '@/store/slices/uiSlice';
-import type { MenuItem } from '@/types';
+import { fetchFavorites, clearFavorites, toggleFavorite } from '@/store/slices/favoriteSlice';
+import type { MenuItem, FavoriteItem } from '@/types';
 import { exportAllTablesFromDOM } from '@/utils/excelExport';
 import { useExcelExport } from '@/contexts';
 import { menuService } from '@/services/menuService';
+import { chatService } from '@/services/chatService';
 import { useTokenRefresh } from '@/hooks';
 import SessionTimeoutModal from '@/components/common/SessionTimeoutModal';
 import ContractWarningModal from '@/components/common/ContractWarningModal';
+import ChatFloatingWidget from '@/components/chat/ChatFloatingWidget';
 import { clearContractWarning } from '@/store/slices/authSlice';
 import './MainLayout.css';
 
@@ -173,9 +178,11 @@ const MainLayout: React.FC = () => {
   const { user, contractWarning } = useAppSelector((state) => state.auth);
   const { menus, collapsed, selectedKeys, openKeys, loading } = useAppSelector((state) => state.menu);
   const { fontSize, darkMode } = useAppSelector((state) => state.ui);
+  const { favorites } = useAppSelector((state) => state.favorite);
 
   // 계약 만료 경고 모달 상태
   const [showContractWarning, setShowContractWarning] = React.useState(false);
+  const [chatUnreadCount, setChatUnreadCount] = React.useState(0);
 
   // 계약 만료 경고 모달 표시 (로그인 후 최초 1회)
   useEffect(() => {
@@ -202,12 +209,48 @@ const MainLayout: React.FC = () => {
   const minWidth = 200;
   const maxWidth = 400;
 
+  // 컨텍스트 메뉴 상태 (사이드바 메뉴용)
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const [contextMenuTargetId, setContextMenuTargetId] = useState<string | null>(null);
+
+  // 즐겨찾기 컨텍스트 메뉴 상태
+  const [favContextMenuOpen, setFavContextMenuOpen] = useState(false);
+  const [favContextMenuPosition, setFavContextMenuPosition] = useState({ x: 0, y: 0 });
+  const [favContextMenuTargetId, setFavContextMenuTargetId] = useState<string | null>(null);
+
   // 메뉴 조회 (사용자 변경 시 재조회)
   useEffect(() => {
     if (user) {
       dispatch(fetchMenus());
+      dispatch(fetchFavorites());
     }
   }, [dispatch, user?.userId]);
+
+  const refreshChatUnreadCount = useCallback(async () => {
+    if (!user) {
+      setChatUnreadCount(0);
+      return;
+    }
+    try {
+      const response = await chatService.getUnreadCount();
+      setChatUnreadCount(response.data.data?.unreadCount ?? 0);
+    } catch {
+      setChatUnreadCount(0);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void refreshChatUnreadCount();
+    const intervalId = window.setInterval(() => {
+      void refreshChatUnreadCount();
+    }, 10000);
+    return () => window.clearInterval(intervalId);
+  }, [refreshChatUnreadCount]);
+
+  const handleRefreshUnread = useCallback(() => {
+    void refreshChatUnreadCount();
+  }, [refreshChatUnreadCount]);
 
   // 초기 폰트 크기 적용
   useEffect(() => {
@@ -222,6 +265,20 @@ const MainLayout: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // 컨텍스트 메뉴 닫기 (다른 곳 클릭 시)
+  useEffect(() => {
+    const handleClick = () => {
+      if (contextMenuOpen) {
+        setContextMenuOpen(false);
+      }
+      if (favContextMenuOpen) {
+        setFavContextMenuOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [contextMenuOpen, favContextMenuOpen]);
 
   // 역방향 URL 맵 생성 (menuUrl -> menuId) - URL로 메뉴 찾기용
   const urlToMenuIdMap = useMemo(() => {
@@ -308,6 +365,104 @@ const MainLayout: React.FC = () => {
     return map;
   }, [menus]);
 
+  // 즐겨찾기 ID Set (빠른 조회용)
+  const favoriteMenuIds = useMemo(() => {
+    return new Set(favorites.map((f) => f.menuId));
+  }, [favorites]);
+
+  // 메뉴가 즐겨찾기인지 확인
+  const isFavoriteMenu = useCallback(
+    (menuId: string) => favoriteMenuIds.has(menuId),
+    [favoriteMenuIds]
+  );
+
+  // 즐겨찾기 토글 핸들러
+  const handleToggleFavorite = useCallback(
+    async (menuId: string) => {
+      const result = await dispatch(toggleFavorite(menuId));
+      if (toggleFavorite.fulfilled.match(result)) {
+        const response = result.payload as { isFavorite: boolean; message: string };
+        message.success(response.message);
+      }
+      setContextMenuOpen(false);
+      setFavContextMenuOpen(false);
+    },
+    [dispatch]
+  );
+
+  // 즐겨찾기 드롭다운 내 우클릭 핸들러
+  const handleFavoriteContextMenu = useCallback(
+    (e: React.MouseEvent, menuId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setFavContextMenuTargetId(menuId);
+      setFavContextMenuPosition({ x: e.clientX, y: e.clientY });
+      setFavContextMenuOpen(true);
+    },
+    []
+  );
+
+  // 컨텍스트 메뉴 핸들러 (우클릭)
+  const handleMenuContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+
+      // 클릭한 요소에서 메뉴 아이템 찾기
+      const target = e.target as HTMLElement;
+      const menuItem = target.closest('.ant-menu-item') as HTMLElement;
+
+      if (menuItem) {
+        // data-menu-key 속성 또는 ant-menu-item의 key 찾기
+        const menuKey = menuItem.getAttribute('data-menu-key') ||
+          menuItem.querySelector('[data-menu-id]')?.getAttribute('data-menu-id');
+
+        // ant-menu는 key를 직접 노출하지 않으므로 다른 방법 사용
+        // ant-menu-title-content의 텍스트로 메뉴 찾기 또는 DOM 구조 활용
+        const menuItemKey = Array.from(document.querySelectorAll('.ant-menu-item'))
+          .indexOf(menuItem);
+
+        // 실제로는 ant-menu의 items에서 key를 가져와야 함
+        // 여기서는 selectedKeys나 다른 방법 사용
+
+        // DOM에서 메뉴 ID 추출 (Ant Design 5.x에서 data-menu-id 사용)
+        const allMenuItems = document.querySelectorAll('.sider-menu .ant-menu-item');
+        let foundMenuId: string | null = null;
+
+        allMenuItems.forEach((item) => {
+          if (item === menuItem || item.contains(target)) {
+            // Ant Design Menu는 key를 data-* 속성으로 저장하지 않음
+            // 대안: 메뉴 텍스트로 찾기
+            const labelEl = item.querySelector('.ant-menu-title-content');
+            const label = labelEl?.textContent;
+            if (label) {
+              // menus에서 해당 라벨을 가진 메뉴 찾기
+              const findMenuByLabel = (items: MenuItem[]): string | null => {
+                for (const menu of items) {
+                  if (menu.menuNm === label && menu.menuUrl) {
+                    return menu.menuId;
+                  }
+                  if (menu.children) {
+                    const found = findMenuByLabel(menu.children);
+                    if (found) return found;
+                  }
+                }
+                return null;
+              };
+              foundMenuId = findMenuByLabel(menus);
+            }
+          }
+        });
+
+        if (foundMenuId) {
+          setContextMenuTargetId(foundMenuId);
+          setContextMenuPosition({ x: e.clientX, y: e.clientY });
+          setContextMenuOpen(true);
+        }
+      }
+    },
+    [menus]
+  );
+
 
   // 메뉴 데이터를 Ant Design 형식으로 변환
   const menuItems: MenuProps['items'] = useMemo(() => {
@@ -335,6 +490,7 @@ const MainLayout: React.FC = () => {
   // 로그아웃 처리
   const handleLogout = async () => {
     dispatch(clearMenus()); // 메뉴 상태 초기화
+    dispatch(clearFavorites()); // 즐겨찾기 상태 초기화
     await dispatch(logout());
     navigate('/login');
   };
@@ -388,6 +544,72 @@ const MainLayout: React.FC = () => {
     },
   ];
 
+  // 컨텍스트 메뉴 아이템 (사이드바 메뉴 - 즐겨찾기 추가/삭제)
+  const contextMenuItems: MenuProps['items'] = useMemo(() => {
+    if (!contextMenuTargetId) return [];
+
+    const isFav = isFavoriteMenu(contextMenuTargetId);
+    return [
+      {
+        key: 'toggle-favorite',
+        label: isFav ? '즐겨찾기 삭제' : '즐겨찾기 추가',
+        icon: isFav ? <StarFilled style={{ color: '#faad14' }} /> : <StarOutlined />,
+        onClick: () => handleToggleFavorite(contextMenuTargetId),
+      },
+    ];
+  }, [contextMenuTargetId, isFavoriteMenu, handleToggleFavorite]);
+
+  // 즐겨찾기 컨텍스트 메뉴 아이템 (즐겨찾기 제외)
+  const favContextMenuItems: MenuProps['items'] = useMemo(() => {
+    if (!favContextMenuTargetId) return [];
+
+    return [
+      {
+        key: 'remove-favorite',
+        label: '즐겨찾기 제외',
+        icon: <StarFilled style={{ color: '#faad14' }} />,
+        danger: true,
+        onClick: () => handleToggleFavorite(favContextMenuTargetId),
+      },
+    ];
+  }, [favContextMenuTargetId, handleToggleFavorite]);
+
+  // 즐겨찾기 드롭다운 메뉴
+  const favoriteMenuItems: MenuProps['items'] = useMemo(() => {
+    if (favorites.length === 0) {
+      return [
+        {
+          key: 'empty',
+          label: (
+            <div style={{ color: '#999', textAlign: 'center', padding: '8px 0' }}>
+              즐겨찾기가 없습니다
+            </div>
+          ),
+          disabled: true,
+        },
+      ];
+    }
+
+    return favorites.map((favorite) => ({
+      key: favorite.menuId,
+      label: (
+        <div
+          onContextMenu={(e) => handleFavoriteContextMenu(e, favorite.menuId)}
+          style={{ margin: '-5px -12px', padding: '5px 12px' }}
+        >
+          {favorite.menuNm}
+        </div>
+      ),
+      icon: getIconByName(favorite.menuIcon),
+      onClick: () => {
+        if (favorite.menuUrl) {
+          menuService.recordMenuAccess(favorite.menuId);
+          navigate(favorite.menuUrl);
+        }
+      },
+    }));
+  }, [favorites, navigate, handleFavoriteContextMenu]);
+
   return (
     <Layout className="main-layout">
       {/* 헤더 */}
@@ -403,6 +625,22 @@ const MainLayout: React.FC = () => {
         </div>
 
         <div className="header-right">
+          <Dropdown
+            menu={{ items: favoriteMenuItems }}
+            placement="bottomRight"
+            trigger={['click']}
+          >
+            <Tooltip title="즐겨찾기">
+              <Badge count={favorites.length} size="small" offset={[-2, 2]}>
+                <Button
+                  type="text"
+                  icon={favorites.length > 0 ? <StarFilled style={{ color: '#faad14' }} /> : <StarOutlined />}
+                  className="header-icon-btn"
+                />
+              </Badge>
+            </Tooltip>
+          </Dropdown>
+
           <Popover
             content={fontSizeContent}
             title={null}
@@ -448,8 +686,13 @@ const MainLayout: React.FC = () => {
           </Tooltip>
 
           <Tooltip title="알림">
-            <Badge count={3} size="small">
-              <Button type="text" icon={<BellOutlined />} className="header-icon-btn" />
+            <Badge count={chatUnreadCount} size="small" overflowCount={99}>
+              <Button
+                type="text"
+                icon={<BellOutlined />}
+                className="header-icon-btn"
+                onClick={() => navigate('/chat')}
+              />
             </Badge>
           </Tooltip>
 
@@ -489,15 +732,40 @@ const MainLayout: React.FC = () => {
               <Spin />
             </div>
           ) : (
-            <Menu
-              mode="inline"
-              inlineCollapsed={collapsed}
-              selectedKeys={selectedKeys}
-              {...(!collapsed && { openKeys, onOpenChange: (keys) => dispatch(setOpenKeys(keys)) })}
-              onSelect={handleMenuSelect}
-              items={menuItems}
-              className="sider-menu"
-            />
+            <div onContextMenu={handleMenuContextMenu}>
+              <Menu
+                mode="inline"
+                inlineCollapsed={collapsed}
+                selectedKeys={selectedKeys}
+                {...(!collapsed && { openKeys, onOpenChange: (keys) => dispatch(setOpenKeys(keys)) })}
+                onSelect={handleMenuSelect}
+                items={menuItems}
+                className="sider-menu"
+              />
+              {/* 컨텍스트 메뉴 (우클릭) */}
+              <Dropdown
+                menu={{ items: contextMenuItems }}
+                open={contextMenuOpen}
+                onOpenChange={setContextMenuOpen}
+                trigger={['contextMenu']}
+                overlayStyle={{
+                  position: 'fixed',
+                  left: contextMenuPosition.x,
+                  top: contextMenuPosition.y,
+                }}
+              >
+                <div
+                  style={{
+                    position: 'fixed',
+                    left: contextMenuPosition.x,
+                    top: contextMenuPosition.y,
+                    width: 1,
+                    height: 1,
+                    display: contextMenuOpen ? 'block' : 'none',
+                  }}
+                />
+              </Dropdown>
+            </div>
           )}
 
           {/* 리사이저 */}
@@ -549,6 +817,35 @@ const MainLayout: React.FC = () => {
         contractWarning={contractWarning}
         onClose={handleCloseContractWarning}
       />
+
+      <ChatFloatingWidget
+        unreadCount={chatUnreadCount}
+        onRefreshUnread={handleRefreshUnread}
+      />
+      {/* 즐겨찾기 컨텍스트 메뉴 (우클릭) */}
+      <Dropdown
+        menu={{ items: favContextMenuItems }}
+        open={favContextMenuOpen}
+        onOpenChange={setFavContextMenuOpen}
+        trigger={['contextMenu']}
+        overlayStyle={{
+          position: 'fixed',
+          left: favContextMenuPosition.x,
+          top: favContextMenuPosition.y,
+        }}
+      >
+        <div
+          style={{
+            position: 'fixed',
+            left: favContextMenuPosition.x,
+            top: favContextMenuPosition.y,
+            width: 1,
+            height: 1,
+            display: favContextMenuOpen ? 'block' : 'none',
+            zIndex: 9999,
+          }}
+        />
+      </Dropdown>
     </Layout>
   );
 };

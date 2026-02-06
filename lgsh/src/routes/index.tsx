@@ -22,6 +22,7 @@ const CompanySettingsPage = lazy(() => import('@/pages/company/CompanySettingsPa
 const CreditEvaluatePage = lazy(() => import('@/pages/credit/CreditEvaluatePage'));
 const CreditDistributionPage = lazy(() => import('@/pages/credit/CreditDistributionPage'));
 const EdaAnalysisPage = lazy(() => import('@/pages/analysis/EdaAnalysisPage'));
+const ModelSelectPage = lazy(() => import('@/pages/analysis/ModelSelectPage'));
 const ModelListPage = lazy(() => import('@/pages/model/ModelListPage'));
 const VariableListPage = lazy(() => import('@/pages/variable/VariableListPage'));
 const MessageCodePage = lazy(() => import('@/pages/system/MessageCodePage'));
@@ -31,6 +32,16 @@ const BatchManagementPage = lazy(() => import('@/pages/system/BatchManagementPag
 const SimulationPage = lazy(() => import('@/pages/simulation/SimulationPage'));
 const SimulationHistoryPage = lazy(() => import('@/pages/simulation/SimulationHistoryPage'));
 const MenuAdminPage = lazy(() => import('@/pages/system/MenuAdminPage'));
+const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
+
+// AI 챗봇
+const AiChatPage = lazy(() => import('@/pages/ai/AiChatPage'));
+
+// 월간레포트
+const ReportKanbanPage = lazy(() => import('@/pages/report/ReportKanbanPage'));
+const ReportHistoryPage = lazy(() => import('@/pages/report/ReportHistoryPage'));
+const ReportClosePage = lazy(() => import('@/pages/report/ReportClosePage'));
+const ReportItemAdminPage = lazy(() => import('@/pages/report/ReportItemAdminPage'));
 
 // 공지사항
 const NoticeListPage = lazy(() => import('@/pages/notice/NoticeListPage'));
@@ -129,6 +140,14 @@ export const routes: RouteConfig[] = [
     title: '데이터 분석',
     menuId: 'M0301',
   },
+  // Analysis > Model Select
+  {
+    path: 'analysis/model-select',
+    element: ModelSelectPage,
+    title: '\uBAA8\uB378 \uC120\uD0DD',
+    menuId: 'M0303',
+  },
+
 
   // 분석관리 > 모델관리
   {
@@ -272,7 +291,7 @@ export const routes: RouteConfig[] = [
 
   // 시스템관리 > 배치관리
   {
-    path: 'admin/batches',
+    path: 'ops/batches',
     element: BatchManagementPage,
     title: '배치관리',
     menuId: 'M0806',
@@ -284,6 +303,53 @@ export const routes: RouteConfig[] = [
     element: FileManagementPage,
     title: '파일관리',
     menuId: 'M0807',
+  },
+
+  // AI 챗봇
+  {
+    path: 'ai/chat',
+    element: AiChatPage,
+    title: 'AI 어시스턴트',
+    menuId: 'M0901',
+  },
+
+  // 실시간 채팅
+  {
+    path: 'chat',
+    element: ChatPage,
+    title: '실시간 채팅',
+  },
+
+  // 월간레포트 > 레포트 생성
+  {
+    path: 'report/create',
+    element: ReportKanbanPage,
+    title: '레포트 생성',
+    menuId: 'M1001',
+  },
+
+  // 월간레포트 > 레포트 이력
+  {
+    path: 'report/history',
+    element: ReportHistoryPage,
+    title: '레포트 이력',
+    menuId: 'M1002',
+  },
+
+  // 월간레포트 > 마감관리
+  {
+    path: 'report/close',
+    element: ReportClosePage,
+    title: '마감관리',
+    menuId: 'M1003',
+  },
+
+  // 월간레포트 > 항목관리 (관리자)
+  {
+    path: 'report/items',
+    element: ReportItemAdminPage,
+    title: '항목관리',
+    menuId: 'M1004',
   },
 ];
 

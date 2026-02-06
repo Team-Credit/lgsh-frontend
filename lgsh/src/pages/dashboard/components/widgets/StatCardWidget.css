@@ -1,0 +1,84 @@
+/**
+ * 통계 카드 위젯 스타일
+ */
+
+.stat-card-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  padding: 8px;
+}
+
+.stat-card-widget .ant-statistic-content {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.stat-card-widget .ant-statistic-content-suffix {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--muted, #64748b);
+}
+
+.stat-card-comparison {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.stat-card-comparison .comparison-value {
+  font-weight: 600;
+}
+
+.stat-card-comparison .comparison-label {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* 년월 선택기 */
+.stat-card-month-selector {
+  margin-bottom: 4px;
+}
+
+.stat-card-month-selector .ant-picker {
+  border-radius: 4px;
+}
+
+.stat-card-month-selector .ant-picker-input > input {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted, #64748b);
+}
+
+/* 다크모드 */
+:root.dark .stat-card-widget .ant-statistic-title {
+  color: var(--muted, #94a3b8);
+}
+
+:root.dark .stat-card-widget .ant-statistic-content {
+  color: var(--text, #e5e7eb);
+}
+
+:root.dark .stat-card-widget .ant-statistic-content-value {
+  color: var(--text, #e5e7eb);
+}
+
+:root.dark .stat-card-widget .ant-statistic-content-suffix {
+  color: var(--muted, #94a3b8);
+}
+
+:root.dark .stat-card-comparison .comparison-label {
+  color: var(--muted, #94a3b8);
+}
+
+:root.dark .stat-card-month-selector .ant-picker-input > input {
+  color: var(--muted, #94a3b8);
+}
