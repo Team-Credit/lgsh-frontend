@@ -67,6 +67,8 @@ import type { MenuItem, FavoriteItem } from '@/types';
 import { exportAllTablesFromDOM } from '@/utils/excelExport';
 import { useExcelExport } from '@/contexts';
 import { menuService } from '@/services/menuService';
+import alertService, { type UserAlert } from '@/services/alertService';
+import chatService from '@/services/chatService';
 import { useTokenRefresh } from '@/hooks';
 import SessionTimeoutModal from '@/components/common/SessionTimeoutModal';
 import ContractWarningModal from '@/components/common/ContractWarningModal';
@@ -754,11 +756,68 @@ const MainLayout: React.FC = () => {
             />
           </Tooltip>
 
-          <Tooltip title="알림">
-            <Badge count={3} size="small">
-              <Button type="text" icon={<BellOutlined />} className="header-icon-btn" />
-            </Badge>
-          </Tooltip>
+          <Popover
+            content={
+              <div style={{ width: 320, maxHeight: 400, overflow: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--line, #f0f0f0)' }}>
+                  <span style={{ fontWeight: 600 }}>알림</span>
+                  <div>
+                    <Button size="small" type="link" onClick={handleToggleHideRead}>
+                      {hideReadAlerts ? '전체 보기' : '읽지않은 알림만'}
+                    </Button>
+                    <Button size="small" type="link" onClick={handleReadAllAlerts} disabled={alertUnreadCount === 0}>
+                      모두 읽음
+                    </Button>
+                  </div>
+                </div>
+                {alertLoading ? (
+                  <div style={{ textAlign: 'center', padding: 20 }}><Spin size="small" /></div>
+                ) : alerts.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: '#999' }}>알림이 없습니다.</div>
+                ) : (
+                  alerts.map((alert) => (
+                    <div
+                      key={alert.alertId}
+                      onClick={() => handleReadAlert(alert.alertId, alert.linkUrl)}
+                      style={{
+                        padding: '10px 8px',
+                        borderBottom: '1px solid var(--line, #f0f0f0)',
+                        cursor: alert.linkUrl ? 'pointer' : 'default',
+                        backgroundColor: alert.readYn === 'N' ? 'var(--primary-bg, rgba(24, 144, 255, 0.05))' : 'transparent',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span style={{ fontWeight: alert.readYn === 'N' ? 600 : 400, color: 'var(--text)' }}>
+                          {alert.alertTitle}
+                        </span>
+                        {alert.readYn === 'N' && (
+                          <Badge status="processing" />
+                        )}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary, #666)', marginTop: 4 }}>
+                        {alert.alertMsg}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--muted, #999)', marginTop: 4 }}>
+                        {alert.timeAgo}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            }
+            title={null}
+            trigger="click"
+            placement="bottomRight"
+            onOpenChange={(open) => {
+              if (open) fetchAlerts();
+            }}
+          >
+            <Tooltip title="알림">
+              <Badge count={alertUnreadCount} size="small">
+                <Button type="text" icon={<BellOutlined />} className="header-icon-btn" />
+              </Badge>
+            </Tooltip>
+          </Popover>
 
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <div className="user-info">
