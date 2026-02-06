@@ -24,8 +24,10 @@ import {
   Popconfirm,
   Input,
   Form,
+  Popover,
+  Checkbox,
 } from 'antd';
-import { SearchOutlined, ClearOutlined } from '@ant-design/icons';
+import { SearchOutlined, ClearOutlined, SettingOutlined, UndoOutlined } from '@ant-design/icons';
 import {
   UploadOutlined,
   InboxOutlined,
@@ -89,6 +91,20 @@ const UploadGrid: React.FC<UploadGridProps> = ({
   const [filterPersonId, setFilterPersonId] = useState<string>('');
   const [filterDataStatus, setFilterDataStatus] = useState<string | undefined>(undefined);
   const [filterDateRange, setFilterDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
+
+  // 컬럼 설정
+  const [columnSettingOpen, setColumnSettingOpen] = useState(false);
+  const DATA_COLUMN_KEYS = ['rawDataId', 'personId', 'dataCollectDt', 'snapshotDate', 'dataStatus', 'validationMsg', 'regDt'];
+  const DEFAULT_DATA_VISIBLE = ['rawDataId', 'personId', 'dataCollectDt', 'snapshotDate', 'dataStatus', 'validationMsg', 'regDt'];
+  const [visibleDataColumns, setVisibleDataColumns] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('uploadGridDataVisibleColumns');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    const defaults: Record<string, boolean> = {};
+    DATA_COLUMN_KEYS.forEach(k => { defaults[k] = DEFAULT_DATA_VISIBLE.includes(k); });
+    return defaults;
+  });
 
   // 엑셀 내보내기
   const { registerExportHandler, unregisterExportHandler } = useExcelExport();
@@ -419,72 +435,125 @@ const UploadGrid: React.FC<UploadGridProps> = ({
     },
   ];
 
+  // 컬럼 설정 초기화
+  const handleResetDataColumnSettings = useCallback(() => {
+    const defaults: Record<string, boolean> = {};
+    DATA_COLUMN_KEYS.forEach(k => { defaults[k] = DEFAULT_DATA_VISIBLE.includes(k); });
+    setVisibleDataColumns(defaults);
+    localStorage.removeItem('uploadGridDataVisibleColumns');
+    message.success('컬럼 설정이 초기화되었습니다.');
+  }, [DATA_COLUMN_KEYS, DEFAULT_DATA_VISIBLE]);
+
+  // 컬럼 가시성 변경
+  const handleDataColumnVisibilityChange = useCallback((key: string, checked: boolean) => {
+    setVisibleDataColumns(prev => {
+      const newState = { ...prev, [key]: checked };
+      localStorage.setItem('uploadGridDataVisibleColumns', JSON.stringify(newState));
+      return newState;
+    });
+  }, []);
+
+  // 데이터 컬럼 정보
+  const DATA_COLUMN_INFO: Record<string, { title: string; width: number }> = {
+    rawDataId: { title: '데이터ID', width: 180 },
+    personId: { title: '대상자ID', width: 150 },
+    dataCollectDt: { title: '데이터수집일', width: 120 },
+    snapshotDate: { title: '스냅샷일자', width: 120 },
+    dataStatus: { title: '상태', width: 100 },
+    validationMsg: { title: '검증메시지', width: 200 },
+    regDt: { title: '등록일시', width: 150 },
+  };
+
   // 데이터 목록 컬럼
-  const dataColumns: ColumnsType<RawData> = [
-    {
-      title: 'ID',
-      dataIndex: 'rawDataId',
-      key: 'rawDataId',
-      width: 180,
-      ellipsis: true,
-    },
-    {
-      title: '대상자ID',
-      dataIndex: 'personId',
-      key: 'personId',
-      width: 150,
-      ellipsis: true,
-      render: (v) => v || '-',
-    },
-    {
-      title: '데이터수집일',
-      dataIndex: 'dataCollectDt',
-      key: 'dataCollectDt',
-      width: 120,
-      render: (v) => v ? dayjs(v).format('YYYY-MM-DD') : '-',
-    },
-    {
-      title: '스냅샷일자',
-      dataIndex: 'snapshotDate',
-      key: 'snapshotDate',
-      width: 120,
-      render: (v) => v ? dayjs(v).format('YYYY-MM-DD') : '-',
-    },
-    {
-      title: '상태',
-      dataIndex: 'dataStatus',
-      key: 'dataStatus',
-      width: 100,
-      render: (v) => {
-        const colors: Record<string, string> = {
-          PENDING: 'default',
-          VALIDATED: 'success',
-          ERROR: 'error',
-        };
-        const texts: Record<string, string> = {
-          PENDING: '대기',
-          VALIDATED: '검증완료',
-          ERROR: '오류',
-        };
-        return <Tag color={colors[v] || 'default'}>{texts[v] || v || '-'}</Tag>;
+  const dataColumns: ColumnsType<RawData> = useMemo(() => {
+    const allColumns: ColumnsType<RawData> = [
+      {
+        title: '데이터ID',
+        dataIndex: 'rawDataId',
+        key: 'rawDataId',
+        width: 180,
+        ellipsis: true,
       },
-    },
-    {
-      title: '검증메시지',
-      dataIndex: 'validationMsg',
-      key: 'validationMsg',
-      width: 200,
-      ellipsis: true,
-      render: (v) => v || '-',
-    },
-    {
-      title: '등록일시',
-      dataIndex: 'regDt',
-      key: 'regDt',
-      width: 150,
-      render: (v) => v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-',
-    },
-  ];
+      {
+        title: '대상자ID',
+        dataIndex: 'personId',
+        key: 'personId',
+        width: 150,
+        ellipsis: true,
+        render: (v) => v || '-',
+      },
+      {
+        title: '데이터수집일',
+        dataIndex: 'dataCollectDt',
+        key: 'dataCollectDt',
+        width: 120,
+        render: (v) => v ? dayjs(v).format('YYYY-MM-DD') : '-',
+      },
+      {
+        title: '스냅샷일자',
+        dataIndex: 'snapshotDate',
+        key: 'snapshotDate',
+        width: 120,
+        render: (v) => v ? dayjs(v).format('YYYY-MM-DD') : '-',
+      },
+      {
+        title: '상태',
+        dataIndex: 'dataStatus',
+        key: 'dataStatus',
+        width: 100,
+        render: (v) => {
+          const colors: Record<string, string> = {
+            PENDING: 'default',
+            VALIDATED: 'success',
+            ERROR: 'error',
+          };
+          const texts: Record<string, string> = {
+            PENDING: '대기',
+            VALIDATED: '검증완료',
+            ERROR: '오류',
+          };
+          return <Tag color={colors[v] || 'default'}>{texts[v] || v || '-'}</Tag>;
+        },
+      },
+      {
+        title: '검증메시지',
+        dataIndex: 'validationMsg',
+        key: 'validationMsg',
+        width: 200,
+        ellipsis: true,
+        render: (v) => v || '-',
+      },
+      {
+        title: '등록일시',
+        dataIndex: 'regDt',
+        key: 'regDt',
+        width: 150,
+        render: (v) => v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-',
+      },
+    ];
+    return allColumns.filter(col => visibleDataColumns[col.key as string] !== false);
+  }, [visibleDataColumns]);
+
+  // 컬럼 설정 팝오버 내용
+  const dataColumnSettingContent = (
+    <div style={{ width: 200 }}>
+      <div style={{ marginBottom: 8 }}>
+        <Button size="small" icon={<UndoOutlined />} onClick={handleResetDataColumnSettings} block>
+          기본 설정으로 초기화
+        </Button>
+      </div>
+      {DATA_COLUMN_KEYS.map((key) => (
+        <Checkbox
+          key={key}
+          checked={visibleDataColumns[key] !== false}
+          onChange={(e) => handleDataColumnVisibilityChange(key, e.target.checked)}
+          style={{ display: 'block', marginLeft: 0, marginBottom: 4 }}
+        >
+          {DATA_COLUMN_INFO[key]?.title || key}
+        </Checkbox>
+      ))}
+    </div>
+  );
 
   // 탭 아이템
   const tabItems = [
@@ -618,9 +687,21 @@ const UploadGrid: React.FC<UploadGridProps> = ({
             <Text type="secondary">
               {selectedUploadId ? `업로드 ${selectedUploadId} 데이터` : '업로드를 선택하거나 검색 조건을 입력하세요'}
             </Text>
-            <Button icon={<ReloadOutlined />} onClick={handleSearch} disabled={!selectedUploadId && !filterPersonId}>
-              조회
-            </Button>
+            <Space>
+              <Popover
+                content={dataColumnSettingContent}
+                title="컬럼 표시 설정"
+                trigger="click"
+                open={columnSettingOpen}
+                onOpenChange={setColumnSettingOpen}
+                placement="bottomRight"
+              >
+                <Button icon={<SettingOutlined />}>컬럼 설정</Button>
+              </Popover>
+              <Button icon={<ReloadOutlined />} onClick={handleSearch} disabled={!selectedUploadId && !filterPersonId}>
+                조회
+              </Button>
+            </Space>
           </div>
           <Table
             columns={dataColumns}
