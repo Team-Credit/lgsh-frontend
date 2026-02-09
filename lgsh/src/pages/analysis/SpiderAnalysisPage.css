@@ -1,0 +1,38 @@
+/**
+ * 스파이더웹 비교 분석 페이지 스타일
+ * 화면 ID: SWB001
+ */
+.spider-analysis-page {
+  padding: 0;
+}
+
+.spider-page-header {
+  margin-bottom: 16px;
+}
+
+.spider-action-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.spider-bottom-actions {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+/* 반응형 */
+@media (max-width: 1199px) {
+  .spider-radar-panel .ant-col-md-8 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+@media (max-width: 767px) {
+  .spider-radar-panel .ant-col-md-8 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}

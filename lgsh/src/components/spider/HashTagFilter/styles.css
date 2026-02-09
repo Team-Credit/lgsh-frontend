@@ -1,0 +1,31 @@
+.spider-filter-card {
+  margin-bottom: 16px;
+}
+
+.spider-filter-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, #f0f0f0);
+}
+
+.spider-filter-section {
+  padding: 10px 0;
+}
+
+.spider-filter-section + .spider-filter-section {
+  border-top: 1px dashed var(--border-color, #f0f0f0);
+}
+
+.spider-filter-label {
+  margin-bottom: 8px;
+}
+
+.spider-filter-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}

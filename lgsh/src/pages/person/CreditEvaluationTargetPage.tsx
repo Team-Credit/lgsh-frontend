@@ -1,53 +1,69 @@
-﻿/**
- * 신용평가 대상자 목록 페이지
+/**
+ * PSN-001 대상자 목록 카드보드 UI
  */
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Form, Input, Popconfirm, Select, Space, Table, Typography, message } from 'antd';
-import { DeleteOutlined, FileExcelOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
-import type { ColumnsType, TableRowSelection } from 'antd/es/table/interface';
+import {
+  Card, Form, Input, Select, Button, Space, Typography, Pagination,
+  Modal, Spin, Empty, message,
+} from 'antd';
+import { SearchOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import { personService } from '@/services/personService';
-import type { PersonFull } from '@/types';
+import { useAppSelector } from '@/store/hooks';
+import { useCommonCodes } from '@/hooks';
+import PersonCard from './components/PersonCard';
+import PersonDetailData from './PersonDetailData';
+import SimulationPage from '@/pages/simulation/SimulationPage';
+import type { PersonCardItem } from '@/types';
 import './CreditEvaluationTargetPage.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-interface PersonWithScore extends PersonFull {
-  recentScore?: number;
-}
-
 const CreditEvaluationTargetPage: React.FC = () => {
-  const [form] = Form.useForm();
+  const [searchForm] = Form.useForm();
+
+  // 로그인 사용자
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const userCompanyId = currentUser?.companyId || null;
+
+  // 공통코드: 등급
+  const { codeMap } = useCommonCodes(['CREDIT_GRADE']);
+  const gradeOptions = codeMap['CREDIT_GRADE'] || [];
+
+  // 상태
   const [loading, setLoading] = useState(false);
-  const [dataSource, setDataSource] = useState<PersonWithScore[]>([]);
+  const [dataSource, setDataSource] = useState<PersonCardItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [pageSize, setPageSize] = useState(20);
 
-  const fetchData = async (nextPage = page, nextSize = pageSize) => {
+  // 모달 상태
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailPersonId, setDetailPersonId] = useState('');
+  const [simModalOpen, setSimModalOpen] = useState(false);
+  const [simPersonId, setSimPersonId] = useState('');
+
+  // 데이터 조회
+  const fetchData = async (currentPage = page, currentSize = pageSize) => {
     setLoading(true);
     try {
-      const searchValues = form.getFieldsValue();
-      const response = await personService.list({
-        page: nextPage - 1,
-        size: nextSize,
+      const searchValues = searchForm.getFieldsValue();
+      const response = await personService.cardList({
+        page: currentPage - 1,
+        size: currentSize,
         ...searchValues,
+        companyId: userCompanyId || searchValues.companyId,
       });
 
-      if (!response.success || !response.data) {
+      if (response.success && response.data) {
+        setDataSource(response.data.content);
+        setTotal(response.data.totalCount);
+        if (response.data.content.length === 0) {
+          message.info('조회된 데이터가 없습니다.');
+        }
+      } else {
         message.error(response.message || '데이터 조회에 실패했습니다.');
-        return;
       }
-
-      const content = response.data.content || [];
-      const contentWithScore = content.map((item) => ({
-        ...item,
-        recentScore: Math.floor(Math.random() * (990 - 300 + 1)) + 300,
-      }));
-
-      setDataSource(contentWithScore);
-      setTotal(response.data.totalCount ?? content.length);
     } catch (error: any) {
       console.error('데이터 조회 오류:', error);
       message.error(error?.message || '데이터 조회 중 오류가 발생했습니다.');
@@ -56,202 +72,182 @@ const CreditEvaluationTargetPage: React.FC = () => {
     }
   };
 
+  // 초기 로드
   useEffect(() => {
     fetchData(1, pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 검색
   const handleSearch = () => {
     setPage(1);
     fetchData(1, pageSize);
   };
 
+  // 초기화
   const handleReset = () => {
-    form.resetFields();
+    searchForm.resetFields();
+    searchForm.setFieldsValue({ sortBy: 'SCORE_DESC' });
     setPage(1);
     fetchData(1, pageSize);
   };
 
-  const handleBatchDelete = async () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning('삭제할 항목을 선택해 주세요.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const personIds = selectedRowKeys as string[];
-      await personService.deleteBatch(personIds);
-      message.success(`${personIds.length}건이 삭제되었습니다.`);
-      setSelectedRowKeys([]);
-      fetchData(page, pageSize);
-    } catch (error: any) {
-      console.error('일괄 삭제 오류:', error);
-      message.error(error?.message || '삭제 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
+  // 상세보기 모달
+  const handleDetailClick = (personId: string) => {
+    setDetailPersonId(personId);
+    setDetailModalOpen(true);
   };
 
-  const rowSelection: TableRowSelection<PersonWithScore> = {
-    selectedRowKeys,
-    onChange: (keys) => setSelectedRowKeys(keys),
+  // 시뮬레이션 모달
+  const handleSimulationClick = (personId: string) => {
+    setSimPersonId(personId);
+    setSimModalOpen(true);
   };
 
-  const columns: ColumnsType<PersonWithScore> = [
-    {
-      title: '이름',
-      dataIndex: 'personNm',
-      key: 'personNm',
-      width: 120,
-      align: 'center',
-    },
-    {
-      title: '주민번호',
-      dataIndex: 'personNo',
-      key: 'personNo',
-      width: 150,
-      align: 'center',
-      render: (text?: string) => {
-        if (!text) return '-';
-        if (text.length >= 7) return `${text.substring(0, 6)}-${text.substring(6, 7)}******`;
-        return text;
-      },
-    },
-    {
-      title: '전화번호',
-      dataIndex: 'mobileNo',
-      key: 'mobileNo',
-      width: 140,
-      align: 'center',
-      render: (text?: string) => text || '-',
-    },
-    {
-      title: '그룹',
-      dataIndex: 'personGrpNm',
-      key: 'personGrpNm',
-      width: 120,
-      align: 'center',
-      render: (text: string | undefined, record) => text || record.personGrp || '-',
-    },
-    {
-      title: '상태',
-      dataIndex: 'useYn',
-      key: 'useYn',
-      width: 100,
-      align: 'center',
-      render: (useYn?: string) => (
-        <div className="status-badge">
-          <span className={`status-dot ${useYn === 'Y' ? 'active' : 'inactive'}`} />
-          {useYn === 'Y' ? '활성' : '비활성'}
-        </div>
-      ),
-    },
-    {
-      title: '최근점수',
-      dataIndex: 'recentScore',
-      key: 'recentScore',
-      width: 100,
-      align: 'center',
-      render: (score?: number) => <Text strong>{score ?? '-'}</Text>,
-    },
-    {
-      title: '상세',
-      key: 'action',
-      width: 80,
-      align: 'center',
-      render: () => (
-        <Button type="text" size="small">
-          보기
-        </Button>
-      ),
-    },
-  ];
+  // 페이지 변경
+  const handlePageChange = (newPage: number, newSize: number) => {
+    setPage(newPage);
+    setPageSize(newSize);
+    fetchData(newPage, newSize);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <div className="credit-evaluation-target-page">
+    <div className="person-card-page">
+      {/* 페이지 헤더 */}
       <div className="page-header">
-        <Title level={4} style={{ margin: 0 }}>
-          신용평가 대상자 목록
+        <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+          <TeamOutlined style={{ marginRight: 8 }} />
+          대상자 목록
         </Title>
-        <Button type="primary" style={{ visibility: 'hidden' }}>
-          + 신규등록
-        </Button>
+        <Text type="secondary" style={{ fontSize: 13 }}>
+          신용평가 대상자를 카드보드 형태로 조회합니다.
+        </Text>
       </div>
 
+      {/* 조회조건 */}
       <Card className="search-card" size="small">
-        <div className="search-title">조회조건</div>
-        <Form form={form} layout="inline" className="search-form">
-          <Form.Item name="personNm">
-            <Input placeholder="검색어 입력" style={{ width: 200 }} />
+        <Form form={searchForm} layout="inline" initialValues={{ sortBy: 'SCORE_DESC' }}>
+          <Form.Item name="personNo" label="대상자번호">
+            <Input placeholder="대상자번호" style={{ width: 150 }} />
           </Form.Item>
-          <Form.Item name="personGrp">
-            <Select placeholder="그룹 전체" style={{ width: 150 }} allowClear>
-              <Option value="VIP">VIP</Option>
-              <Option value="NORMAL">일반</Option>
+          <Form.Item name="personNm" label="대상자명">
+            <Input placeholder="대상자명" style={{ width: 150 }} />
+          </Form.Item>
+          {!userCompanyId && (
+            <Form.Item name="companyId" label="원청사">
+              <Input placeholder="원청사ID" style={{ width: 130 }} />
+            </Form.Item>
+          )}
+          <Form.Item name="personGrp" label="관리그룹">
+            <Input placeholder="관리그룹" style={{ width: 130 }} />
+          </Form.Item>
+          <Form.Item name="useYn" label="사용여부">
+            <Select placeholder="전체" allowClear style={{ width: 100 }}>
+              <Option value="Y">사용</Option>
+              <Option value="N">미사용</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="useYn">
-            <Select placeholder="상태 전체" style={{ width: 150 }} allowClear>
-              <Option value="Y">활성</Option>
-              <Option value="N">비활성</Option>
+          <Form.Item name="creditGrade" label="등급">
+            <Select placeholder="전체" allowClear style={{ width: 120 }}>
+              {gradeOptions.map((opt) => (
+                <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+              ))}
             </Select>
           </Form.Item>
-
-          <div style={{ marginLeft: 'auto' }}>
+          <Form.Item name="sortBy" label="정렬">
+            <Select style={{ width: 140 }}>
+              <Option value="SCORE_DESC">점수 높은 순</Option>
+              <Option value="SCORE_ASC">점수 낮은 순</Option>
+              <Option value="RECENT">최신순</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item>
             <Space>
-              <Button type="primary" onClick={handleSearch} icon={<SearchOutlined />}>
-                검색
+              <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                조회
               </Button>
-              <Button onClick={handleReset} icon={<ReloadOutlined />}>
+              <Button icon={<ReloadOutlined />} onClick={handleReset}>
                 초기화
               </Button>
-              <Button icon={<FileExcelOutlined />}>엑셀</Button>
             </Space>
-          </div>
+          </Form.Item>
         </Form>
       </Card>
 
-      <Card className="table-card" size="small">
-        <div className="table-title">조회결과 (총 {total}건)</div>
+      {/* 결과 영역 */}
+      <div className="result-header">
+        <Text type="secondary">전체 {total.toLocaleString()}건</Text>
+      </div>
 
-        <Table
-          rowSelection={rowSelection}
-          columns={columns}
-          dataSource={dataSource}
-          rowKey="personId"
-          loading={loading}
-          pagination={{
-            current: page,
-            pageSize,
-            total,
-            showSizeChanger: true,
-            onChange: (nextPage, nextSize) => {
-              setPage(nextPage);
-              setPageSize(nextSize);
-              fetchData(nextPage, nextSize);
-            },
-          }}
-          size="middle"
-          bordered
-        />
-
-        <div className="footer-actions" style={{ marginTop: 16 }}>
-          <Text type="secondary">선택: {selectedRowKeys.length}건</Text>
-          <Popconfirm
-            title="일괄 삭제"
-            description="선택한 항목을 정말 삭제하시겠습니까?"
-            onConfirm={handleBatchDelete}
-            okText="삭제"
-            cancelText="취소"
-            disabled={selectedRowKeys.length === 0}
-          >
-            <Button danger type="primary" icon={<DeleteOutlined />} disabled={selectedRowKeys.length === 0}>
-              일괄 삭제
-            </Button>
-          </Popconfirm>
+      {loading ? (
+        <div className="loading-container">
+          <Spin size="large" tip="조회 중..." />
         </div>
-      </Card>
+      ) : dataSource.length === 0 ? (
+        <div className="empty-container">
+          <Empty description="조회된 데이터가 없습니다" />
+        </div>
+      ) : (
+        <>
+          {/* 카드 그리드 */}
+          <div className="person-card-grid" role="list">
+            {dataSource.map((item) => (
+              <PersonCard
+                key={item.personId}
+                item={item}
+                onDetailClick={handleDetailClick}
+                onSimulationClick={handleSimulationClick}
+              />
+            ))}
+          </div>
+
+          {/* 페이지네이션 */}
+          <div className="pagination-wrapper">
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={total}
+              showSizeChanger
+              pageSizeOptions={['12', '20', '40', '60']}
+              showTotal={(t) => `전체 ${t.toLocaleString()}건`}
+              onChange={handlePageChange}
+            />
+          </div>
+        </>
+      )}
+
+      {/* 상세보기 모달 */}
+      <Modal
+        title={null}
+        open={detailModalOpen}
+        onCancel={() => setDetailModalOpen(false)}
+        footer={null}
+        width={900}
+        destroyOnClose
+        centered
+        style={{ top: 20 }}
+      >
+        <div style={{ padding: '0px' }}>
+          <PersonDetailData personId={detailPersonId} />
+        </div>
+      </Modal>
+
+      {/* 시뮬레이션 모달 */}
+      <Modal
+        title="시뮬레이션 실행"
+        open={simModalOpen}
+        onCancel={() => setSimModalOpen(false)}
+        footer={null}
+        width={1000}
+        destroyOnClose
+        centered
+        style={{ top: 20 }}
+      >
+        <div style={{ padding: '0px', maxHeight: '80vh', overflow: 'auto' }}>
+          <SimulationPage personId={simPersonId} embedded />
+        </div>
+      </Modal>
     </div>
   );
 };

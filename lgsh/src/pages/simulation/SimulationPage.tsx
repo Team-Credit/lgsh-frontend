@@ -1,7 +1,7 @@
 ﻿/**
  * SIM001 시뮬레이션 실행 화면
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Col, Form, Input, Row, Slider, InputNumber, Button, Space, Tag, message, Divider, Collapse } from 'antd';
 import { PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { SimulationAdjustment, SimulationRequest, SimulationResult, SimulationSaveRequest } from '@/types';
@@ -141,7 +141,15 @@ const gradeColorMap: Record<string, string> = {
   E: '#ef4444',
 };
 
-const SimulationPage: React.FC = () => {
+interface SimulationPageProps {
+  personId?: string;
+  embedded?: boolean;
+}
+
+const SimulationPage: React.FC<SimulationPageProps> = ({
+  personId: externalPersonId,
+  embedded = false,
+}) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -158,6 +166,12 @@ const SimulationPage: React.FC = () => {
     values.modelId = 'MDL_001';
     return values;
   }, []);
+
+  useEffect(() => {
+    if (externalPersonId) {
+      form.setFieldsValue({ personId: externalPersonId });
+    }
+  }, [externalPersonId, form]);
 
   const handleReset = () => {
     form.setFieldsValue(initialValues);
@@ -234,7 +248,7 @@ const SimulationPage: React.FC = () => {
     <div className="simulation-page">
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={14}>
-          <Card className="simulation-card" title="SIM001 시뮬레이션 실행">
+          <Card className="simulation-card" title={embedded ? '시뮬레이션 실행' : 'SIM001 시뮬레이션 실행'}>
             <Form form={form} layout="vertical" initialValues={initialValues}>
               <Row gutter={[16, 16]}>
                 <Col xs={24} md={12}>
@@ -243,7 +257,7 @@ const SimulationPage: React.FC = () => {
                     name="personId"
                     rules={[{ required: true, message: '대상자 ID를 입력하세요.' }]}
                   >
-                    <Input placeholder="PERSON_ID" />
+                    <Input placeholder="PERSON_ID" disabled={!!externalPersonId} />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>

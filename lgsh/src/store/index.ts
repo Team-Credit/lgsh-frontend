@@ -6,6 +6,7 @@ import authReducer from './slices/authSlice';
 import menuReducer from './slices/menuSlice';
 import uiReducer from './slices/uiSlice';
 import favoriteReducer from './slices/favoriteSlice';
+import spiderReducer from './slices/spiderSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     menu: menuReducer,
     ui: uiReducer,
     favorite: favoriteReducer,
+    spider: spiderReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
