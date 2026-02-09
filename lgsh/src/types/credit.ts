@@ -76,6 +76,8 @@ export interface CreditDistributionStats {
 export interface CreditDistributionResult {
   gradeCounts: Record<string, number>;
   stats: CreditDistributionStats;
+  algorithmType?: string;
+  modelNm?: string;
 }
 
 export interface CreditCorrelationPair {

@@ -12,7 +12,7 @@ export interface SimulationBreakdown {
 
 export interface SimulationRequest {
   personId: string;
-  modelId: string;
+  modelId?: string;
   runId?: string;
   adjustments: SimulationAdjustment[];
 }
@@ -29,7 +29,7 @@ export interface SimulationResult {
 
 export interface SimulationSaveRequest {
   personId: string;
-  modelId: string;
+  modelId?: string;
   scenarioType: string;
   beforeScore: number;
   afterScore: number;

@@ -98,7 +98,7 @@ export const routes: RouteConfig[] = [
     path: 'persons/detail',
     element: PersonDetailData,
     title: '대상자상세',
-    menuId: 'M0204',
+    menuId: 'M0202',
   },
 
   // 신용평가 > 대상자 상세(360°) - 직접 조회
@@ -113,7 +113,7 @@ export const routes: RouteConfig[] = [
     path: 'credit/run',
     element: CreditEvaluatePage,
     title: '평가 실행',
-    menuId: 'M0202',
+    menuId: 'M0203',
   },
 
   // 신용평가 > 점수 분포
@@ -121,23 +121,23 @@ export const routes: RouteConfig[] = [
     path: 'credit/distribution',
     element: CreditDistributionPage,
     title: '점수 분포',
-    menuId: 'M0203',
+    menuId: 'M0204',
   },
 
-  // 신용평가 > 시뮬레이션 실행
+  // 시뮬레이션 > 시뮬레이션 실행
   {
     path: 'simulation',
     element: SimulationPage,
-    title: '시뮬레이션',
-    menuId: 'M0206',
+    title: '시뮬레이션 실행',
+    menuId: 'M0301',
   },
 
-  // 신용평가 > 시뮬레이션 이력
+  // 시뮬레이션 > 시뮬레이션 이력
   {
     path: 'simulation/history',
     element: SimulationHistoryPage,
-    title: '시뮬레이션이력',
-    menuId: 'M0207',
+    title: '시뮬레이션 이력',
+    menuId: 'M0302',
   },
 
   // 분석관리 > 모델관리 (순번 1)

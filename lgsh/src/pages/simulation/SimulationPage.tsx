@@ -155,7 +155,6 @@ const SimulationPage: React.FC = () => {
       values[item.key] = item.defaultValue;
     });
     values.personId = '';
-    values.modelId = 'MDL_001';
     return values;
   }, []);
 
@@ -177,7 +176,6 @@ const SimulationPage: React.FC = () => {
 
       const payload: SimulationRequest = {
         personId: values.personId,
-        modelId: values.modelId,
         adjustments,
       };
 
@@ -204,7 +202,6 @@ const SimulationPage: React.FC = () => {
     }
     const payload: SimulationSaveRequest = {
       personId: lastRequest.personId,
-      modelId: lastRequest.modelId,
       scenarioType: 'WHAT_IF',
       beforeScore: result.beforeScore,
       afterScore: result.afterScore,
@@ -236,26 +233,13 @@ const SimulationPage: React.FC = () => {
         <Col xs={24} lg={14}>
           <Card className="simulation-card" title="SIM001 시뮬레이션 실행">
             <Form form={form} layout="vertical" initialValues={initialValues}>
-              <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="대상자 ID"
-                    name="personId"
-                    rules={[{ required: true, message: '대상자 ID를 입력하세요.' }]}
-                  >
-                    <Input placeholder="PERSON_ID" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="모델 ID"
-                    name="modelId"
-                    rules={[{ required: true, message: '모델 ID를 입력하세요.' }]}
-                  >
-                    <Input placeholder="MDL_001" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item
+                label="대상자 ID"
+                name="personId"
+                rules={[{ required: true, message: '대상자 ID를 입력하세요.' }]}
+              >
+                <Input placeholder="PERSON_ID" />
+              </Form.Item>
 
               <Divider className="simulation-divider">시나리오 변경</Divider>
 

@@ -69,6 +69,8 @@ import { useExcelExport } from '@/contexts';
 import { menuService } from '@/services/menuService';
 import alertService, { type UserAlert } from '@/services/alertService';
 import chatService from '@/services/chatService';
+import alertService, { type UserAlert } from '@/services/alertService';
+import chatService from '@/services/chatService';
 import { useTokenRefresh } from '@/hooks';
 import SessionTimeoutModal from '@/components/common/SessionTimeoutModal';
 import ContractWarningModal from '@/components/common/ContractWarningModal';
@@ -226,7 +228,7 @@ const MainLayout: React.FC = () => {
   const [alertLoading, setAlertLoading] = useState(false);
   const [hideReadAlerts, setHideReadAlerts] = useState(false);  // 읽은 알림 숨기기
 
-  // 알림 조회
+  // 알림 목록 조회 (Popover 열 때만 호출)
   const fetchAlerts = useCallback(async (hideRead?: boolean) => {
     try {
       setAlertLoading(true);
@@ -234,7 +236,7 @@ const MainLayout: React.FC = () => {
       const result = await alertService.getAlertList({
         page: 0,
         size: 10,
-        readYn: shouldHideRead ? 'N' : undefined,  // 읽은 알림 숨기기
+        readYn: shouldHideRead ? 'N' : undefined,
       });
       setAlerts(result.content);
       const unread = await alertService.getUnreadCount();
@@ -246,14 +248,19 @@ const MainLayout: React.FC = () => {
     }
   }, [hideReadAlerts]);
 
-  // 알림 주기적 조회 (30초마다)
+  // 미읽음 건수만 주기적 조회 (60초마다, 가벼운 API)
   useEffect(() => {
-    if (user) {
-      fetchAlerts();
-      const interval = setInterval(fetchAlerts, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user, fetchAlerts]);
+    if (!user) return;
+    const pollUnreadCount = async () => {
+      try {
+        const unread = await alertService.getUnreadCount();
+        setAlertUnreadCount(unread);
+      } catch { /* ignore */ }
+    };
+    pollUnreadCount();
+    const interval = setInterval(pollUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [user?.userId]);
 
   // 알림 읽음 처리
   const handleReadAlert = useCallback(async (alertId: number, linkUrl?: string) => {
@@ -299,25 +306,25 @@ const MainLayout: React.FC = () => {
   }, [dispatch, user?.userId]);
 
   const refreshChatUnreadCount = useCallback(async () => {
-    if (!user) {
-      setChatUnreadCount(0);
-      return;
-    }
     try {
       const response = await chatService.getUnreadCount();
       setChatUnreadCount(response.data.data?.unreadCount ?? 0);
     } catch {
       setChatUnreadCount(0);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
+    if (!user) {
+      setChatUnreadCount(0);
+      return;
+    }
     void refreshChatUnreadCount();
     const intervalId = window.setInterval(() => {
       void refreshChatUnreadCount();
-    }, 10000);
+    }, 60000);
     return () => window.clearInterval(intervalId);
-  }, [refreshChatUnreadCount]);
+  }, [user?.userId, refreshChatUnreadCount]);
 
   const handleRefreshUnread = useCallback(() => {
     void refreshChatUnreadCount();
@@ -757,55 +764,79 @@ const MainLayout: React.FC = () => {
           </Tooltip>
 
           <Popover
-            content={
-              <div style={{ width: 320, maxHeight: 400, overflow: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--line, #f0f0f0)' }}>
-                  <span style={{ fontWeight: 600 }}>알림</span>
-                  <div>
-                    <Button size="small" type="link" onClick={handleToggleHideRead}>
-                      {hideReadAlerts ? '전체 보기' : '읽지않은 알림만'}
-                    </Button>
-                    <Button size="small" type="link" onClick={handleReadAllAlerts} disabled={alertUnreadCount === 0}>
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>알림</span>
+                <div>
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={handleToggleHideRead}
+                    style={{ fontSize: 12, padding: 0, marginRight: 8 }}
+                  >
+                    {hideReadAlerts ? '전체 보기' : '안읽은 것만'}
+                  </Button>
+                  {alertUnreadCount > 0 && (
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={handleReadAllAlerts}
+                      style={{ fontSize: 12, padding: 0 }}
+                    >
                       모두 읽음
                     </Button>
-                  </div>
+                  )}
                 </div>
+              </div>
+            }
+            content={
+              <div style={{ width: 320, maxHeight: 400, overflowY: 'auto' }}>
                 {alertLoading ? (
-                  <div style={{ textAlign: 'center', padding: 20 }}><Spin size="small" /></div>
+                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <Spin size="small" />
+                  </div>
                 ) : alerts.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: 20, color: '#999' }}>알림이 없습니다.</div>
+                  <div style={{ textAlign: 'center', padding: '20px 0', color: '#999' }}>
+                    알림이 없습니다
+                  </div>
                 ) : (
                   alerts.map((alert) => (
                     <div
                       key={alert.alertId}
                       onClick={() => handleReadAlert(alert.alertId, alert.linkUrl)}
                       style={{
-                        padding: '10px 8px',
-                        borderBottom: '1px solid var(--line, #f0f0f0)',
-                        cursor: alert.linkUrl ? 'pointer' : 'default',
-                        backgroundColor: alert.readYn === 'N' ? 'var(--primary-bg, rgba(24, 144, 255, 0.05))' : 'transparent',
+                        padding: '10px 12px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f0f0f0',
+                        backgroundColor: alert.readYn === 'N' ? '#e6f4ff' : 'transparent',
+                        transition: 'background-color 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = alert.readYn === 'N' ? '#bae0ff' : '#f5f5f5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = alert.readYn === 'N' ? '#e6f4ff' : 'transparent';
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <span style={{ fontWeight: alert.readYn === 'N' ? 600 : 400, color: 'var(--text)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: alert.readYn === 'N' ? 600 : 400, fontSize: 13 }}>
                           {alert.alertTitle}
                         </span>
-                        {alert.readYn === 'N' && (
-                          <Badge status="processing" />
-                        )}
+                        <span style={{ fontSize: 11, color: '#999', whiteSpace: 'nowrap', marginLeft: 8 }}>
+                          {alert.timeAgo}
+                        </span>
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary, #666)', marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: '#666', marginTop: 4, lineHeight: 1.4 }}>
                         {alert.alertMsg}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted, #999)', marginTop: 4 }}>
-                        {alert.timeAgo}
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                        {alert.alertTypeNm}
                       </div>
                     </div>
                   ))
                 )}
               </div>
             }
-            title={null}
             trigger="click"
             placement="bottomRight"
             onOpenChange={(open) => {
