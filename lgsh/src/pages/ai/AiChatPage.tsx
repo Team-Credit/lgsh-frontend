@@ -108,6 +108,7 @@ const AiChatPage: React.FC = () => {
         question,
         conversationId,
         undefined, // personId
+        aiMessageId, // clientMessageId (fallback when backend doesn't send done event)
         // onChunk
         (chunk: string) => {
           setMessages((prev) =>

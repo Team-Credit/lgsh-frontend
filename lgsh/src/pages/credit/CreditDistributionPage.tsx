@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Typography, DatePicker, Select, Button, Row, Col, Spin, message } from 'antd';
+import { Card, Typography, DatePicker, Select, Button, Row, Col, Spin, Tag, message } from 'antd';
 import { BarChartOutlined } from '@ant-design/icons';
 import { Bar } from 'react-chartjs-2';
 import {
@@ -11,6 +11,7 @@ import {
   Legend,
 } from 'chart.js';
 import type { ChartOptions } from 'chart.js';
+import dayjs, { Dayjs } from 'dayjs';
 import { creditService } from '@/services';
 import type { CreditDistributionResult } from '@/types';
 import './CreditDistributionPage.css';
@@ -32,6 +33,8 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 const CreditDistributionPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<CreditDistributionResult | null>(null);
+  const [startMonth, setStartMonth] = useState<Dayjs | null>(null);
+  const [endMonth, setEndMonth] = useState<Dayjs | null>(null);
   const [isDark, setIsDark] = useState(() =>
     document.documentElement.getAttribute('data-theme') === 'dark' ||
     document.documentElement.classList.contains('dark')
@@ -112,10 +115,17 @@ const CreditDistributionPage: React.FC = () => {
     };
   }, [gradeCounts, isDark]);
 
-  const fetchDistribution = async () => {
+  const fetchDistribution = async (start?: Dayjs | null, end?: Dayjs | null) => {
     setLoading(true);
     try {
-      const response = await creditService.distribution();
+      const params: { startMonth?: string; endMonth?: string } = {};
+      if (start && end) {
+        params.startMonth = start.format('YYMM');
+        params.endMonth = end.format('YYMM');
+      }
+      const response = await creditService.distribution(
+        Object.keys(params).length > 0 ? params : undefined
+      );
       if (response.success && response.data) {
         setData(response.data);
       } else {
@@ -126,6 +136,14 @@ const CreditDistributionPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = () => {
+    if (startMonth && endMonth && endMonth.isBefore(startMonth)) {
+      message.warning('종료월은 시작월 이후여야 합니다.');
+      return;
+    }
+    fetchDistribution(startMonth, endMonth);
   };
 
   useEffect(() => {
@@ -157,10 +175,22 @@ const CreditDistributionPage: React.FC = () => {
       <Card className="filter-card" title="조회 조건">
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={6}>
-            <DatePicker className="filter-input" placeholder="시작일" disabled />
+            <DatePicker
+              className="filter-input"
+              placeholder="시작월"
+              picker="month"
+              value={startMonth}
+              onChange={(val) => setStartMonth(val)}
+            />
           </Col>
           <Col xs={24} md={6}>
-            <DatePicker className="filter-input" placeholder="종료일" disabled />
+            <DatePicker
+              className="filter-input"
+              placeholder="종료월"
+              picker="month"
+              value={endMonth}
+              onChange={(val) => setEndMonth(val)}
+            />
           </Col>
           <Col xs={24} md={6}>
             <Select className="filter-input" placeholder="그룹 전체" disabled options={[{ value: 'all', label: '그룹 전체' }]} />
@@ -169,7 +199,7 @@ const CreditDistributionPage: React.FC = () => {
             <Select className="filter-input" placeholder="직업 전체" disabled options={[{ value: 'all', label: '직업 전체' }]} />
           </Col>
           <Col xs={24} md={2}>
-            <Button type="primary" className="filter-button" disabled>
+            <Button type="primary" className="filter-button" onClick={handleSearch} loading={loading}>
               검색
             </Button>
           </Col>
@@ -210,7 +240,21 @@ const CreditDistributionPage: React.FC = () => {
           </Col>
         </Row>
 
-        <Card className="chart-card" title="점수 분포 (등급 기준)">
+        <Card className="chart-card" title={
+          <span>
+            점수 분포 (등급 기준)
+            {data?.algorithmType && (
+              <Tag color="blue" style={{ marginLeft: 8 }}>
+                {data.algorithmType}
+              </Tag>
+            )}
+            {data?.modelNm && (
+              <span style={{ fontSize: 13, fontWeight: 400, color: '#888', marginLeft: 4 }}>
+                {data.modelNm}
+              </span>
+            )}
+          </span>
+        }>
           <div className="distribution-chart">
             <Bar
               key={isDark ? 'dark' : 'light'}

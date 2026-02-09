@@ -18,8 +18,25 @@ export const menuService = {
       const response = await api.get<ApiResponse<MenuResponse>>('/menus/user');
       return response.data;
     } catch (error) {
-      console.warn('메뉴 API 미구현, Mock 메뉴 사용');
-      return mockMenuService.getUserMenus();
+      // Only fall back to mock menus when the backend endpoint is missing or
+      // the server is unreachable. Do NOT hide auth/permission errors.
+      const err = error as any;
+      const status = err?.response?.status;
+      const code = err?.code;
+
+      const isUnreachable =
+        code === 'ERR_NETWORK' ||
+        code === 'ECONNREFUSED' ||
+        /ECONNREFUSED|ENOTFOUND/i.test(String(err?.message || ''));
+
+      const isMissingEndpoint = status === 404;
+
+      if (isUnreachable || isMissingEndpoint) {
+        console.warn('메뉴 API 연결 실패/미구현으로 Mock 메뉴 사용');
+        return mockMenuService.getUserMenus();
+      }
+
+      throw error;
     }
   },
 

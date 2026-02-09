@@ -30,6 +30,7 @@ const aiChatService = {
     question: string,
     conversationId?: string,
     personId?: string,
+    clientMessageId?: string,
     onChunk?: (chunk: string) => void,
     onDone?: (messageId: string, convId: string) => void,
     onError?: (errorCode: string, message: string) => void,
@@ -38,6 +39,9 @@ const aiChatService = {
     const controller = new AbortController();
     const token = localStorage.getItem('accessToken');
     const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+    // 5분 타임아웃
+    const timeoutId = setTimeout(() => controller.abort(), 300_000);
 
     fetch(`${baseUrl}/ai/chat/stream`, {
       method: 'POST',
@@ -67,6 +71,9 @@ const aiChatService = {
 
         let buffer = '';
         let currentEvent = 'message';
+        let receivedDone = false;
+        let receivedError = false;
+        let receivedTextChunk = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -78,6 +85,9 @@ const aiChatService = {
 
           for (const line of lines) {
             const trimmedLine = line.trim();
+
+            // SSE 주석 무시
+            if (trimmedLine.startsWith(':')) continue;
 
             // 이벤트 타입 파싱
             if (trimmedLine.startsWith('event:')) {
@@ -93,20 +103,36 @@ const aiChatService = {
 
                 const data = JSON.parse(jsonStr);
 
+                // SSE event type이 strip된 경우 data 필드로 감지
+                if (currentEvent === 'message' && data.errorCode && !data.chunk) {
+                  currentEvent = 'error';
+                }
+                if (currentEvent === 'message' && data.messageId && data.conversationId && !data.chunk) {
+                  currentEvent = 'done';
+                }
+
                 switch (currentEvent) {
                   case 'message':
                     if (data.chunk && onChunk) {
                       onChunk(data.chunk);
                     }
+                    if (typeof data.chunk === 'string' && data.chunk.length > 0) {
+                      receivedTextChunk = true;
+                    }
                     break;
 
                   case 'done':
-                    if (data.messageId && data.conversationId && onDone) {
-                      onDone(data.messageId, data.conversationId);
+                    receivedDone = true;
+                    if (onDone) {
+                      onDone(
+                        data.messageId || clientMessageId || `ai-${Date.now()}`,
+                        data.conversationId || conversationId || 'local'
+                      );
                     }
                     break;
 
                   case 'error':
+                    receivedError = true;
                     if (onError) {
                       onError(
                         data.errorCode || 'ERR_AI_001',
@@ -122,13 +148,11 @@ const aiChatService = {
                     break;
 
                   default:
-                    // 기본적으로 chunk로 처리
                     if (data.chunk && onChunk) {
                       onChunk(data.chunk);
                     }
                 }
 
-                // 이벤트 타입 리셋
                 currentEvent = 'message';
               } catch (parseError) {
                 console.warn('SSE 데이터 파싱 실패:', parseError);
@@ -136,11 +160,29 @@ const aiChatService = {
             }
           }
         }
+
+        // 스트림 종료 후 done/error 이벤트 없이 끝난 경우 cleanup
+        if (!receivedDone && !receivedError) {
+          // Backend may not emit an explicit done event. If we received any text chunks,
+          // treat the stream as successfully completed.
+          if (receivedTextChunk && onDone) {
+            onDone(clientMessageId || `ai-${Date.now()}`, conversationId || 'local');
+          } else if (onError) {
+            onError('ERR_AI_001', 'AI 응답이 비정상적으로 종료되었습니다.');
+          }
+        }
       })
       .catch((error) => {
-        if (error.name !== 'AbortError' && onError) {
+        if (error.name === 'AbortError') {
+          if (onError) {
+            onError('ERR_AI_001', 'AI 응답 시간이 초과되었습니다.');
+          }
+        } else if (onError) {
           onError('ERR_AI_001', error.message || 'AI 서비스 연결에 실패했습니다.');
         }
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
       });
 
     return controller;

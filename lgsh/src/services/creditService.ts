@@ -71,8 +71,8 @@ const creditService = {
     const response = await api.post<ApiResponse<{ revokedCount?: number }>>('/credit/run/stop', payload);
     return response.data;
   },
-  distribution: async (): Promise<ApiResponse<CreditDistributionResult>> => {
-    const response = await api.get<ApiResponse<CreditDistributionResult>>('/credit/distribution');
+  distribution: async (params?: { startMonth?: string; endMonth?: string }): Promise<ApiResponse<CreditDistributionResult>> => {
+    const response = await api.get<ApiResponse<CreditDistributionResult>>('/credit/distribution', { params });
     return response.data;
   },
   analysis: async (modelId?: string): Promise<ApiResponse<CreditCorrelationResult>> => {
