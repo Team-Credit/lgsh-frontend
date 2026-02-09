@@ -22,6 +22,7 @@ const CompanySettingsPage = lazy(() => import('@/pages/company/CompanySettingsPa
 const CreditEvaluatePage = lazy(() => import('@/pages/credit/CreditEvaluatePage'));
 const CreditDistributionPage = lazy(() => import('@/pages/credit/CreditDistributionPage'));
 const EdaAnalysisPage = lazy(() => import('@/pages/analysis/EdaAnalysisPage'));
+const ResultVisualizationPage = lazy(() => import('@/pages/analysis/ResultVisualizationPage'));
 const ModelSelectPage = lazy(() => import('@/pages/analysis/ModelSelectPage'));
 const TimeSeriesPage = lazy(() => import('@/pages/analysis/TimeSeriesPage'));
 const ModelListPage = lazy(() => import('@/pages/model/ModelListPage'));
@@ -140,6 +141,12 @@ export const routes: RouteConfig[] = [
     element: EdaAnalysisPage,
     title: '데이터 분석',
     menuId: 'M0301',
+  },
+  {
+    path: 'analysis/result-visualization',
+    element: ResultVisualizationPage,
+    title: '결과 시각화',
+    menuId: 'M0410',
   },
   {
     path: 'analysis/time-series',
