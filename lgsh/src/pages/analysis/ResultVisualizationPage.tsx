@@ -69,16 +69,11 @@ const COLUMN_DEFS: ColumnDef[] = [
 
 const PIE_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b'];
 const CREDIT_GRADE_LABEL_MAP: Record<string, string> = {
-  A: 'A등급',
-  B: 'B등급',
-  C: 'C등급',
-  D: 'D등급',
-  E: 'E등급',
-  '1': '1등급',
-  '2': '2등급',
-  '3': '3등급',
-  '4': '4등급',
-  '5': '5등급',
+  A: 'A등급 (900~)',
+  B: 'B등급 (800~899)',
+  C: 'C등급 (700~799)',
+  D: 'D등급 (600~699)',
+  E: 'E등급 (~599)',
 };
 const EDUCATION_LABEL_MAP: Record<string, string> = {
   '1': '고졸',
@@ -142,7 +137,8 @@ const formatCategoryValue = (columnKey: keyof ResultVisualizationRow, raw: unkno
   const upper = value.toUpperCase();
 
   if (columnKey === 'creditGrade') {
-    return CREDIT_GRADE_LABEL_MAP[upper] || `${value}등급`;
+    const gradeKey = upper.charAt(0);
+    return CREDIT_GRADE_LABEL_MAP[gradeKey] || `${value}등급`;
   }
   if (columnKey === 'marriageYn') {
     if (upper === 'Y' || value === '1') return '기혼';
@@ -226,6 +222,8 @@ const ResultVisualizationPage: React.FC = () => {
 
   const [selectedColumns, setSelectedColumns] = useState<(keyof ResultVisualizationRow)[]>([
     'creditScore',
+    'creditGrade',
+    'annualIncome',
     'assetAmt',
     'debtAmt',
     'creditCardCnt',
@@ -234,8 +232,8 @@ const ResultVisualizationPage: React.FC = () => {
 
   const [histogramColumn, setHistogramColumn] = useState<keyof ResultVisualizationRow>('creditScore');
   const [categoryColumn, setCategoryColumn] = useState<keyof ResultVisualizationRow>('creditGrade');
-  const [scatterX, setScatterX] = useState<keyof ResultVisualizationRow>('assetAmt');
-  const [scatterY, setScatterY] = useState<keyof ResultVisualizationRow>('debtAmt');
+  const [scatterX, setScatterX] = useState<keyof ResultVisualizationRow>('annualIncome');
+  const [scatterY, setScatterY] = useState<keyof ResultVisualizationRow>('creditScore');
 
   const numericDefs = useMemo(
     () => COLUMN_DEFS.filter((c) => c.type === 'numeric' && selectedColumns.includes(c.key)),
@@ -282,17 +280,17 @@ const ResultVisualizationPage: React.FC = () => {
   const loadDeployedModels = async (): Promise<string | undefined> => {
     setModelLoading(true);
     try {
-      const response = await modelService.list({
-        approvalStatus: 'DEPLOYED',
-        page: 0,
-        size: 100,
-      });
+      const response = await modelService.list({ page: 0, size: 200 });
+      if (!response.data?.success || !response.data?.data?.content) {
+        message.warning('모델 목록을 불러오지 못했습니다.');
+        return undefined;
+      }
 
-      const modelPage = response.data?.data;
-      const modelList = (modelPage?.content || []).filter((m) => m.approvalStatus === 'DEPLOYED');
-      setDeployedModels(modelList);
+      const allModels = response.data.data.content;
+      const deployed = allModels.filter((m) => m.approvalStatus === 'DEPLOYED');
+      setDeployedModels(deployed);
 
-      if (!modelList.length) {
+      if (!deployed.length) {
         setSelectedModelId(undefined);
         setActiveModelNm(null);
         setActiveDeployedDt(null);
@@ -301,9 +299,9 @@ const ResultVisualizationPage: React.FC = () => {
       }
 
       const nextModelId =
-        selectedModelId && modelList.some((m) => m.modelId === selectedModelId)
+        selectedModelId && deployed.some((m) => m.modelId === selectedModelId)
           ? selectedModelId
-          : modelList[0].modelId;
+          : deployed[0].modelId;
 
       setSelectedModelId(nextModelId);
       return nextModelId;

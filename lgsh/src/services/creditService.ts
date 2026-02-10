@@ -125,35 +125,6 @@ const creditService = {
     );
     return response.data;
   },
-  resultVisualization: async (params?: {
-    modelId?: string;
-    maxRows?: number;
-  }): Promise<ApiResponse<{
-    modelId: string;
-    modelNm: string;
-    deployedDt: string;
-    totalCount: number;
-    rows: Array<{
-      personId: string;
-      personNm: string;
-      creditScore: number;
-      creditGrade: string;
-      scoreDt: string;
-      marriageYn: string;
-      childrenCnt: number;
-      educationCode: string;
-      homeTypeCode: string;
-      carYn: string;
-      assetAmt: number;
-      debtAmt: number;
-      creditCardCnt: number;
-      annualIncome: number;
-      notes: string;
-    }>;
-  }>> => {
-    const response = await api.get('/analysis/result-visualization', { params });
-    return response.data;
-  },
 };
 
 export default creditService;
