@@ -25,6 +25,7 @@ const EdaAnalysisPage = lazy(() => import('@/pages/analysis/EdaAnalysisPage'));
 const ResultVisualizationPage = lazy(() => import('@/pages/analysis/ResultVisualizationPage'));
 const ModelSelectPage = lazy(() => import('@/pages/analysis/ModelSelectPage'));
 const TimeSeriesPage = lazy(() => import('@/pages/analysis/TimeSeriesPage'));
+const SpiderAnalysisPage = lazy(() => import('@/pages/analysis/SpiderAnalysisPage'));
 const ModelListPage = lazy(() => import('@/pages/model/ModelListPage'));
 const VariableListPage = lazy(() => import('@/pages/variable/VariableListPage'));
 const MessageCodePage = lazy(() => import('@/pages/system/MessageCodePage'));
@@ -148,7 +149,15 @@ export const routes: RouteConfig[] = [
     menuId: 'M0401',
   },
 
-  // 분석관리 > 기초데이터업로드 (순번 2)
+  // 분석관리 > 모델 선택 (순번 2)
+  {
+    path: 'analysis/model-select',
+    element: ModelSelectPage,
+    title: '모델 선택',
+    menuId: 'M0406',
+  },
+
+  // 분석관리 > 기초데이터업로드 (순번 3)
   {
     path: 'admin/rawdata',
     element: RawDataUploadPage,
@@ -156,7 +165,7 @@ export const routes: RouteConfig[] = [
     menuId: 'M0402',
   },
 
-  // 분석관리 > 기초데이터조회 (순번 3)
+  // 분석관리 > 기초데이터조회 (순번 4)
   {
     path: 'admin/rawdata-list',
     element: RawDataListPage,
@@ -164,19 +173,23 @@ export const routes: RouteConfig[] = [
     menuId: 'M0403',
   },
 
-  // 분석관리 > 데이터 분석 (순번 4)
+  // 분석관리 > 데이터 분석 (순번 5)
   {
     path: 'analysis',
     element: EdaAnalysisPage,
     title: '데이터 분석',
     menuId: 'M0404',
   },
+
+  // 분석관리 > 결과 시각화 (순번 8)
   {
     path: 'analysis/result-visualization',
     element: ResultVisualizationPage,
     title: '결과 시각화',
     menuId: 'M0408',
   },
+
+  // 분석관리 > 시계열 분석 (순번 6)
   {
     path: 'analysis/time-series',
     element: TimeSeriesPage,
@@ -184,12 +197,12 @@ export const routes: RouteConfig[] = [
     menuId: 'M0405',
   },
 
-  // 분석관리 > 모델 선택 (순번 6)
+  // 분석관리 > 스파이더웹 분석 (순번 7)
   {
-    path: 'analysis/model-select',
-    element: ModelSelectPage,
-    title: '모델 선택',
-    menuId: 'M0406',
+    path: 'analysis/spider',
+    element: SpiderAnalysisPage,
+    title: '스파이더웹 분석',
+    menuId: 'M0407',
   },
 
   // 분석관리 > 변수 메타 관리 (순번 9)

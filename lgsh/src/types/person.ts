@@ -107,3 +107,43 @@ export interface PersonListResponse {
   page: number;
   size: number;
 }
+
+// 카드보드 아이템 (목록 조회 결과)
+export interface PersonCardItem {
+  personId: string;
+  personNo: string;
+  personNm: string;
+  gender?: string;
+  companyId: string;
+  companyNm?: string;
+  personGrp?: string;
+  personGrpNm?: string;
+  useYn: string;
+  creditScore: number | null;
+  creditGrade: string | null;
+  creditGradeNm: string | null;
+  gradeColor: string | null;
+  scoreDt: string | null;
+}
+
+// 카드보드 검색 파라미터
+export interface PersonCardSearchParams {
+  page?: number;
+  size?: number;
+  sortBy?: 'SCORE_DESC' | 'SCORE_ASC' | 'RECENT';
+  personNo?: string;
+  personNm?: string;
+  companyId?: string;
+  personGrp?: string;
+  useYn?: string;
+  creditGrade?: string;
+}
+
+// 카드보드 목록 응답
+export interface PersonCardListResponse {
+  content: PersonCardItem[];
+  totalCount: number;
+  page: number;
+  size: number;
+  totalPages: number;
+}

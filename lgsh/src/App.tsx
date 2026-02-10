@@ -12,7 +12,7 @@ import koKR from 'antd/locale/ko_KR';
 message.config({
   maxCount: 1, // 동시에 표시되는 최대 메시지 수
   top: 80, // 상단으로부터 위치
-  duration: 1, // 기본 표시 시간 (초) - 기존 3초에서 1초로 감소
+  duration: 3, // 기본 표시 시간 (초)
 });
 import { store } from '@/store';
 import { antdTheme } from '@/styles/theme';

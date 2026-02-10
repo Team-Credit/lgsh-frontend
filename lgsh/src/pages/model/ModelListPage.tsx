@@ -434,7 +434,7 @@ const ModelListPage: React.FC = () => {
 
             // 완료/실패 메시지 표시
             if (status.approvalStatus === 'FAILED') {
-              message.error('모델 학습이 실패했습니다.');
+              message.error(status.errorMessage || '모델 학습이 실패했습니다.', 5);
             } else {
               message.success('모델 학습이 완료되었습니다.');
               // 성공 시 2초 후 자동 닫기

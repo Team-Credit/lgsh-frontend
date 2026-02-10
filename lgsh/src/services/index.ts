@@ -25,3 +25,4 @@ export { default as timeseriesService } from './timeseriesService';
 export { default as rawDataService } from './rawDataService';
 export { default as aiChatLogService } from './aiChatLogService';
 export { default as resultVisualizationService } from './resultVisualizationService';
+export { default as spiderService } from './spiderService';

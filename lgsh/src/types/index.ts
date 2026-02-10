@@ -27,3 +27,4 @@ export * from './timeseries';
 export * from './rawData';
 export * from './aiChatLog';
 export * from './resultVisualization';
+export * from './spider';

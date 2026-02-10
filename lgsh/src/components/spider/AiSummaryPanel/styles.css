@@ -1,0 +1,33 @@
+.spider-ai-summary {
+  padding: 4px 0;
+}
+
+.spider-ai-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spider-ai-finding-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.spider-ai-finding-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+}
+
+.spider-ai-recommendations {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.spider-ai-recommendations li {
+  margin-bottom: 4px;
+}

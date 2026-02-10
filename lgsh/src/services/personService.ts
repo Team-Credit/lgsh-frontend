@@ -6,6 +6,8 @@ import type {
   PersonRequest,
   PersonSearchParams,
   PersonListResponse,
+  PersonCardSearchParams,
+  PersonCardListResponse,
   ApiResponse,
 } from '@/types';
 
@@ -73,6 +75,15 @@ export const personService = {
   // ??젣: DELETE /persons/{personId}
   delete: async (personId: string): Promise<ApiResponse<void>> => {
     const response = await api.delete<ApiResponse<void>>(`/persons/${personId}`);
+    return response.data;
+  },
+
+  // 카드보드 목록 조회
+  cardList: async (params: PersonCardSearchParams): Promise<ApiResponse<PersonCardListResponse>> => {
+    const response = await api.get<ApiResponse<PersonCardListResponse>>(
+      '/persons/card-list',
+      { params }
+    );
     return response.data;
   },
 

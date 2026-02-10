@@ -1,6 +1,4 @@
-/**
- * 관리그룹 관리 페이지 스타일
- */
+/* 관리그룹 관리 - 트리 레이아웃 */
 
 .person-group-page {
   padding: 16px;
@@ -10,113 +8,108 @@
   margin-bottom: 16px;
 }
 
-.person-group-page .search-card {
-  background: var(--panel, #ffffff);
-  border-radius: var(--radius-lg, 12px);
-  margin-bottom: 16px;
+/* 메인 레이아웃: 좌측 트리 + 우측 상세 */
+.person-group-page .grp-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  min-height: calc(100vh - 280px);
 }
 
-.person-group-page .search-card .ant-form-inline {
+/* 좌측 트리 컨테이너 */
+.grp-tree-container {
+  border: 1px solid var(--border, #f0f0f0);
+  border-radius: var(--radius-lg, 8px);
+  padding: 12px;
+  background: var(--bg, #fff);
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.grp-tree-header {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border, #f0f0f0);
+}
+
+/* 트리 노드 제목 */
+.grp-tree-title {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
+  width: 100%;
 }
 
-.person-group-page .ant-table-wrapper {
-  background: var(--panel, #ffffff);
+.grp-tree-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.person-group-page .ant-table-thead > tr > th {
-  background: var(--bg, #f8fafc);
-  color: var(--text, #1e3a8a);
-  font-weight: 600;
-  position: relative;
+.grp-tree-info {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-.person-group-page .ant-table-row:hover {
-  background: var(--bg, #f8fafc);
+/* 우측 상세 컨테이너 */
+.grp-detail-container {
+  min-height: 400px;
 }
 
-/* 컬럼 리사이즈 핸들 스타일 */
-.person-group-page .react-resizable {
-  position: relative;
-  background-clip: padding-box;
+.grp-detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: #d9d9d9;
 }
 
-.person-group-page .react-resizable-handle {
-  position: absolute;
-  width: 10px;
-  height: 100%;
-  bottom: 0;
-  right: -5px;
-  cursor: col-resize;
-  z-index: 1;
+/* 경로 정보 */
+.grp-path-info {
+  padding: 8px 12px;
+  background: var(--panel, #fafafa);
+  border-radius: 4px;
+  margin-top: 8px;
 }
 
-.person-group-page .react-resizable-handle::after {
-  content: '';
-  position: absolute;
-  width: 2px;
-  height: 100%;
-  right: 4px;
-  top: 0;
-  background-color: #d9d9d9;
-  transition: background-color 0.3s;
-}
-
-.person-group-page .react-resizable-handle:hover::after {
-  background-color: #1890ff;
-}
-
-/* 반응형 - 태블릿 */
-@media (max-width: 1200px) {
-  .person-group-page {
-    padding: 16px;
-  }
-
-  .person-group-page .search-card .ant-form-inline {
-    flex-direction: column;
-  }
-
-  .person-group-page .search-card .ant-form-item {
-    width: 100%;
-  }
-}
-
-/* 반응형 - 모바일 */
+/* 반응형: 모바일에서 세로 배치 */
 @media (max-width: 768px) {
-  .person-group-page {
-    padding: 12px;
+  .person-group-page .grp-layout {
+    grid-template-columns: 1fr;
   }
 
-  .person-group-page .page-header h3 {
-    font-size: 18px;
+  .grp-tree-container {
+    max-height: 300px;
   }
 }
 
 /* 다크모드 */
-:root.dark .person-group-page .ant-table-thead > tr > th {
-  background: #374151 !important;
-  color: var(--text) !important;
+:root.dark .grp-tree-container {
+  background: var(--bg, #1f2937);
+  border-color: var(--border, #374151);
 }
 
-:root.dark .person-group-page .ant-table-tbody > tr > td {
-  color: var(--text);
+:root.dark .grp-tree-header {
+  border-color: var(--border, #374151);
 }
 
-:root.dark .person-group-page .ant-typography {
-  color: var(--text) !important;
+:root.dark .grp-path-info {
+  background: var(--panel, #111827);
+}
+
+:root.dark .grp-detail-empty {
+  color: #4b5563;
 }
 
 :root.dark .person-group-page .page-header h4,
 :root.dark .person-group-page .page-header .ant-typography {
   color: var(--text) !important;
-}
-
-:root.dark .person-group-page .search-form .ant-form-item-label > label {
-  color: var(--text) !important;
-}
-
-:root.dark .person-group-page .react-resizable-handle::after {
-  background-color: #4b5563;
 }
