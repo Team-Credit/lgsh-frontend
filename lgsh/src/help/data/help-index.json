@@ -1,0 +1,150 @@
+{
+  "/dashboard": {
+    "menuKey": "dashboard",
+    "menuName": "대시보드"
+  },
+  "/persons": {
+    "menuKey": "persons",
+    "menuName": "대상자 목록"
+  },
+  "/persons/create": {
+    "menuKey": "persons-create",
+    "menuName": "대상자등록"
+  },
+  "/persons/detail": {
+    "menuKey": "persons-detail",
+    "menuName": "대상자상세"
+  },
+  "/credit/run": {
+    "menuKey": "credit-run",
+    "menuName": "평가 실행"
+  },
+  "/credit/distribution": {
+    "menuKey": "credit-distribution",
+    "menuName": "점수 분포"
+  },
+  "/simulation": {
+    "menuKey": "simulation",
+    "menuName": "시뮬레이션 실행"
+  },
+  "/simulation/history": {
+    "menuKey": "simulation-history",
+    "menuName": "시뮬레이션 이력"
+  },
+  "/models": {
+    "menuKey": "models",
+    "menuName": "모델관리"
+  },
+  "/analysis/model-select": {
+    "menuKey": "analysis-model-select",
+    "menuName": "모델 선택"
+  },
+  "/admin/rawdata": {
+    "menuKey": "admin-rawdata",
+    "menuName": "기초데이터업로드"
+  },
+  "/admin/rawdata-list": {
+    "menuKey": "admin-rawdata-list",
+    "menuName": "기초데이터조회"
+  },
+  "/analysis": {
+    "menuKey": "analysis",
+    "menuName": "데이터 분석"
+  },
+  "/analysis/result-visualization": {
+    "menuKey": "analysis-result-visualization",
+    "menuName": "결과 시각화"
+  },
+  "/analysis/time-series": {
+    "menuKey": "analysis-time-series",
+    "menuName": "시계열 분석"
+  },
+  "/analysis/spider": {
+    "menuKey": "analysis-spider",
+    "menuName": "스파이더웹 분석"
+  },
+  "/admin/variables": {
+    "menuKey": "admin-variables",
+    "menuName": "변수 메타 관리"
+  },
+  "/psngrp": {
+    "menuKey": "psngrp",
+    "menuName": "관리그룹"
+  },
+  "/admin/codes": {
+    "menuKey": "admin-codes",
+    "menuName": "공통코드관리"
+  },
+  "/admin/menus": {
+    "menuKey": "admin-menus",
+    "menuName": "메뉴관리"
+  },
+  "/users": {
+    "menuKey": "users",
+    "menuName": "사용자목록"
+  },
+  "/users/approval": {
+    "menuKey": "users-approval",
+    "menuName": "사용자승인"
+  },
+  "/users/detail": {
+    "menuKey": "users-detail",
+    "menuName": "사용자상세"
+  },
+  "/companies": {
+    "menuKey": "companies",
+    "menuName": "원청사목록"
+  },
+  "/companies/settings": {
+    "menuKey": "companies-settings",
+    "menuName": "원청사설정"
+  },
+  "/admin/messages": {
+    "menuKey": "admin-messages",
+    "menuName": "메시지코드관리"
+  },
+  "/admin/configs": {
+    "menuKey": "admin-configs",
+    "menuName": "환경설정"
+  },
+  "/notices": {
+    "menuKey": "notices",
+    "menuName": "공지사항"
+  },
+  "/admin/roles": {
+    "menuKey": "admin-roles",
+    "menuName": "역할관리"
+  },
+  "/admin/batches": {
+    "menuKey": "admin-batches",
+    "menuName": "배치관리"
+  },
+  "/admin/files": {
+    "menuKey": "admin-files",
+    "menuName": "파일관리"
+  },
+  "/ai/chat": {
+    "menuKey": "ai-chat",
+    "menuName": "AI 어시스턴트"
+  },
+  "/ai/chatlogs": {
+    "menuKey": "ai-chatlogs",
+    "menuName": "AI 채팅 로그"
+  },
+  "/report/create": {
+    "menuKey": "report-create",
+    "menuName": "레포트 생성"
+  },
+  "/report/history": {
+    "menuKey": "report-history",
+    "menuName": "레포트 이력"
+  },
+  "/report/close": {
+    "menuKey": "report-close",
+    "menuName": "마감관리"
+  },
+  "/report/items": {
+    "menuKey": "report-items",
+    "menuName": "항목관리"
+  }
+}
