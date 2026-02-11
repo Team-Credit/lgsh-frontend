@@ -91,6 +91,12 @@ const getAccuracyPercent = (aucScore?: number) => {
 
 const isDeployableStatus = (status?: ApprovalStatus) => status === 'DRAFT' || status === 'APPROVED';
 
+const normalizeModelId = (value?: string | null) => (value ?? '').replace(/[_-]/g, '').toUpperCase();
+const pickDefaultModelId = (list: ModelListResponse[]) => {
+  const preferred = list.find((m) => normalizeModelId(m.modelId) === 'MDL001')?.modelId;
+  return preferred || list[0]?.modelId || null;
+};
+
 const ModelSelectPage: React.FC = () => {
   const [cardModels, setCardModels] = useState<ModelListResponse[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
@@ -109,7 +115,7 @@ const ModelSelectPage: React.FC = () => {
           const selectable = picked.filter((item) => item.modelType !== 'REFERENCE');
           if (selectable.length === 0) return null;
           if (prev && selectable.some((item) => item.modelId === prev)) return prev;
-          return selectable[0].modelId;
+          return pickDefaultModelId(selectable);
         });
       } else {
         message.error(response.data.message || "모델 정보를 불러오지 못했습니다.");

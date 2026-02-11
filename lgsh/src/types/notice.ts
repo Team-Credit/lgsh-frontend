@@ -16,6 +16,7 @@ export interface Notice {
     regDt: string;
     updUserId?: string;
     updDt?: string;
+    expiredYn?: 'Y' | 'N';
 }
 
 export interface NoticeListParams {

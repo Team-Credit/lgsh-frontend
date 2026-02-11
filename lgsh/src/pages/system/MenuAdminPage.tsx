@@ -17,7 +17,6 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SaveOutlined,
-  DeleteOutlined,
 } from '@ant-design/icons';
 import {
   LayoutGrid,
@@ -233,30 +232,6 @@ const MenuAdminPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async () => {
-    const menuId = form.getFieldValue('menuId');
-    if (!menuId) {
-      message.warning('삭제할 메뉴를 선택해주세요.');
-      return;
-    }
-    try {
-      const response = await menuService.deleteAdminMenu(menuId);
-      if (response.success) {
-        message.success('삭제되었습니다.');
-        form.resetFields();
-        setSelectedId(null);
-        await loadTree();
-        return;
-      }
-      message.error(response.message || '삭제에 실패했습니다.');
-    } catch (error: any) {
-      if (error?.response?.data?.code === 'ERR_MENU_002') {
-        message.error('하위 메뉴가 존재하여 삭제할 수 없습니다.');
-        return;
-      }
-      message.error(error?.response?.data?.message || '삭제에 실패했습니다.');
-    }
-  };
 
   const handleActivate = async () => {
     const menuId = form.getFieldValue('menuId');
@@ -445,17 +420,6 @@ const MenuAdminPage: React.FC = () => {
               <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving}>
                 저장
               </Button>
-              <Popconfirm
-                title="삭제 확인"
-                description="선택한 메뉴를 삭제하시겠습니까?"
-                onConfirm={handleDelete}
-                okText="삭제"
-                cancelText="취소"
-              >
-                <Button danger icon={<DeleteOutlined />}>
-                  삭제
-                </Button>
-              </Popconfirm>
             </Space>
           }
           className="menu-admin-detail"

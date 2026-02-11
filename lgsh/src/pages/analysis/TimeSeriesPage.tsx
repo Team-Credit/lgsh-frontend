@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Col, DatePicker, Row, Select, Tabs, Button, Spin, Table, message, Empty } from 'antd';
+import { Card, Col, DatePicker, Row, Select, Tabs, Button, Spin, Table, message, Empty, Space } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import {
   BarChart,
@@ -42,8 +42,23 @@ const fmt = (v: unknown, digits = 2): string => {
   if (Number.isNaN(n)) return String(v);
   return Number.isInteger(n) ? n.toLocaleString() : n.toFixed(digits);
 };
-const fmtPsi = (v: unknown) => fmt(v, 4);
+const fmtPsi = (v: unknown): string => {
+  if (v == null) return '-';
+  const n = Number(v);
+  if (!Number.isFinite(n)) return String(v);
+  if (n === 0) return '0';
+  const abs = Math.abs(n);
+  // Feature PSI (e.g., BUDO) can be extremely small; show more precision so it doesn't look like 0.
+  const digits = abs < 0.001 ? 10 : abs < 0.01 ? 8 : 4;
+  return n.toFixed(digits);
+};
 const fmtRate = (v: unknown) => fmt(v, 4);
+
+const normalizeModelId = (value?: string | null) => (value ?? '').replace(/[_-]/g, '').toUpperCase();
+const pickDefaultModelId = (list: ModelListResponse[]) => {
+  const preferred = list.find((m) => normalizeModelId(m.modelId) === 'MDL001')?.modelId;
+  return preferred || list[0]?.modelId || '';
+};
 
 const TimeSeriesPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
@@ -55,8 +70,8 @@ const TimeSeriesPage: React.FC = () => {
     dayjs('2025-07', 'YYYY-MM'),
     dayjs('2025-12', 'YYYY-MM'),
   ]);
-  const [baseMonth, setBaseMonth] = useState<Dayjs>(dayjs('2025-07', 'YYYY-MM'));
   const [loading, setLoading] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
 
   const [summary, setSummary] = useState<TsSnapshotSummary[]>([]);
   const [scoreDist, setScoreDist] = useState<TsScoreBin[]>([]);
@@ -68,7 +83,10 @@ const TimeSeriesPage: React.FC = () => {
 
   // Dashboard 전용 state
   const [scorePsi, setScorePsi] = useState<TsPsiPoint[]>([]);
-  const [scoreDistFirst, setScoreDistFirst] = useState<TsScoreBin[]>([]);
+  const [compareMonthA, setCompareMonthA] = useState<string>('');
+  const [compareMonthB, setCompareMonthB] = useState<string>('');
+  const [compareDistA, setCompareDistA] = useState<TsScoreBin[]>([]);
+  const [compareDistB, setCompareDistB] = useState<TsScoreBin[]>([]);
 
   const monthOptions = useMemo(() => {
     const list: { label: string; value: string }[] = [];
@@ -88,9 +106,10 @@ const TimeSeriesPage: React.FC = () => {
       try {
         const response = await modelService.list({ page: 0, size: 200 });
         if (response.data?.success && response.data?.data?.content) {
-          setModels(response.data.data.content);
-          if (!modelId && response.data.data.content.length > 0) {
-            setModelId(response.data.data.content[0].modelId);
+          const list = response.data.data.content;
+          setModels(list);
+          if (!modelId && list.length > 0) {
+            setModelId(pickDefaultModelId(list));
           }
         } else {
           message.error(response.data?.message || '모델 목록을 불러오지 못했습니다.');
@@ -103,12 +122,36 @@ const TimeSeriesPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!monthOptions.length) return;
-    const first = monthOptions[0]?.value;
-    if (first) {
-      setBaseMonth(dayjs(first, 'YYYY-MM'));
-    }
+    const opts = monthOptions.map((o) => o.value);
+    if (!opts.length) return;
+
+    setCompareMonthA((prev) => (prev && opts.includes(prev) ? prev : opts[0]));
+    setCompareMonthB((prev) => (prev && opts.includes(prev) ? prev : opts[opts.length - 1]));
   }, [monthOptions]);
+
+  const fetchCompareDist = async (monthA: string, monthB: string) => {
+    if (!companyId || !modelId || !monthA || !monthB) return;
+    setCompareLoading(true);
+    try {
+      const [aRes, bRes] = await Promise.all([
+        timeseriesService.scoreDistribution({ companyId, modelId, month: monthA }),
+        timeseriesService.scoreDistribution({ companyId, modelId, month: monthB }),
+      ]);
+      setCompareDistA(aRes.data || []);
+      setCompareDistB(bRes.data || []);
+    } catch {
+      setCompareDistA([]);
+      setCompareDistB([]);
+    } finally {
+      setCompareLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!compareMonthA || !compareMonthB) return;
+    void fetchCompareDist(compareMonthA, compareMonthB);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId, modelId, compareMonthA, compareMonthB]);
 
   const fetchAll = async () => {
     if (!companyId || !modelId || !range) {
@@ -118,21 +161,18 @@ const TimeSeriesPage: React.FC = () => {
 
     const fromMonth = formatMonth(range[0]);
     const toMonth = formatMonth(range[1]);
-    const baseMonthValue = formatMonth(baseMonth);
+    // Base month is always the range start month.
+    const baseMonthValue = fromMonth;
     const selectedMonth = toMonth || fromMonth;
 
     setLoading(true);
     try {
-      const [summaryRes, scoreRes, featureListRes, scoreDistFirstRes, scorePsiRes] = await Promise.all([
+      const [summaryRes, scoreRes, featureListRes, scorePsiRes, distARes, distBRes] = await Promise.all([
         timeseriesService.snapshotSummary({ companyId, modelId, fromMonth, toMonth }),
         selectedMonth
           ? timeseriesService.scoreDistribution({ companyId, modelId, month: selectedMonth })
           : Promise.resolve({ success: true, data: [] }),
         timeseriesService.featureList({ companyId, modelId }),
-        // Dashboard: 첫 월 점수 분포
-        fromMonth && fromMonth !== selectedMonth
-          ? timeseriesService.scoreDistribution({ companyId, modelId, month: fromMonth })
-          : Promise.resolve({ success: true, data: [] }),
         // Dashboard: Score PSI
         baseMonthValue
           ? timeseriesService.psi({
@@ -141,16 +181,20 @@ const TimeSeriesPage: React.FC = () => {
               baseMonth: baseMonthValue,
               targetType: 'SCORE',
               targetName: 'CREDIT_SCORE',
-              fromMonth,
-              toMonth,
-            })
+               fromMonth,
+               toMonth,
+             })
           : Promise.resolve({ success: true, data: [] }),
+        // Dashboard: score distribution compare A/B
+        compareMonthA ? timeseriesService.scoreDistribution({ companyId, modelId, month: compareMonthA }) : Promise.resolve({ success: true, data: [] }),
+        compareMonthB ? timeseriesService.scoreDistribution({ companyId, modelId, month: compareMonthB }) : Promise.resolve({ success: true, data: [] }),
       ]);
 
       setSummary(summaryRes.data || []);
       setScoreDist(scoreRes.data || []);
-      setScoreDistFirst(scoreDistFirstRes.data || []);
       setScorePsi(scorePsiRes.data || []);
+      setCompareDistA(distARes.data || []);
+      setCompareDistB(distBRes.data || []);
 
       const featureList = featureListRes.data || [];
       setFeatures(featureList);
@@ -273,6 +317,14 @@ const TimeSeriesPage: React.FC = () => {
     }));
   }, [scorePsi]);
 
+  /** PSI 추이 (Feature 기반) */
+  const featurePsiChartData = useMemo(() => {
+    return psi.map((row) => ({
+      month: row.snapshotMonth,
+      PSI: row.psiValue ?? 0,
+    }));
+  }, [psi]);
+
   /** 등급 이동률 */
   const migrationChartData = useMemo(() => {
     if (!migration) return [];
@@ -288,31 +340,31 @@ const TimeSeriesPage: React.FC = () => {
 
   /** 점수 분포 비교 (첫 월 vs 마지막 월) */
   const scoreDistCompareData = useMemo(() => {
-    const fromMonth = formatMonth(range[0]) || '';
-    const toMonth = formatMonth(range[1]) || '';
-    const first = scoreDistFirst.length > 0 ? scoreDistFirst : [];
-    const last = scoreDist.length > 0 ? scoreDist : [];
-    if (first.length === 0 && last.length === 0) return [];
+    const monthA = compareMonthA || '';
+    const monthB = compareMonthB || '';
+    const a = compareDistA.length > 0 ? compareDistA : [];
+    const b = compareDistB.length > 0 ? compareDistB : [];
+    if (a.length === 0 && b.length === 0) return [];
 
-    const maxBins = Math.max(first.length, last.length);
+    const maxBins = Math.max(a.length, b.length);
     const result: { bin: string; [key: string]: string | number }[] = [];
     for (let i = 0; i < maxBins; i++) {
-      const binLabel = first[i]
-        ? `${first[i].binMin ?? ''}-${first[i].binMax ?? ''}`
-        : last[i]
-        ? `${last[i].binMin ?? ''}-${last[i].binMax ?? ''}`
+      const binLabel = a[i]
+        ? `${a[i].binMin ?? ''}-${a[i].binMax ?? ''}`
+        : b[i]
+        ? `${b[i].binMin ?? ''}-${b[i].binMax ?? ''}`
         : `Bin ${i + 1}`;
       result.push({
         bin: binLabel,
-        [fromMonth]: first[i]?.binCnt ?? 0,
-        [toMonth]: last[i]?.binCnt ?? 0,
+        [monthA]: a[i]?.binCnt ?? 0,
+        [monthB]: b[i]?.binCnt ?? 0,
       });
     }
     return result;
-  }, [scoreDist, scoreDistFirst, range]);
+  }, [compareDistA, compareDistB, compareMonthA, compareMonthB]);
 
-  const fromMonthLabel = formatMonth(range[0]) || '';
-  const toMonthLabel = formatMonth(range[1]) || '';
+  const monthALabel = compareMonthA || '';
+  const monthBLabel = compareMonthB || '';
 
   // ─── 기존 테이블 컬럼 ───
 
@@ -460,22 +512,44 @@ const TimeSeriesPage: React.FC = () => {
         </Card>
       </Col>
       <Col span={12}>
-        <Card title={`점수 분포 비교 (${fromMonthLabel} vs ${toMonthLabel})`} size="small">
-          {scoreDistCompareData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={scoreDistCompareData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e6ebf5" />
-                <XAxis dataKey="bin" tick={{ fontSize: 10 }} interval={1} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: number) => fmt(v, 0)} />
-                <Legend />
-                <Bar dataKey={fromMonthLabel} fill="#93c5fd" radius={[2, 2, 0, 0]} />
-                <Bar dataKey={toMonthLabel} fill="#1e3a8a" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <Empty description="데이터 없음" style={{ height: 280, display: 'flex', flexDirection: 'column', justifyContent: 'center' }} />
-          )}
+        <Card
+          title={monthALabel && monthBLabel ? `점수 분포 비교 (${monthALabel} vs ${monthBLabel})` : '점수 분포 비교'}
+          size="small"
+          extra={
+            <Space size={8}>
+              <Select
+                style={{ width: 120 }}
+                value={compareMonthA || undefined}
+                options={monthOptions}
+                onChange={(v) => setCompareMonthA(v)}
+              />
+              <span style={{ color: '#64748b' }}>vs</span>
+              <Select
+                style={{ width: 120 }}
+                value={compareMonthB || undefined}
+                options={monthOptions}
+                onChange={(v) => setCompareMonthB(v)}
+              />
+            </Space>
+          }
+        >
+          <Spin spinning={compareLoading}>
+            {scoreDistCompareData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={scoreDistCompareData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e6ebf5" />
+                  <XAxis dataKey="bin" tick={{ fontSize: 10 }} interval={1} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v: number) => fmt(v, 0)} />
+                  <Legend />
+                  <Bar dataKey={monthALabel} fill="#93c5fd" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey={monthBLabel} fill="#1e3a8a" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <Empty description="데이터 없음" style={{ height: 280, display: 'flex', flexDirection: 'column', justifyContent: 'center' }} />
+            )}
+          </Spin>
         </Card>
       </Col>
     </Row>
@@ -497,7 +571,7 @@ const TimeSeriesPage: React.FC = () => {
               }))}
             />
           </Col>
-          <Col span={8}>
+          <Col span={10}>
             <RangePicker
               picker="month"
               value={range}
@@ -509,16 +583,7 @@ const TimeSeriesPage: React.FC = () => {
               style={{ width: '100%' }}
             />
           </Col>
-          <Col span={4}>
-            <Select
-              style={{ width: '100%' }}
-              placeholder="베이스 월"
-              value={formatMonth(baseMonth)}
-              onChange={(value) => setBaseMonth(dayjs(value, 'YYYY-MM'))}
-              options={monthOptions}
-            />
-          </Col>
-          <Col span={6} style={{ display: 'flex', gap: 8 }}>
+          <Col span={8} style={{ display: 'flex', gap: 8 }}>
             <Button type="primary" onClick={fetchAll}>조회</Button>
             <Button onClick={handleRebuild}>리빌드</Button>
           </Col>
@@ -607,14 +672,75 @@ const TimeSeriesPage: React.FC = () => {
               key: 'psi',
               label: 'PSI',
               children: (
-                <Card title="PSI 추이">
-                  <Table
-                    rowKey="snapshotMonth"
-                    columns={psiColumns}
-                    dataSource={psi}
-                    pagination={false}
-                  />
-                </Card>
+                <Row gutter={[16, 16]}>
+                  <Col span={24}>
+                    <Card title="PSI 추이 (점수 기반)">
+                      {psiChartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={260}>
+                          <LineChart data={psiChartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e6ebf5" />
+                            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                            <YAxis domain={[0, 'auto']} tick={{ fontSize: 12 }} />
+                            <Tooltip formatter={(v: unknown) => fmtPsi(v)} />
+                            <Legend />
+                            <ReferenceLine
+                              y={0.25}
+                              stroke="#ef4444"
+                              strokeDasharray="4 4"
+                              label={{ value: '위험 0.25', position: 'insideTopRight', fill: '#ef4444', fontSize: 11 }}
+                            />
+                            <ReferenceLine
+                              y={0.1}
+                              stroke="#f97316"
+                              strokeDasharray="4 4"
+                              label={{ value: '주의 0.10', position: 'insideTopRight', fill: '#f97316', fontSize: 11 }}
+                            />
+                            <Line type="monotone" dataKey="PSI" stroke="#1e3a8a" strokeWidth={2} dot={{ r: 4, fill: '#1e3a8a' }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <Empty description="데이터 없음" style={{ height: 260, display: 'flex', flexDirection: 'column', justifyContent: 'center' }} />
+                      )}
+                      <div style={{ marginTop: 12 }}>
+                        <Table rowKey="snapshotMonth" columns={psiColumns} dataSource={scorePsi} pagination={false} />
+                      </div>
+                    </Card>
+                  </Col>
+
+                  <Col span={24}>
+                    <Card title={`PSI 추이 (피처 기반)${featureName ? `: ${featureName}` : ''}`}>
+                      {featurePsiChartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={260}>
+                          <LineChart data={featurePsiChartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e6ebf5" />
+                            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                            <YAxis domain={[0, 'auto']} tick={{ fontSize: 12 }} />
+                            <Tooltip formatter={(v: unknown) => fmtPsi(v)} />
+                            <Legend />
+                            <ReferenceLine
+                              y={0.25}
+                              stroke="#ef4444"
+                              strokeDasharray="4 4"
+                              label={{ value: '위험 0.25', position: 'insideTopRight', fill: '#ef4444', fontSize: 11 }}
+                            />
+                            <ReferenceLine
+                              y={0.1}
+                              stroke="#f97316"
+                              strokeDasharray="4 4"
+                              label={{ value: '주의 0.10', position: 'insideTopRight', fill: '#f97316', fontSize: 11 }}
+                            />
+                            <Line type="monotone" dataKey="PSI" stroke="#0f766e" strokeWidth={2} dot={{ r: 4, fill: '#0f766e' }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <Empty description="데이터 없음" style={{ height: 260, display: 'flex', flexDirection: 'column', justifyContent: 'center' }} />
+                      )}
+                      <div style={{ marginTop: 12 }}>
+                        <Table rowKey="snapshotMonth" columns={psiColumns} dataSource={psi} pagination={false} />
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
               ),
             },
           ]}

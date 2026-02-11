@@ -131,6 +131,12 @@ const round2 = (value: number): number => Number(value.toFixed(2));
 const round0 = (value: number): number => Math.round(value);
 const formatNumber = (value: number): string => value.toLocaleString('ko-KR');
 
+const normalizeModelId = (value?: string | null) => (value ?? '').replace(/[_-]/g, '').toUpperCase();
+const pickDefaultModelId = (list: ModelListResponse[]) => {
+  const preferred = list.find((m) => normalizeModelId(m.modelId) === 'MDL001')?.modelId;
+  return preferred || list[0]?.modelId;
+};
+
 const formatCategoryValue = (columnKey: keyof ResultVisualizationRow, raw: unknown): string => {
   if (raw === null || raw === undefined || raw === '') return '미입력';
   const value = String(raw).trim();
@@ -301,7 +307,7 @@ const ResultVisualizationPage: React.FC = () => {
       const nextModelId =
         selectedModelId && deployed.some((m) => m.modelId === selectedModelId)
           ? selectedModelId
-          : deployed[0].modelId;
+          : pickDefaultModelId(deployed);
 
       setSelectedModelId(nextModelId);
       return nextModelId;

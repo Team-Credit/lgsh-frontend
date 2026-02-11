@@ -1,9 +1,9 @@
-﻿/**
- * 怨듭??ы빆 ?깅줉/?섏젙 ?섏씠吏
- * NOT002 - 怨듭??ы빆 ?깅줉 愿由?
+/**
+ * 공지사항 등록/수정 페이지
+ * NOT002 - 공지사항 등록 관리
  */
 import React, { useEffect, useState, useCallback } from 'react';
-import { Form, Input, Button, DatePicker, Switch, Space, Card, Row, Col, Select, message } from 'antd';
+import { Form, Input, Button, DatePicker, Switch, Space, Card, Row, Col, Select, message, Popconfirm } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -42,12 +42,13 @@ const NoticeFormPage: React.FC = () => {
         },
     });
 
-    // ?곹깭 愿由?(?덇굅???⑦꽩: 媛쒕퀎 useState)
+    // 상태 관리 (리액트 패턴: 간단 useState)
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [detailData, setDetailData] = useState<Notice | null>(null);
 
-    // ?곸꽭 議고쉶 (?덇굅???⑦꽩: 而댄룷?뚰듃 ?대? ?⑥닔)
+    // 상세 조회 (리액트 패턴: 컴포넌트 마운트 함수)
     const fetchDetail = useCallback(async () => {
         if (!noticeId) return;
 
@@ -57,24 +58,24 @@ const NoticeFormPage: React.FC = () => {
             if (response.success && response.data) {
                 setDetailData(response.data);
             } else {
-                message.error(response.message || '怨듭??ы빆 ?뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.');
+                message.error(response.message || '공지사항 정보를 불러오는데 실패했습니다.');
             }
         } catch (error: any) {
-            console.error('怨듭??ы빆 ?곸꽭 議고쉶 ?ㅻ쪟:', error);
-            message.error('怨듭??ы빆 ?뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.');
+            console.error('공지사항 상세 조회 오류:', error);
+            message.error('공지사항 정보를 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
         }
     }, [noticeId]);
 
-    // 珥덇린 濡쒕뱶
+    // 초기 로드
     useEffect(() => {
         if (isEdit) {
             fetchDetail();
         }
     }, [isEdit, fetchDetail]);
 
-    // ?곸꽭 ?곗씠??濡쒕뱶 ?????ㅼ젙
+    // 상세 데이터 로드 시 폼 설정
     useEffect(() => {
         if (detailData) {
             form.setFieldsValue({
@@ -118,17 +119,36 @@ const NoticeFormPage: React.FC = () => {
             }
 
             if (response.success) {
-                message.success(isEdit ? '怨듭??ы빆???섏젙?섏뿀?듬땲??' : '怨듭??ы빆???깅줉?섏뿀?듬땲??');
+                message.success(isEdit ? '공지사항이 수정되었습니다.' : '공지사항이 등록되었습니다.');
                 navigate('/notices');
             } else {
-                message.error(response.message || '??μ뿉 ?ㅽ뙣?덉뒿?덈떎.');
+                message.error(response.message || '저장에 실패했습니다.');
             }
         } catch (error: any) {
-            console.error('????ㅻ쪟:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || '???以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
+            console.error('저장 오류:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || '저장 중 오류가 발생했습니다.';
             message.error(errorMessage);
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!noticeId) return;
+        setDeleting(true);
+        try {
+            const response = await noticeService.delete(Number(noticeId));
+            if (response.success) {
+                message.success('공지사항이 삭제되었습니다.');
+                navigate('/notices');
+            } else {
+                message.error(response.message || '삭제에 실패했습니다.');
+            }
+        } catch (error: any) {
+            console.error('삭제 오류:', error);
+            message.error(error?.response?.data?.message || '삭제 중 오류가 발생했습니다.');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -205,6 +225,16 @@ const NoticeFormPage: React.FC = () => {
                     <div className="notice-form-page__footer">
                         <Space>
                             <Button onClick={() => navigate('/notices')}>취소</Button>
+                            {isEdit && (
+                                <Popconfirm
+                                    title="정말 삭제하시겠습니까?"
+                                    okText="삭제"
+                                    cancelText="취소"
+                                    onConfirm={handleDelete}
+                                >
+                                    <Button danger loading={deleting}>삭제</Button>
+                                </Popconfirm>
+                            )}
                             <Button type="primary" htmlType="submit" loading={submitting}>
                                 {isEdit ? '수정' : '등록'}
                             </Button>
@@ -217,4 +247,3 @@ const NoticeFormPage: React.FC = () => {
 };
 
 export default NoticeFormPage;
-

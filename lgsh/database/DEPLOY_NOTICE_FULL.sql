@@ -117,14 +117,23 @@ AS
     V_OFFSET NUMBER;
 BEGIN
     V_OFFSET := (P_PAGE - 1) * P_SIZE;
-    
+
     SELECT COUNT(*)
     INTO P_TOTAL_COUNT
     FROM TB_NOTICE
     WHERE USE_YN = 'Y'
       AND (P_KEYWORD IS NULL OR TITLE LIKE '%' || P_KEYWORD || '%' OR CONTENT LIKE '%' || P_KEYWORD || '%')
       AND (P_LEVEL IS NULL OR LVL = P_LEVEL);
-    
+
+    -- 만료된 공지의 상단고정 자동 해제
+    UPDATE TB_NOTICE
+    SET PIN_YN = 'N', UPD_DT = SYSDATE
+    WHERE PIN_YN = 'Y'
+      AND END_DT IS NOT NULL
+      AND END_DT < TRUNC(SYSDATE);
+    COMMIT;
+
+    -- 목록 조회 (만료 공지 포함, EXPIRED_YN 추가)
     OPEN P_RESULT FOR
         SELECT
             NOTICE_ID,
@@ -139,7 +148,8 @@ BEGIN
             REG_USER_ID,
             TO_CHAR(REG_DT, 'YYYY-MM-DD HH24:MI:SS') AS REG_DT,
             UPD_USER_ID,
-            TO_CHAR(UPD_DT, 'YYYY-MM-DD HH24:MI:SS') AS UPD_DT
+            TO_CHAR(UPD_DT, 'YYYY-MM-DD HH24:MI:SS') AS UPD_DT,
+            CASE WHEN END_DT IS NOT NULL AND END_DT < TRUNC(SYSDATE) THEN 'Y' ELSE 'N' END AS EXPIRED_YN
         FROM (
             SELECT
                 NOTICE_ID,
@@ -155,7 +165,12 @@ BEGIN
                 REG_DT,
                 UPD_USER_ID,
                 UPD_DT,
-                ROW_NUMBER() OVER (ORDER BY PIN_YN DESC, NOTICE_ID DESC) AS RN
+                ROW_NUMBER() OVER (
+                    ORDER BY
+                        PIN_YN DESC,
+                        CASE WHEN END_DT IS NOT NULL AND END_DT < TRUNC(SYSDATE) THEN 1 ELSE 0 END,
+                        NOTICE_ID DESC
+                ) AS RN
             FROM TB_NOTICE
             WHERE USE_YN = 'Y'
               AND (P_KEYWORD IS NULL OR TITLE LIKE '%' || P_KEYWORD || '%' OR CONTENT LIKE '%' || P_KEYWORD || '%')
@@ -164,7 +179,7 @@ BEGIN
         WHERE RN > V_OFFSET
           AND RN <= V_OFFSET + P_SIZE
         ORDER BY RN;
-        
+
 END SP_NOTICE_GET_LIST;
 /
 

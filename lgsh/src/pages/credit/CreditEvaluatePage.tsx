@@ -12,6 +12,7 @@ import {
   Space,
   message,
   Modal,
+  notification,
   Progress,
   Tag,
   Typography,
@@ -105,6 +106,12 @@ const generateMonths = (from: Dayjs, to: Dayjs): string[] => {
   return months;
 };
 
+const normalizeModelId = (value?: string | null) => (value ?? '').replace(/[_-]/g, '').toUpperCase();
+const pickDefaultModelId = (list: ModelListResponse[]) => {
+  const preferred = list.find((m) => normalizeModelId(m.modelId) === 'MDL001')?.modelId;
+  return preferred || list[0]?.modelId || undefined;
+};
+
 const CreditEvaluatePage: React.FC = () => {
   const [form] = Form.useForm<CreditPredictRequest & { evalRange?: [Dayjs, Dayjs] }>();
   const [mode, setMode] = useState<CreditRunMode>('single');
@@ -128,17 +135,31 @@ const CreditEvaluatePage: React.FC = () => {
   const [batchProgressModal, setBatchProgressModal] = useState(false);
   const [batchSummaryModal, setBatchSummaryModal] = useState(false);
   const [batchStarting, setBatchStarting] = useState(false);
+  const [singleLoading, setSingleLoading] = useState(false);
+  const [singleElapsed, setSingleElapsed] = useState(0);
+  const singleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [celeryRunning, setCeleryRunning] = useState<boolean | null>(null);
   const [celeryWarned, setCeleryWarned] = useState(false);
   const [latestRawDataId, setLatestRawDataId] = useState<string | null>(null);
   const monthlyBatchesRef = useRef<MonthlyBatch[]>([]);
+  const batchProgressModalRef = useRef(false);
 
   // Derived
   const firstBatchResult = monthlyBatches[0]?.batchResult ?? null;
   const isMultiMonth = monthlyBatches.length > 1;
   const isBatchRunning = batchStarting || statusPolling || batchProgressModal;
 
+  // 개인 평가 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (singleTimerRef.current) clearInterval(singleTimerRef.current);
+    };
+  }, []);
+
   // ref 동기화 (폴링 클로저용)
+  useEffect(() => {
+    batchProgressModalRef.current = batchProgressModal;
+  }, [batchProgressModal]);
   useEffect(() => {
     monthlyBatchesRef.current = monthlyBatches;
   }, [monthlyBatches]);
@@ -152,7 +173,7 @@ const CreditEvaluatePage: React.FC = () => {
           const list = res.data.data.content;
           setModels(list);
           if (list.length > 0 && !form.getFieldValue('modelId')) {
-            form.setFieldsValue({ modelId: list[0].modelId });
+            form.setFieldsValue({ modelId: pickDefaultModelId(list) });
           }
         }
       } catch {
@@ -349,6 +370,7 @@ const CreditEvaluatePage: React.FC = () => {
 
         if (allFinished && current.some((mb) => mb.batchResult)) {
           setStatusPolling(false);
+          const wasBackground = !batchProgressModalRef.current;
           setBatchProgressModal(false);
           try {
             localStorage.removeItem(STORAGE_KEY);
@@ -360,11 +382,32 @@ const CreditEvaluatePage: React.FC = () => {
 
           if (allSuccess) {
             setBatchSummaryModal(true);
+            if (wasBackground) {
+              notification.success({
+                message: '평가 완료',
+                description: '신용평가가 정상적으로 완료되었습니다. 결과를 확인하세요.',
+                duration: 5,
+              });
+            }
           } else if (hasFailure && !current.some((mb) => mb.batchStatus?.status === 'SUCCESS')) {
             message.error('평가가 실패했습니다.');
+            if (wasBackground) {
+              notification.error({
+                message: '평가 실패',
+                description: '신용평가 실행 중 오류가 발생했습니다.',
+                duration: 5,
+              });
+            }
           } else if (hasPartial || hasFailure) {
             message.warning('평가가 부분적으로 완료되었습니다.');
             setBatchSummaryModal(true);
+            if (wasBackground) {
+              notification.warning({
+                message: '평가 부분 완료',
+                description: '신용평가가 부분적으로 완료되었습니다. 결과를 확인하세요.',
+                duration: 5,
+              });
+            }
           }
         }
       }
@@ -547,13 +590,27 @@ const CreditEvaluatePage: React.FC = () => {
           payload.toMonth = evalRange[1].format('YYYY-MM');
         }
 
-        const response = await creditService.predict(payload);
-        if (response.success && response.data) {
-          setResult(response.data);
-          setEvalTime(new Date().toLocaleString('ko-KR'));
-          message.success('평가가 완료되었습니다.');
-        } else {
-          message.error(response.message || '평가에 실패했습니다.');
+        setSingleLoading(true);
+        setSingleElapsed(0);
+        singleTimerRef.current = setInterval(() => {
+          setSingleElapsed((prev) => prev + 1);
+        }, 1000);
+
+        try {
+          const response = await creditService.predict(payload);
+          if (response.success && response.data) {
+            setResult(response.data);
+            setEvalTime(new Date().toLocaleString('ko-KR'));
+            message.success('평가가 완료되었습니다.');
+          } else {
+            message.error(response.message || '평가에 실패했습니다.');
+          }
+        } finally {
+          if (singleTimerRef.current) {
+            clearInterval(singleTimerRef.current);
+            singleTimerRef.current = null;
+          }
+          setSingleLoading(false);
         }
       } else {
         // 배치 모드: 월별 분리 실행
@@ -1215,6 +1272,39 @@ const CreditEvaluatePage: React.FC = () => {
         )}
       </Card>
 
+      {/* 개인 평가 로딩 모달 */}
+      <Modal
+        open={singleLoading}
+        footer={null}
+        closable={false}
+        maskClosable={false}
+        centered
+        width={400}
+        className="single-loading-modal"
+      >
+        <div className="single-loading-header">
+          <CalculatorOutlined style={{ marginRight: 8 }} />
+          개인 평가 진행중
+        </div>
+        <div className="single-loading-body">
+          <Spin size="large" />
+          <div className="single-loading-text">
+            신용평가 모델을 실행하고 있습니다...
+          </div>
+          <div className="single-loading-elapsed">
+            경과 시간: {singleElapsed}초
+          </div>
+          {singleElapsed >= 10 && (
+            <Alert
+              type="info"
+              showIcon
+              message="모델 캐시가 없는 경우 초기 로딩에 시간이 걸릴 수 있습니다."
+              style={{ marginTop: 16 }}
+            />
+          )}
+        </div>
+      </Modal>
+
       {/* 단일 평가 결과 모달 */}
       <Modal
         open={Boolean(result)}
@@ -1302,7 +1392,10 @@ const CreditEvaluatePage: React.FC = () => {
           <Button
             type="text"
             icon={<span style={{ fontSize: 18 }}>×</span>}
-            onClick={() => setBatchProgressModal(false)}
+            onClick={() => {
+              setBatchProgressModal(false);
+              message.info('실행 완료 후 알림으로 알려드리겠습니다.');
+            }}
             className="batch-progress-minimize"
             title="백그라운드로 전환"
           />
@@ -1463,7 +1556,10 @@ const CreditEvaluatePage: React.FC = () => {
             <Button danger icon={<StopOutlined />} onClick={handleStopBatch}>
               중지
             </Button>
-            <Button onClick={() => setBatchProgressModal(false)}>백그라운드로 전환</Button>
+            <Button onClick={() => {
+              setBatchProgressModal(false);
+              message.info('실행 완료 후 알림으로 알려드리겠습니다.');
+            }}>백그라운드로 전환</Button>
           </div>
         </div>
       </Modal>

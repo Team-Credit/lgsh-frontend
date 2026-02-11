@@ -68,10 +68,20 @@ const NoticeListPage: React.FC = () => {
         keyword,
       });
 
+      console.log('[NoticeList] API response:', JSON.stringify(response));
+
       if (response.success && response.data) {
-        setDataSource(response.data.content);
+        const today = dayjs().format('YYYYMMDD');
+        console.log('[NoticeList] today:', today);
+        const enriched = (response.data.content || []).map((item: Notice) => {
+          const computed = item.expiredYn || (item.endDt && item.endDt < today ? 'Y' : 'N');
+          console.log(`[NoticeList] id=${item.noticeId}, endDt="${item.endDt}", expiredYn="${item.expiredYn}", computed="${computed}"`);
+          return { ...item, expiredYn: computed as 'Y' | 'N' };
+        });
+        setDataSource(enriched);
         setTotal(response.data.totalCount);
       } else {
+        console.error('[NoticeList] 조회 실패:', response);
         message.error(response.message || '데이터 조회에 실패했습니다.');
       }
     } catch (error: any) {
@@ -243,6 +253,7 @@ const NoticeListPage: React.FC = () => {
       render: (text: string, record: Notice) => (
         <Space>
           {record.pinYn === 'Y' && <PushpinFilled style={{ color: '#faad14' }} />}
+          {record.expiredYn === 'Y' && <Tag color="default">만료</Tag>}
           {record.lvl === '3' && <Tag color="red">긴급</Tag>}
           {record.lvl === '2' && <Tag color="orange">중요</Tag>}
           {record.lvl === '1' && <Tag color="default">일반</Tag>}
@@ -379,7 +390,11 @@ const NoticeListPage: React.FC = () => {
                 }
               : undefined
           }
-          rowClassName={(record) => (record.pinYn === 'Y' ? 'notice-list__pinned-row' : '')}
+          rowClassName={(record) => {
+            if (record.expiredYn === 'Y') return 'notice-list__expired-row';
+            if (record.pinYn === 'Y') return 'notice-list__pinned-row';
+            return '';
+          }}
         />
 
         <div className="notice-list__pagination">

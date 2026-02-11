@@ -446,3 +446,44 @@
   gap: 12px;
   margin-top: 16px;
 }
+
+/* 개인 평가 로딩 모달 */
+.single-loading-modal .ant-modal-content {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.single-loading-modal .ant-modal-body {
+  padding: 0;
+}
+
+.single-loading-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.single-loading-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 24px 32px;
+  background: #ffffff;
+}
+
+.single-loading-text {
+  margin-top: 20px;
+  font-size: 15px;
+  color: #374151;
+}
+
+.single-loading-elapsed {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
