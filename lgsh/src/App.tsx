@@ -16,7 +16,7 @@ message.config({
 });
 import { store } from '@/store';
 import { antdTheme } from '@/styles/theme';
-import { AppErrorBoundary, ProtectedRoute } from '@/components/common';
+import { AppErrorBoundary, ProtectedRoute, MenuGuard } from '@/components/common';
 import { MainLayout } from '@/layouts';
 import { ExcelExportProvider } from '@/contexts';
 import LoginPage from '@/pages/auth/LoginPage';
@@ -62,15 +62,17 @@ const AppRoutes: React.FC = () => {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
 
-        {/* 동적 라우트 생성 */}
+        {/* 동적 라우트 생성 (메뉴 권한 가드 적용) */}
         {routes.map((route) => (
           <Route
             key={route.path}
             path={route.path}
             element={
-              <Suspense fallback={<PageLoading />}>
-                <route.element />
-              </Suspense>
+              <MenuGuard menuId={route.menuId}>
+                <Suspense fallback={<PageLoading />}>
+                  <route.element />
+                </Suspense>
+              </MenuGuard>
             }
           />
         ))}

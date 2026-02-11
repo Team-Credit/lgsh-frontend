@@ -15,10 +15,11 @@
 .credit-evaluate-page .page-title {
   font-size: 20px;
   font-weight: 600;
+  color: var(--text, #0f172a);
 }
 
 .credit-evaluate-page .page-subtitle {
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
 }
 
 .credit-evaluate-page .evaluate-card {
@@ -40,13 +41,13 @@
 .credit-evaluate-page .mode-label {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text, #374151);
   margin-bottom: 4px;
 }
 
 .credit-evaluate-page .mode-form {
   flex: 1;
-  border-left: 1px solid #e5e7eb;
+  border-left: 1px solid var(--line, #e5e7eb);
   padding-left: 20px;
 }
 
@@ -109,7 +110,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  color: #ffffff;
+  color: #fff;
 }
 
 .result-modal-title {
@@ -127,12 +128,12 @@
 
 .result-modal-body {
   padding: 24px 24px 30px;
-  background: #ffffff;
+  background: var(--panel, #ffffff);
   min-height: 520px;
 }
 
 .result-modal-capture {
-  background: #ffffff;
+  background: var(--panel, #ffffff);
 }
 
 .pdf-mode .pdf-hide {
@@ -143,7 +144,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: #4b5563;
+  color: var(--text-secondary, #4b5563);
   margin-bottom: 12px;
 }
 
@@ -155,7 +156,7 @@
 }
 
 .result-card {
-  background: #f3f4f6;
+  background: var(--bg, #f3f4f6);
   border-radius: 10px;
   padding: 14px;
   text-align: center;
@@ -164,19 +165,19 @@
 
 .result-card-title {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
   margin-bottom: 6px;
 }
 
 .result-score {
   font-size: 40px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text, #111827);
 }
 
 .result-score-unit {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
 }
 
 .result-score-change {
@@ -191,7 +192,7 @@
 
 .result-grade-desc {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
 }
 
 .result-section-title {
@@ -220,14 +221,14 @@
 }
 
 .result-bar-label {
-  color: #374151;
+  color: var(--text, #374151);
   font-size: 15px;
   font-weight: 600;
 }
 
 .result-bar-track {
   height: 20px;
-  background: #e5e7eb;
+  background: var(--line, #e5e7eb);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -240,11 +241,11 @@
 .result-bar-score {
   text-align: right;
   font-size: 14px;
-  color: #374151;
+  color: var(--text, #374151);
 }
 
 .result-empty {
-  color: #9ca3af;
+  color: var(--muted-light, #9ca3af);
   font-size: 13px;
   padding: 8px 0;
 }
@@ -307,7 +308,7 @@
 
 .batch-progress-body {
   padding: 20px 24px 24px;
-  background: #ffffff;
+  background: var(--panel, #ffffff);
 }
 
 /* 배치 완료 요약 모달 */
@@ -349,7 +350,7 @@
 
 .batch-summary-body {
   padding: 24px;
-  background: #ffffff;
+  background: var(--panel, #ffffff);
 }
 
 .summary-cards {
@@ -360,23 +361,23 @@
 }
 
 .summary-card {
-  background: #f9fafb;
+  background: var(--bg, #f9fafb);
   border-radius: 10px;
   padding: 16px;
   text-align: center;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--line, #e5e7eb);
 }
 
 .summary-card-title {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
   margin-bottom: 8px;
 }
 
 .summary-card-value {
   font-size: 32px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text, #111827);
 }
 
 .summary-card-value.success {
@@ -389,7 +390,7 @@
 
 .summary-card-unit {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
   margin-top: 4px;
 }
 
@@ -413,13 +414,13 @@
 
 .grade-bar-label {
   font-weight: 600;
-  color: #374151;
+  color: var(--text, #374151);
   text-align: center;
 }
 
 .grade-bar-track {
   height: 20px;
-  background: #e5e7eb;
+  background: var(--line, #e5e7eb);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -432,7 +433,7 @@
 
 .grade-bar-count {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
   text-align: right;
 }
 

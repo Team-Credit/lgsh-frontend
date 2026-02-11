@@ -1,4 +1,4 @@
-﻿.notice-detail {
+.notice-detail {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -10,7 +10,7 @@
 
 .notice-detail__content {
   line-height: 1.6;
-  color: #222;
+  color: var(--text, #222);
 }
 
 .notice-detail__content img {
@@ -26,8 +26,8 @@
 .notice-detail__content blockquote {
   margin: 0.8em 0;
   padding-left: 12px;
-  border-left: 4px solid #d9d9d9;
-  color: #666;
+  border-left: 4px solid var(--line, #d9d9d9);
+  color: var(--text-secondary, #666);
 }
 
 .notice-detail__content pre {
@@ -39,7 +39,12 @@
 }
 
 .notice-detail__content code {
-  background: #f5f5f5;
+  background: var(--bg, #f5f5f5);
   padding: 2px 4px;
   border-radius: 4px;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .notice-detail__content code {
+  background: var(--panel-elevated, #1a2236);
 }

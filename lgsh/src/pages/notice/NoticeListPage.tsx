@@ -33,11 +33,13 @@ import type { ColumnsType } from 'antd/es/table/interface';
 import { noticeService } from '@/services/noticeService';
 import { Notice } from '@/types';
 import dayjs, { Dayjs } from 'dayjs';
+import { useMenuPermission } from '@/hooks';
 import './NoticeListPage.css';
 
 const { Title, Text } = Typography;
 
 const NoticeListPage: React.FC = () => {
+  const { canWrite, canDelete } = useMenuPermission('M0701');
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const isAdmin = user?.roleId === 'ADMIN';
@@ -283,27 +285,31 @@ const NoticeListPage: React.FC = () => {
             align: 'center' as const,
             render: (_: unknown, record: Notice) => (
               <Space size="small">
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => openEditModal(record)}
-                  title="수정"
-                />
-                <Popconfirm
-                  title="정말 삭제하시겠습니까?"
-                  okText="삭제"
-                  cancelText="취소"
-                  onConfirm={() => handleDelete(record.noticeId)}
-                >
+                {canWrite && (
                   <Button
                     type="link"
                     size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                    title="삭제"
+                    icon={<EditOutlined />}
+                    onClick={() => openEditModal(record)}
+                    title="수정"
                   />
-                </Popconfirm>
+                )}
+                {canDelete && (
+                  <Popconfirm
+                    title="정말 삭제하시겠습니까?"
+                    okText="삭제"
+                    cancelText="취소"
+                    onConfirm={() => handleDelete(record.noticeId)}
+                  >
+                    <Button
+                      type="link"
+                      size="small"
+                      danger
+                      icon={<DeleteOutlined />}
+                      title="삭제"
+                    />
+                  </Popconfirm>
+                )}
               </Space>
             ),
           },
@@ -343,7 +349,7 @@ const NoticeListPage: React.FC = () => {
               만료 기한 설정
             </Button>
           )}
-          {isAdmin && (
+          {isAdmin && canWrite && (
             <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/admin/notices/create')}>
               등록
             </Button>

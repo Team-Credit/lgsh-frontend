@@ -2,6 +2,10 @@
   padding: 16px 20px 32px;
 }
 
+.simulation-history-page .page-header {
+  margin-bottom: 16px;
+}
+
 .simulation-history-card {
   border-radius: 12px;
 }
@@ -25,7 +29,7 @@
 }
 
 .simulation-detail-modal .detail-label {
-  color: #64748b;
+  color: var(--muted, #64748b);
   font-weight: 600;
 }
 
@@ -35,8 +39,8 @@
 }
 
 .simulation-detail-modal .detail-json {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--panel, #0f172a);
+  color: var(--text, #e2e8f0);
   padding: 12px;
   border-radius: 8px;
   max-height: 240px;
@@ -54,12 +58,18 @@
   justify-content: space-between;
   padding: 6px 8px;
   border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
   font-size: 12px;
 }
 
 .simulation-detail-modal .detail-empty {
-  color: #94a3b8;
+  color: var(--muted-light, #94a3b8);
   font-size: 12px;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .simulation-detail-modal .detail-json {
+  background: #0a0f1a;
+  color: #c9d8ef;
 }

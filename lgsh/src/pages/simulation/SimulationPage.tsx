@@ -2,8 +2,10 @@
  * SIM001 시뮬레이션 실행 화면
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Col, Form, Input, Row, Slider, InputNumber, Button, Space, Tag, message, Divider, Collapse } from 'antd';
-import { PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, Col, Form, Input, Row, Slider, InputNumber, Button, Space, Tag, message, Divider, Collapse, Typography } from 'antd';
+import { PlayCircleOutlined, ReloadOutlined, ExperimentOutlined } from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 import type { SimulationAdjustment, SimulationRequest, SimulationResult, SimulationSaveRequest } from '@/types';
 import { simulationService } from '@/services';
 import './SimulationPage.css';
@@ -243,9 +245,18 @@ const SimulationPage: React.FC<SimulationPageProps> = ({
 
   return (
     <div className="simulation-page">
+      {!embedded && (
+        <div className="page-header">
+          <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+            <ExperimentOutlined style={{ marginRight: 8 }} />
+            시뮬레이션 실행
+          </Title>
+          <Text type="secondary">시나리오별 조건을 조정하여 신용점수 변동을 시뮬레이션합니다.</Text>
+        </div>
+      )}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={14}>
-          <Card className="simulation-card" title={embedded ? '시뮬레이션 실행' : 'SIM001 시뮬레이션 실행'}>
+          <Card className="simulation-card" title={embedded ? '시뮬레이션 실행' : undefined}>
             <Form form={form} layout="vertical" initialValues={initialValues}>
               <Row gutter={[16, 16]}>
                 <Col xs={24} md={12}>

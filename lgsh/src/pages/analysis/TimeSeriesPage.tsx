@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Col, DatePicker, Row, Select, Tabs, Button, Spin, Table, message, Empty } from 'antd';
+import { Card, Col, DatePicker, Row, Select, Tabs, Button, Spin, Table, message, Empty, Typography } from 'antd';
+import { LineChartOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import {
   BarChart,
@@ -22,6 +23,7 @@ import { timeseriesService } from '@/services/timeseriesService';
 import type { ModelListResponse } from '@/types';
 import type { TsSnapshotSummary, TsScoreBin, TsFeatureStats, TsPsiPoint, TsMigration } from '@/types/timeseries';
 
+const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const formatMonth = (value?: Dayjs | null) => (value ? value.format('YYYY-MM') : undefined);
@@ -483,6 +485,13 @@ const TimeSeriesPage: React.FC = () => {
 
   return (
     <div style={{ padding: 24 }}>
+      <div className="page-header">
+        <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+          <LineChartOutlined style={{ marginRight: 8 }} />
+          시계열분석
+        </Title>
+        <Text type="secondary" style={{ fontSize: 13 }}>모델 성능 추이와 PSI, 등급 이동 현황을 모니터링합니다.</Text>
+      </div>
       <Card style={{ marginBottom: 16 }}>
         <Row gutter={16} align="middle">
           <Col span={6}>

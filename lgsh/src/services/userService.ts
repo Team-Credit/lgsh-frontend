@@ -85,9 +85,15 @@ export const userService = {
     };
   },
 
-  // 비밀번호 초기화
+  // 비밀번호 초기화 (관리자)
   resetPassword: async (userId: string): Promise<ApiResponse<void>> => {
     const response = await api.put<ApiResponse<void>>(`/users/${userId}/reset-password`);
+    return response.data;
+  },
+
+  // 비밀번호 변경
+  changePassword: async (userId: string, newPassword: string): Promise<ApiResponse<void>> => {
+    const response = await api.put<ApiResponse<void>>(`/users/${userId}/change-password`, { newPassword });
     return response.data;
   },
 

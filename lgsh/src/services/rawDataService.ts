@@ -150,6 +150,16 @@ export const rawDataService = {
   },
 
   /**
+   * 업로드 취소 요청
+   */
+  cancelUpload: async (uploadId: string): Promise<{ uploadId: string; cancelled: boolean }> => {
+    const response = await api.post<ApiResponse<{ uploadId: string; cancelled: boolean }>>(
+      `${BASE_URL}/upload/${uploadId}/cancel`
+    );
+    return response.data.data!;
+  },
+
+  /**
    * 업로드 진행상황 조회
    */
   getUploadProgress: async (uploadId: string): Promise<UploadProgress> => {
@@ -307,7 +317,8 @@ export const rawDataService = {
 
         if (
           progress.uploadStatus === 'COMPLETED' ||
-          progress.uploadStatus === 'FAILED'
+          progress.uploadStatus === 'FAILED' ||
+          progress.uploadStatus === 'CANCELLED'
         ) {
           onComplete(progress);
           return;

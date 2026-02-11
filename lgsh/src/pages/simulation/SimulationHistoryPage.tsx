@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Card, DatePicker, Form, Row, Col, Select, Table, Tag, Modal, Divider } from 'antd';
+import { Button, Card, DatePicker, Form, Row, Col, Select, Table, Tag, Modal, Divider, Typography } from 'antd';
+import { HistoryOutlined } from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import type { SimulationHistoryItem, SimulationHistoryResponse } from '@/types';
@@ -148,7 +151,14 @@ const SimulationHistoryPage: React.FC = () => {
 
   return (
     <div className="simulation-history-page">
-      <Card className="simulation-history-card" title="시뮬레이션 이력 조회">
+      <div className="page-header">
+        <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+          <HistoryOutlined style={{ marginRight: 8 }} />
+          시뮬레이션 이력 조회
+        </Title>
+        <Text type="secondary">시뮬레이션 실행 이력을 조회하고 상세 결과를 확인합니다.</Text>
+      </div>
+      <Card className="simulation-history-card">
         <Form form={form} layout="inline" className="history-filter">
           <Form.Item name="scenarioType" label="시나리오 유형">
             <Select options={scenarioOptions} style={{ width: 160 }} />

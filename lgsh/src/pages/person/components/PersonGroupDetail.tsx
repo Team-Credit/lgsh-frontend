@@ -22,6 +22,8 @@ interface PersonGroupDetailProps {
   onSaved: () => void;
   onDeleted: () => void;
   onAddChild: (parentGrp: string) => void;
+  canWrite?: boolean;
+  canDelete?: boolean;
 }
 
 const LEVEL_LABELS: Record<number, string> = {
@@ -38,6 +40,8 @@ const PersonGroupDetail: React.FC<PersonGroupDetailProps> = ({
   onSaved,
   onDeleted,
   onAddChild,
+  canWrite = true,
+  canDelete: permDelete = true,
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -133,7 +137,7 @@ const PersonGroupDetail: React.FC<PersonGroupDetailProps> = ({
   if (!selectedGroup && mode !== 'create') {
     return (
       <div className="grp-detail-empty">
-        <InfoCircleOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+        <InfoCircleOutlined style={{ fontSize: 48 }} />
         <Text type="secondary">좌측 트리에서 관리그룹을 선택하세요.</Text>
       </div>
     );
@@ -158,7 +162,7 @@ const PersonGroupDetail: React.FC<PersonGroupDetailProps> = ({
         }
         size="small"
         extra={
-          mode !== 'create' && selectedGroup && selectedGroup.grpLevel < 3 && (
+          canWrite && mode !== 'create' && selectedGroup && selectedGroup.grpLevel < 3 && (
             <Button
               size="small"
               icon={<PlusOutlined />}
@@ -248,15 +252,17 @@ const PersonGroupDetail: React.FC<PersonGroupDetailProps> = ({
         <Divider style={{ margin: '12px 0' }} />
 
         <Space>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            onClick={handleSave}
-            loading={loading}
-          >
-            저장
-          </Button>
-          {mode !== 'create' && (
+          {canWrite && (
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={handleSave}
+              loading={loading}
+            >
+              저장
+            </Button>
+          )}
+          {permDelete && mode !== 'create' && (
             <Button
               danger
               icon={<DeleteOutlined />}

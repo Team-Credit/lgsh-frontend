@@ -6,6 +6,7 @@ import { Typography, message } from 'antd';
 import { TeamOutlined } from '@ant-design/icons';
 import type { PersonGroupTreeNode } from '@/types';
 import { personGroupService } from '@/services/personGroupService';
+import { useMenuPermission } from '@/hooks';
 import { useAppSelector } from '@/store/hooks';
 import PersonGroupTree from './components/PersonGroupTree';
 import PersonGroupDetail from './components/PersonGroupDetail';
@@ -29,6 +30,7 @@ const findNodeInTree = (
 };
 
 const PersonGroupPage: React.FC = () => {
+  const { canWrite, canDelete } = useMenuPermission('M0205');
   const currentUser = useAppSelector((state) => state.auth.user);
   const userCompanyId = currentUser?.companyId || '';
 
@@ -123,6 +125,7 @@ const PersonGroupPage: React.FC = () => {
           onSelect={handleSelect}
           onAddRoot={handleAddRoot}
           onAddChild={handleAddChild}
+          canWrite={canWrite}
         />
 
         {/* 우측: 상세/등록 */}
@@ -134,6 +137,8 @@ const PersonGroupPage: React.FC = () => {
           onSaved={handleSaved}
           onDeleted={handleDeleted}
           onAddChild={handleAddChild}
+          canWrite={canWrite}
+          canDelete={canDelete}
         />
       </div>
     </div>

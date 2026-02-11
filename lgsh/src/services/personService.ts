@@ -1,5 +1,6 @@
-﻿/**
- * ??곸옄 API ?쒕퉬?? */
+/**
+ * 대상자 API 서비스
+ */
 import api from './api';
 import type {
   PersonFull,
@@ -12,12 +13,14 @@ import type {
 } from '@/types';
 
 export const personService = {
-  // 紐⑸줉 議고쉶
+  // 목록 조회
   list: async (params: PersonSearchParams): Promise<ApiResponse<PersonListResponse>> => {
-    // 諛깆뿏??API媛 吏?먰븯???뚮씪誘명꽣留??꾨떖
     const queryParams: Record<string, string | undefined> = {};
     if (params.companyId) queryParams.companyId = params.companyId;
     if (params.personNm) queryParams.personNm = params.personNm;
+    if (params.personIdFrom) queryParams.personIdFrom = params.personIdFrom;
+    if (params.personIdTo) queryParams.personIdTo = params.personIdTo;
+    if (params.personGrp) queryParams.personGrp = params.personGrp;
 
     const response = await api.get<ApiResponse<PersonFull[]>>('/persons', {
       params: queryParams,
@@ -43,12 +46,12 @@ export const personService = {
     return {
       success: false,
       data: null,
-      message: data.message || '?곗씠??議고쉶 ?ㅽ뙣',
+      message: data.message || '데이터 조회 실패',
       errorCode: data.errorCode,
     };
   },
 
-  // ?곸꽭 議고쉶
+  // 상세 조회
   get: async (personId: string): Promise<ApiResponse<PersonFull>> => {
     const response = await api.get<ApiResponse<PersonFull>>(`/persons/${personId}`);
     return response.data;
@@ -60,19 +63,19 @@ export const personService = {
     return response.data;
   },
 
-  // ?깅줉: POST /persons
+  // 등록: POST /persons
   create: async (data: PersonRequest): Promise<ApiResponse<PersonFull>> => {
     const response = await api.post<ApiResponse<PersonFull>>('/persons', data);
     return response.data;
   },
 
-  // ?섏젙: PUT /persons/{personId}
+  // 수정: PUT /persons/{personId}
   update: async (personId: string, data: PersonRequest): Promise<ApiResponse<void>> => {
     const response = await api.put<ApiResponse<void>>(`/persons/${personId}`, data);
     return response.data;
   },
 
-  // ??젣: DELETE /persons/{personId}
+  // 삭제: DELETE /persons/{personId}
   delete: async (personId: string): Promise<ApiResponse<void>> => {
     const response = await api.delete<ApiResponse<void>>(`/persons/${personId}`);
     return response.data;
@@ -87,9 +90,9 @@ export const personService = {
     return response.data;
   },
 
-  // ?쇨큵 ??젣
+  // 일괄 삭제
   deleteBatch: async (personIds: string[]): Promise<ApiResponse<null>> => {
-    // 媛쒕퀎 ??젣瑜??쒖감?곸쑝濡??몄텧
+    // 개별 삭제를 순차적으로 실행
     await Promise.all(
       personIds.map(personId => api.delete(`/persons/${personId}`))
     );
@@ -97,12 +100,19 @@ export const personService = {
     return {
       success: true,
       data: null,
-      message: `${personIds.length}嫄댁씠 ??젣?섏뿀?듬땲??`,
+      message: `${personIds.length}건이 삭제되었습니다.`,
       errorCode: null,
     };
+  },
+
+  // 관리그룹 일괄 지정
+  batchUpdateGrp: async (personIds: string[], personGrp: string): Promise<ApiResponse<{ successCount: number; totalCount: number }>> => {
+    const response = await api.put<ApiResponse<{ successCount: number; totalCount: number }>>(
+      '/persons/batch-grp',
+      { personIds, personGrp }
+    );
+    return response.data;
   },
 };
 
 export default personService;
-
-

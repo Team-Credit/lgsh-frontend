@@ -39,7 +39,7 @@
 
 /* 테이블 스타일 */
 .model-list-page .ant-table-thead > tr > th {
-  background-color: #fafafa;
+  background-color: var(--bg, #fafafa);
   font-weight: 600;
 }
 
@@ -50,7 +50,7 @@
 /* 성능 지표 카드 */
 .model-list-page .ant-statistic-title {
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--muted, rgba(0, 0, 0, 0.45));
 }
 
 .model-list-page .ant-statistic-content {
@@ -75,4 +75,9 @@
 /* 프로그레스 바 */
 .model-list-page .ant-progress-text {
   font-weight: 600;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .model-list-page .react-resizable-handle:hover {
+  background-color: rgba(255, 255, 255, 0.06);
 }

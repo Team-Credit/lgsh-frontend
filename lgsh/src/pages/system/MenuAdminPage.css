@@ -1,4 +1,4 @@
-﻿.menu-admin-page {
+.menu-admin-page {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -39,7 +39,7 @@
   left: 3px;
   width: 2px;
   border-radius: 2px;
-  background: #d0d4e4;
+  background: var(--line, #d0d4e4);
   opacity: 0.7;
   transition: opacity 120ms ease, background 120ms ease;
 }
@@ -47,7 +47,7 @@
 .menu-admin-grid.is-resizing .menu-admin-resizer::after,
 .menu-admin-resizer:hover::after {
   opacity: 1;
-  background: #5b8cff;
+  background: var(--primary-light, #5b8cff);
 }
 
 .menu-admin-node {
@@ -57,15 +57,15 @@
 }
 
 .menu-admin-node.is-disabled {
-  color: #94a3b8;
+  color: var(--muted-light, #94a3b8);
 }
 
 .menu-admin-node__status {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 999px;
-  background: #e2e8f0;
-  color: #64748b;
+  background: var(--line, #e2e8f0);
+  color: var(--muted, #64748b);
 }
 
 @media (max-width: 1200px) {

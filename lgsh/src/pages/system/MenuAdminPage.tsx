@@ -11,6 +11,7 @@ import {
   Space,
   Popconfirm,
   Divider,
+  Typography,
 } from 'antd';
 import type { DataNode, TreeProps } from 'antd/es/tree';
 import {
@@ -18,6 +19,7 @@ import {
   ReloadOutlined,
   SaveOutlined,
   DeleteOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import {
   LayoutGrid,
@@ -31,8 +33,10 @@ import {
 } from 'lucide-react';
 import type { MenuItem } from '@/types';
 import { menuService } from '@/services/menuService';
+import { useMenuPermission } from '@/hooks';
 import './MenuAdminPage.css';
 
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const ICON_OPTIONS = [
@@ -49,6 +53,7 @@ const ICON_OPTIONS = [
 const MenuAdminPage: React.FC = () => {
   const [form] = Form.useForm();
   const { message } = App.useApp();
+  const { canWrite, canDelete } = useMenuPermission('M0802');
   const [treeData, setTreeData] = useState<MenuItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingTree, setLoadingTree] = useState(false);
@@ -386,6 +391,13 @@ const MenuAdminPage: React.FC = () => {
 
   return (
     <div className="menu-admin-page">
+      <div className="page-header">
+        <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+          <AppstoreOutlined style={{ marginRight: 8 }} />
+          메뉴관리
+        </Title>
+        <Text type="secondary" style={{ fontSize: 13 }}>시스템 메뉴 구조를 관리하고 활성/비활성 상태를 설정합니다.</Text>
+      </div>
       <div
         className={`menu-admin-grid${isResizing ? ' is-resizing' : ''}`}
         style={{ ['--menu-grid-cols' as any]: `${leftWidth}px 8px 1fr` }}
@@ -395,10 +407,12 @@ const MenuAdminPage: React.FC = () => {
           extra={
             <Space>
               <Button icon={<ReloadOutlined />} onClick={loadTree} loading={loadingTree} />
-              <Button icon={<PlusOutlined />} onClick={handleAddRoot}>
-                신규 루트
-              </Button>
-              <Button onClick={handleAddChild}>하위 추가</Button>
+              {canWrite && (
+                <Button icon={<PlusOutlined />} onClick={handleAddRoot}>
+                  신규 루트
+                </Button>
+              )}
+              {canWrite && <Button onClick={handleAddChild}>하위 추가</Button>}
             </Space>
           }
           className="menu-admin-tree"
@@ -442,20 +456,24 @@ const MenuAdminPage: React.FC = () => {
                   </Button>
                 </Popconfirm>
               )}
-              <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving}>
-                저장
-              </Button>
-              <Popconfirm
-                title="삭제 확인"
-                description="선택한 메뉴를 삭제하시겠습니까?"
-                onConfirm={handleDelete}
-                okText="삭제"
-                cancelText="취소"
-              >
-                <Button danger icon={<DeleteOutlined />}>
-                  삭제
+              {canWrite && (
+                <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving}>
+                  저장
                 </Button>
-              </Popconfirm>
+              )}
+              {canDelete && (
+                <Popconfirm
+                  title="삭제 확인"
+                  description="선택한 메뉴를 삭제하시겠습니까?"
+                  onConfirm={handleDelete}
+                  okText="삭제"
+                  cancelText="취소"
+                >
+                  <Button danger icon={<DeleteOutlined />}>
+                    삭제
+                  </Button>
+                </Popconfirm>
+              )}
             </Space>
           }
           className="menu-admin-detail"

@@ -32,6 +32,7 @@ const initialState: AuthState = {
   loading: false,
   error: null,
   contractWarning: null,
+  passwordWarning: null,
 };
 
 // 로그인 Thunk
@@ -90,6 +91,9 @@ const authSlice = createSlice({
     clearContractWarning: (state) => {
       state.contractWarning = null;
     },
+    clearPasswordWarning: (state) => {
+      state.passwordWarning = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -107,6 +111,7 @@ const authSlice = createSlice({
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.contractWarning = action.payload.contractWarning || null;
+        state.passwordWarning = action.payload.passwordWarning || null;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -119,9 +124,10 @@ const authSlice = createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.contractWarning = null;
+        state.passwordWarning = null;
       });
   },
 });
 
-export const { setUser, clearError, clearContractWarning } = authSlice.actions;
+export const { setUser, clearError, clearContractWarning, clearPasswordWarning } = authSlice.actions;
 export default authSlice.reducer;

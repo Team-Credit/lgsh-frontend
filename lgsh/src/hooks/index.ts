@@ -11,6 +11,10 @@ export { useAppDispatch, useAppSelector } from './redux';
 // 토큰 자동 갱신 훅
 export { useTokenRefresh } from './useTokenRefresh';
 
+// 메뉴 권한 훅
+export { useMenuPermission } from './useMenuPermission';
+export type { UseMenuPermissionResult } from './useMenuPermission';
+
 /**
  * 공통코드 옵션 타입
  */

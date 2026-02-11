@@ -99,3 +99,44 @@ export const BATCH_TYPE_LABEL: Record<BatchType, string> = {
   ARCHIVE: '데이터아카이빙',
   MONITORING: '모니터링',
 };
+
+// ========== 배치 스케줄 ==========
+export type ScheduleType = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'CRON';
+
+export interface BatchSchedule {
+  scheduleSeq: number;          // 스케줄 SEQ
+  batchType: string;            // 배치 유형
+  scheduleName: string;         // 스케줄명
+  scheduleType: ScheduleType;   // 스케줄 유형
+  cronExpression: string;       // Cron 표현식
+  useYn: string;                // 사용여부 (Y/N)
+  lastExecDt?: string;          // 최종 실행일시
+  nextExecDt?: string;          // 다음 실행일시
+  description?: string;         // 설명
+  regUserId?: string;           // 등록자 ID
+  regDt?: string;               // 등록일시
+  updUserId?: string;           // 수정자 ID
+  updDt?: string;               // 수정일시
+}
+
+export interface BatchScheduleRequest {
+  batchType: string;            // 배치 유형 (필수)
+  scheduleName: string;         // 스케줄명 (필수)
+  scheduleType: string;         // 스케줄 유형 (필수)
+  cronExpression: string;       // Cron 표현식 (필수)
+  useYn?: string;               // 사용여부 (기본 Y)
+  description?: string;         // 설명 (선택)
+}
+
+export interface BatchScheduleListResponse {
+  content: BatchSchedule[];
+  totalCount: number;
+}
+
+// ========== 스케줄 유형 레이블 ==========
+export const SCHEDULE_TYPE_LABEL: Record<ScheduleType, string> = {
+  DAILY: '매일',
+  WEEKLY: '매주',
+  MONTHLY: '매월',
+  CRON: 'Cron 직접입력',
+};

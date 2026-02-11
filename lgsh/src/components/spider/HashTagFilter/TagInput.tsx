@@ -207,7 +207,7 @@ const TagInput: React.FC<Props> = ({ group, filterOptions, onAdd, existingTypes,
   const content = (
     <div style={{ width: 260 }}>
       <div style={{ marginBottom: 12 }}>
-        <div style={{ marginBottom: 6, fontWeight: 500 }}>유형</div>
+        <div style={{ marginBottom: 6, fontWeight: 500, color: 'var(--text, #0f172a)' }}>유형</div>
         <Select
           placeholder="조건 유형 선택"
           onChange={(val) => {
@@ -222,7 +222,7 @@ const TagInput: React.FC<Props> = ({ group, filterOptions, onAdd, existingTypes,
       </div>
       {tagType && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ marginBottom: 6, fontWeight: 500 }}>
+          <div style={{ marginBottom: 6, fontWeight: 500, color: 'var(--text, #0f172a)' }}>
             {TAG_TYPE_OPTIONS.find((o) => o.value === tagType)?.label} 선택
           </div>
           {renderValueSelector()}

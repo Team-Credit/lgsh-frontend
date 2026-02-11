@@ -42,7 +42,7 @@ import type { MajorCode, MinorCode, MajorCodeRequest, MinorCodeRequest } from '@
 import { codeService } from '@/services/codeService';
 import { useExcelExport } from '@/contexts';
 import type { ExcelColumn } from '@/utils/excelExport';
-// import { useAppSelector } from '@/store/hooks'; // 향후 권한 체크용
+import { useMenuPermission } from '@/hooks';
 import './CommonCodePage.css';
 import 'react-resizable/css/styles.css';
 
@@ -86,6 +86,9 @@ const CommonCodePage: React.FC = () => {
   const [minorForm] = Form.useForm();
   const [majorSearchForm] = Form.useForm();
   const [minorSearchForm] = Form.useForm();
+
+  // 메뉴 권한
+  const { canWrite: permWrite, canDelete: permDelete, canExport: permExport } = useMenuPermission('M0801');
 
   // 대분류 상태
   const [majorLoading, setMajorLoading] = useState(false);
@@ -806,42 +809,46 @@ const CommonCodePage: React.FC = () => {
 
           return (
             <Space size="small">
-              <Tooltip title="수정">
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenMajorEdit(record);
-                  }}
-                />
-              </Tooltip>
-              <Popconfirm
-                title="삭제 확인"
-                description={
-                  isSys
-                    ? '시스템 코드는 삭제할 수 없습니다.'
-                    : hasChildren
-                    ? '하위 코드가 존재하여 삭제할 수 없습니다.'
-                    : '정말 삭제하시겠습니까?'
-                }
-                onConfirm={() => canDelete && handleDeleteMajor(record)}
-                okButtonProps={{ disabled: !canDelete }}
-                okText="삭제"
-                cancelText="취소"
-              >
-                <Tooltip title={isSys ? '시스템코드 삭제불가' : hasChildren ? '하위코드 존재' : '삭제'}>
+              {permWrite && (
+                <Tooltip title="수정">
                   <Button
                     type="text"
                     size="small"
-                    danger
-                    disabled={!canDelete}
-                    icon={isSys ? <LockOutlined /> : <DeleteOutlined />}
-                    onClick={(e) => e.stopPropagation()}
+                    icon={<EditOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenMajorEdit(record);
+                    }}
                   />
                 </Tooltip>
-              </Popconfirm>
+              )}
+              {permDelete && (
+                <Popconfirm
+                  title="삭제 확인"
+                  description={
+                    isSys
+                      ? '시스템 코드는 삭제할 수 없습니다.'
+                      : hasChildren
+                      ? '하위 코드가 존재하여 삭제할 수 없습니다.'
+                      : '정말 삭제하시겠습니까?'
+                  }
+                  onConfirm={() => canDelete && handleDeleteMajor(record)}
+                  okButtonProps={{ disabled: !canDelete }}
+                  okText="삭제"
+                  cancelText="취소"
+                >
+                  <Tooltip title={isSys ? '시스템코드 삭제불가' : hasChildren ? '하위코드 존재' : '삭제'}>
+                    <Button
+                      type="text"
+                      size="small"
+                      danger
+                      disabled={!canDelete}
+                      icon={isSys ? <LockOutlined /> : <DeleteOutlined />}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </Tooltip>
+                </Popconfirm>
+              )}
             </Space>
           );
         },
@@ -995,36 +1002,40 @@ const CommonCodePage: React.FC = () => {
 
           return (
             <Space size="small">
-              <Tooltip title="수정">
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => handleOpenMinorEdit(record)}
-                />
-              </Tooltip>
-              <Popconfirm
-                title="삭제 확인"
-                description={
-                  isSys
-                    ? '시스템 코드는 삭제할 수 없습니다.'
-                    : '정말 삭제하시겠습니까?'
-                }
-                onConfirm={() => !isSys && handleDeleteMinor(record)}
-                okButtonProps={{ disabled: isSys }}
-                okText="삭제"
-                cancelText="취소"
-              >
-                <Tooltip title={isSys ? '시스템코드 삭제불가' : '삭제'}>
+              {permWrite && (
+                <Tooltip title="수정">
                   <Button
                     type="text"
                     size="small"
-                    danger
-                    disabled={isSys}
-                    icon={isSys ? <LockOutlined /> : <DeleteOutlined />}
+                    icon={<EditOutlined />}
+                    onClick={() => handleOpenMinorEdit(record)}
                   />
                 </Tooltip>
-              </Popconfirm>
+              )}
+              {permDelete && (
+                <Popconfirm
+                  title="삭제 확인"
+                  description={
+                    isSys
+                      ? '시스템 코드는 삭제할 수 없습니다.'
+                      : '정말 삭제하시겠습니까?'
+                  }
+                  onConfirm={() => !isSys && handleDeleteMinor(record)}
+                  okButtonProps={{ disabled: isSys }}
+                  okText="삭제"
+                  cancelText="취소"
+                >
+                  <Tooltip title={isSys ? '시스템코드 삭제불가' : '삭제'}>
+                    <Button
+                      type="text"
+                      size="small"
+                      danger
+                      disabled={isSys}
+                      icon={isSys ? <LockOutlined /> : <DeleteOutlined />}
+                    />
+                  </Tooltip>
+                </Popconfirm>
+              )}
             </Space>
           );
         },
@@ -1090,14 +1101,16 @@ const CommonCodePage: React.FC = () => {
                 >
                   초기화
                 </Button>
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  onClick={handleOpenMajorCreate}
-                >
-                  등록
-                </Button>
+                {permWrite && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={handleOpenMajorCreate}
+                  >
+                    등록
+                  </Button>
+                )}
               </Space>
             }
             className="code-card"
@@ -1214,15 +1227,17 @@ const CommonCodePage: React.FC = () => {
                 >
                   초기화
                 </Button>
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  onClick={handleOpenMinorCreate}
-                  disabled={!selectedMajorCode}
-                >
-                  등록
-                </Button>
+                {permWrite && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={handleOpenMinorCreate}
+                    disabled={!selectedMajorCode}
+                  >
+                    등록
+                  </Button>
+                )}
               </Space>
             }
             className="code-card"

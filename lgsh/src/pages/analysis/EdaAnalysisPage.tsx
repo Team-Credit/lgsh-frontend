@@ -16,7 +16,7 @@ import {
   Progress,
   Space,
 } from 'antd';
-import { PlusOutlined, HeatMapOutlined } from '@ant-design/icons';
+import { PlusOutlined, HeatMapOutlined, BarChartOutlined } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
 import { creditService } from '@/services';
 import type {
@@ -1171,6 +1171,13 @@ const EdaAnalysisPage: React.FC = () => {
 
   return (
     <div className="eda-analysis-page fade-in">
+      <div className="page-header">
+        <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+          <BarChartOutlined style={{ marginRight: 8 }} />
+          데이터분석
+        </Title>
+        <Text type="secondary" style={{ fontSize: 13 }}>기초통계, 상관분석, 결측치, 이상치 탐지를 수행합니다.</Text>
+      </div>
       <Tabs
         activeKey={activeKey}
         onChange={setActiveKey}
