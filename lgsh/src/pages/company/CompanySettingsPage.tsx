@@ -94,13 +94,13 @@ const CompanySettingsPage: React.FC = () => {
   const defaultColumnWidths = {
     companyId: 120,
     companyNm: 180,
-    companyType: 100,
-    contractStatus: 100,
+    companyType: 110,
+    contractStatus: 110,
     contractPeriod: 200,
     maxUsers: 120,
     currentUsers: 120,
     usageRate: 180,
-    action: 100,
+    action: 110,
   };
 
   // localStorage에서 저장된 컬럼 너비 불러오기

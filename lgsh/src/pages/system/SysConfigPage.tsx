@@ -126,19 +126,19 @@ const SysConfigPage: React.FC = () => {
 
   // 컬럼 너비 (대분류)
   const defaultMajorColumnWidths: Record<string, number> = {
-    majorCode: 100,
+    majorCode: 110,
     majorCodeNm: 180,
-    useYn: 60,
-    action: 50,
+    useYn: 80,
+    action: 60,
   };
 
   // 컬럼 너비 (소분류)
   const defaultMinorColumnWidths: Record<string, number> = {
-    minorCode: 100,
+    minorCode: 110,
     minorCodeNm: 180,
-    configCnt: 60,
-    useYn: 60,
-    action: 50,
+    configCnt: 80,
+    useYn: 80,
+    action: 60,
   };
 
   // 컬럼 너비 (환경설정)
@@ -146,9 +146,9 @@ const SysConfigPage: React.FC = () => {
     configKey: 180,
     configValue: 150,
     configDesc: 200,
-    dataType: 80,
-    editableYn: 60,
-    useYn: 60,
+    dataType: 90,
+    editableYn: 80,
+    useYn: 80,
     regDt: 140,
     action: 100,
   };

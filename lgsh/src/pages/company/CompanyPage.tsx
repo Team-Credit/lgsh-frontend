@@ -103,10 +103,10 @@ const CompanyPage: React.FC = () => {
     companyId: 120,
     companyNm: 180,
     businessNo: 130,
-    ceoNm: 100,
-    companyType: 100,
-    contractStatus: 100,
-    contractStartDt: 120,
+    ceoNm: 110,
+    companyType: 110,
+    contractStatus: 110,
+    contractStartDt: 130,
     action: 120,
   };
 

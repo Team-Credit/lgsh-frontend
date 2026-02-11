@@ -215,7 +215,7 @@ const COLUMN_INFO: Record<string, { title: string; width: number; group?: string
   loanRecencyDays: { title: '대출최신성', width: 90, group: '대출' },
   loanTenureDays: { title: '대출기간', width: 80, group: '대출' },
   lenderCntChange12m: { title: '12M대출기관변화', width: 120, group: '대출' },
-  budo: { title: '부도', width: 60 },
+  budo: { title: '부도', width: 80 },
   cardLumpSum3m: { title: '3M일시불합계', width: 100, group: '카드통계3M' },
   cardLumpAvg3m: { title: '3M일시불평균', width: 100, group: '카드통계3M' },
   cardLumpMax3m: { title: '3M일시불최대', width: 100, group: '카드통계3M' },

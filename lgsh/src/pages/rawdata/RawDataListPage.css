@@ -14,20 +14,6 @@
   border-bottom: 1px solid var(--line, #f0f0f0);
 }
 
-/* 리사이즈 핸들 - 강조 표시 최소화 */
-.rawdata-list-page .react-resizable-handle {
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.rawdata-list-page th:hover .react-resizable-handle {
-  opacity: 0.3;
-}
-
-.rawdata-list-page .react-resizable-handle:hover {
-  opacity: 0.6;
-}
-
 /* 테이블 스타일 */
 .rawdata-list-page .ant-table-wrapper {
   margin-top: 8px;

@@ -45,6 +45,8 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadProps } from 'antd';
+import { Resizable } from 'react-resizable';
+import type { ResizeCallbackData } from 'react-resizable';
 import dayjs from 'dayjs';
 import rawDataService from '@/services/rawDataService';
 import type {
@@ -58,6 +60,37 @@ import type { ExcelColumn } from '@/utils/excelExport';
 const { Dragger } = Upload;
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
+
+// 리사이즈 가능한 헤더 셀
+const ResizableTitle = (
+  props: React.HTMLAttributes<HTMLElement> & {
+    onResize?: (e: React.SyntheticEvent, data: ResizeCallbackData) => void;
+    width?: number;
+  }
+) => {
+  const { onResize, width, ...restProps } = props;
+
+  if (!width) {
+    return <th {...restProps} />;
+  }
+
+  return (
+    <Resizable
+      width={width}
+      height={0}
+      handle={
+        <span
+          className="react-resizable-handle"
+          onClick={(e) => e.stopPropagation()}
+        />
+      }
+      onResize={onResize}
+      draggableOpts={{ enableUserSelectHack: false }}
+    >
+      <th {...restProps} />
+    </Resizable>
+  );
+};
 
 interface UploadGridProps {
   companyId: string;
@@ -107,6 +140,74 @@ const UploadGrid: React.FC<UploadGridProps> = ({
     DATA_COLUMN_KEYS.forEach(k => { defaults[k] = DEFAULT_DATA_VISIBLE.includes(k); });
     return defaults;
   });
+
+  // 업로드 이력 컬럼 너비
+  const defaultHistoryColumnWidths: Record<string, number> = {
+    fileNm: 200,
+    uploadStatus: 100,
+    totalRows: 90,
+    successRows: 90,
+    errorRows: 90,
+    durationFormatted: 100,
+    regDt: 160,
+    action: 160,
+  };
+
+  const getStoredHistoryColumnWidths = () => {
+    try {
+      const stored = localStorage.getItem('uploadHistoryColumnWidths');
+      if (stored) return { ...defaultHistoryColumnWidths, ...JSON.parse(stored) };
+    } catch {}
+    return defaultHistoryColumnWidths;
+  };
+
+  const [historyColumnWidths, setHistoryColumnWidths] = useState<Record<string, number>>(getStoredHistoryColumnWidths());
+
+  // 데이터 목록 컬럼 너비
+  const defaultDataColumnWidths: Record<string, number> = {
+    rawDataId: 180,
+    personId: 150,
+    dataCollectDt: 120,
+    snapshotDate: 120,
+    dataStatus: 100,
+    validationMsg: 250,
+    regDt: 160,
+  };
+
+  const getStoredDataColumnWidths = () => {
+    try {
+      const stored = localStorage.getItem('uploadDataColumnWidths');
+      if (stored) return { ...defaultDataColumnWidths, ...JSON.parse(stored) };
+    } catch {}
+    return defaultDataColumnWidths;
+  };
+
+  const [dataColumnWidths, setDataColumnWidths] = useState<Record<string, number>>(getStoredDataColumnWidths());
+
+  // 컬럼 리사이즈 핸들러
+  const handleHistoryResize = useCallback(
+    (key: string) =>
+      (_: React.SyntheticEvent, { size }: ResizeCallbackData) => {
+        setHistoryColumnWidths((prev) => {
+          const newWidths = { ...prev, [key]: size.width };
+          localStorage.setItem('uploadHistoryColumnWidths', JSON.stringify(newWidths));
+          return newWidths;
+        });
+      },
+    []
+  );
+
+  const handleDataResize = useCallback(
+    (key: string) =>
+      (_: React.SyntheticEvent, { size }: ResizeCallbackData) => {
+        setDataColumnWidths((prev) => {
+          const newWidths = { ...prev, [key]: size.width };
+          localStorage.setItem('uploadDataColumnWidths', JSON.stringify(newWidths));
+          return newWidths;
+        });
+      },
+    []
+  );
 
   // 엑셀 내보내기
   const { registerExportHandler, unregisterExportHandler } = useExcelExport();
@@ -370,56 +471,85 @@ const UploadGrid: React.FC<UploadGridProps> = ({
       title: '파일명',
       dataIndex: 'fileNm',
       key: 'fileNm',
+      width: historyColumnWidths.fileNm,
       ellipsis: true,
+      onHeaderCell: () => ({
+        width: historyColumnWidths.fileNm,
+        onResize: handleHistoryResize('fileNm'),
+      }) as any,
     },
     {
       title: '상태',
       dataIndex: 'uploadStatus',
       key: 'uploadStatus',
-      width: 100,
+      width: historyColumnWidths.uploadStatus,
       render: renderStatusTag,
+      onHeaderCell: () => ({
+        width: historyColumnWidths.uploadStatus,
+        onResize: handleHistoryResize('uploadStatus'),
+      }) as any,
     },
     {
       title: '전체',
       dataIndex: 'totalRows',
       key: 'totalRows',
-      width: 80,
+      width: historyColumnWidths.totalRows,
       align: 'right',
       render: (v) => v?.toLocaleString() || '-',
+      onHeaderCell: () => ({
+        width: historyColumnWidths.totalRows,
+        onResize: handleHistoryResize('totalRows'),
+      }) as any,
     },
     {
       title: '성공',
       dataIndex: 'successRows',
       key: 'successRows',
-      width: 80,
+      width: historyColumnWidths.successRows,
       align: 'right',
       render: (v) => <Text type="success">{v?.toLocaleString() || '-'}</Text>,
+      onHeaderCell: () => ({
+        width: historyColumnWidths.successRows,
+        onResize: handleHistoryResize('successRows'),
+      }) as any,
     },
     {
       title: '오류',
       dataIndex: 'errorRows',
       key: 'errorRows',
-      width: 80,
+      width: historyColumnWidths.errorRows,
       align: 'right',
       render: (v) => <Text type="danger">{v?.toLocaleString() || '-'}</Text>,
+      onHeaderCell: () => ({
+        width: historyColumnWidths.errorRows,
+        onResize: handleHistoryResize('errorRows'),
+      }) as any,
     },
     {
       title: '소요시간',
       dataIndex: 'durationFormatted',
       key: 'durationFormatted',
-      width: 100,
+      width: historyColumnWidths.durationFormatted,
+      onHeaderCell: () => ({
+        width: historyColumnWidths.durationFormatted,
+        onResize: handleHistoryResize('durationFormatted'),
+      }) as any,
     },
     {
       title: '업로드 일시',
       dataIndex: 'regDt',
       key: 'regDt',
-      width: 160,
+      width: historyColumnWidths.regDt,
       render: (v) => v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-',
+      onHeaderCell: () => ({
+        width: historyColumnWidths.regDt,
+        onResize: handleHistoryResize('regDt'),
+      }) as any,
     },
     {
       title: '작업',
       key: 'action',
-      width: 160,
+      width: historyColumnWidths.action,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="데이터 보기">
@@ -456,12 +586,14 @@ const UploadGrid: React.FC<UploadGridProps> = ({
     },
   ];
 
-  // 컬럼 설정 초기화
+  // 컬럼 설정 초기화 (가시성 + 너비)
   const handleResetDataColumnSettings = useCallback(() => {
     const defaults: Record<string, boolean> = {};
     DATA_COLUMN_KEYS.forEach(k => { defaults[k] = DEFAULT_DATA_VISIBLE.includes(k); });
     setVisibleDataColumns(defaults);
+    setDataColumnWidths(defaultDataColumnWidths);
     localStorage.removeItem('uploadGridDataVisibleColumns');
+    localStorage.removeItem('uploadDataColumnWidths');
     message.success('컬럼 설정이 초기화되었습니다.');
   }, [DATA_COLUMN_KEYS, DEFAULT_DATA_VISIBLE]);
 
@@ -492,36 +624,52 @@ const UploadGrid: React.FC<UploadGridProps> = ({
         title: '데이터ID',
         dataIndex: 'rawDataId',
         key: 'rawDataId',
-        width: 180,
+        width: dataColumnWidths.rawDataId,
         ellipsis: true,
+        onHeaderCell: () => ({
+          width: dataColumnWidths.rawDataId,
+          onResize: handleDataResize('rawDataId'),
+        }) as any,
       },
       {
         title: '대상자ID',
         dataIndex: 'personId',
         key: 'personId',
-        width: 150,
+        width: dataColumnWidths.personId,
         ellipsis: true,
         render: (v) => v || '-',
+        onHeaderCell: () => ({
+          width: dataColumnWidths.personId,
+          onResize: handleDataResize('personId'),
+        }) as any,
       },
       {
         title: '데이터수집일',
         dataIndex: 'dataCollectDt',
         key: 'dataCollectDt',
-        width: 120,
+        width: dataColumnWidths.dataCollectDt,
         render: (v) => v ? dayjs(v).format('YYYY-MM-DD') : '-',
+        onHeaderCell: () => ({
+          width: dataColumnWidths.dataCollectDt,
+          onResize: handleDataResize('dataCollectDt'),
+        }) as any,
       },
       {
         title: '스냅샷일자',
         dataIndex: 'snapshotDate',
         key: 'snapshotDate',
-        width: 120,
+        width: dataColumnWidths.snapshotDate,
         render: (v) => v ? dayjs(v).format('YYYY-MM-DD') : '-',
+        onHeaderCell: () => ({
+          width: dataColumnWidths.snapshotDate,
+          onResize: handleDataResize('snapshotDate'),
+        }) as any,
       },
       {
         title: '상태',
         dataIndex: 'dataStatus',
         key: 'dataStatus',
-        width: 100,
+        width: dataColumnWidths.dataStatus,
         render: (v) => {
           const colors: Record<string, string> = {
             PENDING: 'default',
@@ -535,25 +683,37 @@ const UploadGrid: React.FC<UploadGridProps> = ({
           };
           return <Tag color={colors[v] || 'default'}>{texts[v] || v || '-'}</Tag>;
         },
+        onHeaderCell: () => ({
+          width: dataColumnWidths.dataStatus,
+          onResize: handleDataResize('dataStatus'),
+        }) as any,
       },
       {
         title: '검증메시지',
         dataIndex: 'validationMsg',
         key: 'validationMsg',
-        width: 200,
+        width: dataColumnWidths.validationMsg,
         ellipsis: true,
         render: (v) => v || '-',
+        onHeaderCell: () => ({
+          width: dataColumnWidths.validationMsg,
+          onResize: handleDataResize('validationMsg'),
+        }) as any,
       },
       {
         title: '등록일시',
         dataIndex: 'regDt',
         key: 'regDt',
-        width: 150,
+        width: dataColumnWidths.regDt,
         render: (v) => v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-',
+        onHeaderCell: () => ({
+          width: dataColumnWidths.regDt,
+          onResize: handleDataResize('regDt'),
+        }) as any,
       },
     ];
     return allColumns.filter(col => visibleDataColumns[col.key as string] !== false);
-  }, [visibleDataColumns]);
+  }, [visibleDataColumns, dataColumnWidths, handleDataResize]);
 
   // 컬럼 설정 팝오버 내용
   const dataColumnSettingContent = (
@@ -623,6 +783,12 @@ const UploadGrid: React.FC<UploadGridProps> = ({
             rowKey="uploadId"
             loading={historyLoading}
             size="middle"
+            scroll={{ x: 'max-content' }}
+            components={{
+              header: {
+                cell: ResizableTitle,
+              },
+            }}
             pagination={{
               current: historyPage + 1,
               pageSize: 20,
@@ -730,6 +896,12 @@ const UploadGrid: React.FC<UploadGridProps> = ({
             rowKey={(record) => `${record.rawDataId}_${record.personId}_${record.companyId}`}
             loading={dataLoading}
             size="middle"
+            scroll={{ x: 'max-content' }}
+            components={{
+              header: {
+                cell: ResizableTitle,
+              },
+            }}
             locale={{
               emptyText: selectedUploadId
                 ? '데이터가 없습니다'

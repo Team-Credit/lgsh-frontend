@@ -30,18 +30,31 @@
   min-width: 400px;
 }
 
-/* 리사이즈 핸들 */
+/* 패널 리사이즈 핸들 */
 .resize-handle {
-  width: 6px;
-  background: var(--line, #e6ebf5);
+  width: 4px;
+  background: transparent;
   cursor: col-resize;
   transition: background-color 0.2s;
-  margin: 0 2px;
-  border-radius: 3px;
+  margin: 0 1px;
+  border-radius: 2px;
+  position: relative;
 }
 
-.resize-handle:hover {
-  background: var(--primary, #1e3a8a);
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 30%;
+  bottom: 30%;
+  left: 1px;
+  width: 1px;
+  background: var(--line, #e6ebf5);
+  border-radius: 1px;
+  transition: background-color 0.2s;
+}
+
+.resize-handle:hover::after {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* 카드 */
@@ -105,22 +118,6 @@
   cursor: pointer;
 }
 
-/* Resizable 핸들 */
-.common-code-page .react-resizable-handle {
-  position: absolute;
-  right: -5px;
-  bottom: 0;
-  z-index: 1;
-  width: 10px;
-  height: 100%;
-  cursor: col-resize;
-  background: transparent;
-}
-
-.common-code-page .react-resizable-handle:hover {
-  background: rgba(30, 58, 138, 0.1);
-}
-
 /* 모달 */
 .common-code-page .ant-modal-body {
   padding: 16px 24px;
@@ -149,9 +146,18 @@
 
   .resize-handle {
     width: 100%;
-    height: 6px;
+    height: 4px;
     cursor: row-resize;
-    margin: 2px 0;
+    margin: 1px 0;
+  }
+
+  .resize-handle::after {
+    top: 1px;
+    bottom: 1px;
+    left: 30%;
+    right: 30%;
+    width: auto;
+    height: 1px;
   }
 }
 
@@ -165,12 +171,12 @@
   color: var(--text);
 }
 
-:root.dark .resize-handle {
-  background: #1c2a46;
+:root.dark .resize-handle::after {
+  background: #374151;
 }
 
-:root.dark .resize-handle:hover {
-  background: #3b82f6;
+:root.dark .resize-handle:hover::after {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 :root.dark .common-code-page .ant-table-row-selected,

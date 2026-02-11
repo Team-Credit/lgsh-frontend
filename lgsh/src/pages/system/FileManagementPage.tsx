@@ -163,12 +163,12 @@ const FileManagementPage: React.FC = () => {
   // 컬럼 너비 초기값
   const defaultColumnWidths: { [key: string]: number } = {
     fileNm: 300,
-    fileCategory: 100,
-    fileExt: 80,
+    fileCategory: 110,
+    fileExt: 90,
     fileSize: 100,
-    downloadCnt: 95,
+    downloadCnt: 100,
     regDt: 150,
-    useYn: 70,
+    useYn: 90,
     action: 150,
   };
 

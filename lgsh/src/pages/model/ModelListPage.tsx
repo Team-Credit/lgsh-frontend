@@ -161,13 +161,13 @@ const ModelListPage: React.FC = () => {
   // 컬럼 너비
   const defaultColumnWidths: Record<string, number> = {
     modelNm: 180,
-    algorithmType: 120,
-    modelType: 100,
-    modelVersion: 90,
-    aucScore: 80,
-    ksStat: 80,
+    algorithmType: 130,
+    modelType: 110,
+    modelVersion: 100,
+    aucScore: 90,
+    ksStat: 90,
     ar: 80,
-    approvalStatus: 100,
+    approvalStatus: 110,
     regDt: 150,
     action: 150,
   };

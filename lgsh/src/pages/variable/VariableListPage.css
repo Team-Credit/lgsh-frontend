@@ -19,21 +19,6 @@
     margin-bottom: 0;
 }
 
-/* Resizable 컬럼 핸들 */
-.variable-page .react-resizable-handle {
-    position: absolute;
-    right: -5px;
-    bottom: 0;
-    z-index: 1;
-    width: 10px;
-    height: 100%;
-    cursor: col-resize;
-}
-
-.variable-page .react-resizable-handle:hover {
-    background-color: rgba(0, 0, 0, 0.06);
-}
-
 /* 테이블 스타일 */
 .variable-page .ant-table-thead > tr > th {
     background: #fafafa;
