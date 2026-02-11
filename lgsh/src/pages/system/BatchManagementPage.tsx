@@ -119,13 +119,13 @@ const BatchManagementPage: React.FC = () => {
   const defaultColumnWidths: { [key: string]: number } = {
     batchId: 180,
     batchType: 120,
-    status: 100,
+    status: 110,
     startDt: 160,
     endDt: 160,
-    totalCnt: 80,
-    successCnt: 80,
-    failCnt: 80,
-    execUserId: 100,
+    totalCnt: 90,
+    successCnt: 90,
+    failCnt: 90,
+    execUserId: 110,
     action: 120,
   };
 

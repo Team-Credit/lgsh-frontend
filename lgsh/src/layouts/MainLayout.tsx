@@ -57,6 +57,7 @@ import {
   MoonOutlined,
   StarOutlined,
   StarFilled,
+  QuestionCircleOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
@@ -76,6 +77,8 @@ import ContractWarningModal from '@/components/common/ContractWarningModal';
 import PasswordWarningModal from '@/components/common/PasswordWarningModal';
 import ChatFloatingWidget from '@/components/chat/ChatFloatingWidget';
 import ProfileModal from '@/components/profile/ProfileModal';
+import HelpModal from '@/components/common/HelpModal';
+import helpIndex from '@/help/data/help-index.json';
 import { clearContractWarning, clearPasswordWarning } from '@/store/slices/authSlice';
 import './MainLayout.css';
 
@@ -190,6 +193,9 @@ const MainLayout: React.FC = () => {
 
   // 내 정보 모달 상태
   const [profileModalOpen, setProfileModalOpen] = React.useState(false);
+
+  // 도움말 모달 상태
+  const [helpOpen, setHelpOpen] = React.useState(false);
 
   // 비밀번호 만료 경고 모달 상태
   const [showPasswordWarning, setShowPasswordWarning] = React.useState(false);
@@ -675,6 +681,12 @@ const MainLayout: React.FC = () => {
   const currentPerm = currentMenuId ? permissions[currentMenuId] : null;
   const canExportCurrent = currentPerm ? currentPerm.exportYn : true;
 
+  // 현재 경로의 도움말 menuKey
+  const helpMenuKey = useMemo(() => {
+    const entry = (helpIndex as Record<string, { menuKey: string }>)[location.pathname];
+    return entry?.menuKey || null;
+  }, [location.pathname]);
+
   // 사용자 드롭다운 메뉴
   const userMenuItems: MenuProps['items'] = [
     {
@@ -843,6 +855,16 @@ const MainLayout: React.FC = () => {
               icon={darkMode ? <SunOutlined /> : <MoonOutlined />}
               className="header-icon-btn"
               onClick={() => dispatch(toggleDarkMode())}
+            />
+          </Tooltip>
+
+          <Tooltip title="도움말">
+            <Button
+              type="text"
+              icon={<QuestionCircleOutlined />}
+              className="header-icon-btn"
+              onClick={() => setHelpOpen(true)}
+              disabled={!helpMenuKey}
             />
           </Tooltip>
 
@@ -1075,6 +1097,13 @@ const MainLayout: React.FC = () => {
       <ProfileModal
         open={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
+      />
+
+      {/* 도움말 모달 */}
+      <HelpModal
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        menuKey={helpMenuKey}
       />
 
       {/* 즐겨찾기 컨텍스트 메뉴 (우클릭) */}

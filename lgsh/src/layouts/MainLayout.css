@@ -125,11 +125,19 @@
 }
 
 .sider-resizer:hover {
-  background-color: rgba(24, 144, 255, 0.3) !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 .sider-resizer:active {
-  background-color: #1890ff !important;
+  background-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+:root.dark .sider-resizer:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+:root.dark .sider-resizer:active {
+  background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 .sider-toggle {

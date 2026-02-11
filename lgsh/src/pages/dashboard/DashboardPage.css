@@ -105,32 +105,41 @@
   z-index: 2;
 }
 
-/* 리사이즈 핸들 */
-.react-resizable-handle {
+/* 대시보드 위젯 리사이즈 핸들 */
+.dashboard-page .react-resizable-handle {
   position: absolute;
   width: 20px;
   height: 20px;
 }
 
-.react-resizable-handle::after {
+.dashboard-page .react-resizable-handle::after {
   content: '';
   position: absolute;
   right: 4px;
   bottom: 4px;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid var(--muted, #64748b);
-  border-bottom: 2px solid var(--muted, #64748b);
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-.react-resizable-handle:hover::after {
-  border-color: var(--primary, #1e3a8a);
+.dashboard-page .react-resizable-handle:hover::after {
+  border-color: rgba(0, 0, 0, 0.3);
 }
 
-.react-resizable-handle-se {
+.dashboard-page .react-resizable-handle-se {
   bottom: 0;
   right: 0;
   cursor: se-resize;
+}
+
+:root.dark .dashboard-page .react-resizable-handle::after {
+  border-right-color: rgba(255, 255, 255, 0.15);
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+:root.dark .dashboard-page .react-resizable-handle:hover::after {
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* 다크모드 */

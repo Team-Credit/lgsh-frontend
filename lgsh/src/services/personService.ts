@@ -113,6 +113,25 @@ export const personService = {
     );
     return response.data;
   },
+
+  // 관리그룹 조회지정 (검색 조건 기반 일괄 지정)
+  batchUpdateGrpByCriteria: async (
+    searchParams: PersonSearchParams,
+    personGrp: string
+  ): Promise<ApiResponse<{ successCount: number; message: string }>> => {
+    const params: Record<string, string> = { personGrp };
+    if (searchParams.companyId) params.companyId = searchParams.companyId;
+    if (searchParams.personNm) params.personNm = searchParams.personNm;
+    if (searchParams.personIdFrom) params.personIdFrom = searchParams.personIdFrom;
+    if (searchParams.personIdTo) params.personIdTo = searchParams.personIdTo;
+    if (searchParams.personGrp) params.personGrpSearch = searchParams.personGrp;
+    if (searchParams.useYn) params.useYn = searchParams.useYn;
+
+    const response = await api.put<ApiResponse<{ successCount: number; message: string }>>(
+      '/persons/batch-grp-by-criteria', null, { params }
+    );
+    return response.data;
+  },
 };
 
 export default personService;

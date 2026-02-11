@@ -125,11 +125,11 @@ const MessageCodePage: React.FC = () => {
   // 컬럼 너비 초기값
   const defaultColumnWidths: { [key: string]: number } = {
     msgCode: 150,
-    langCode: 80,
-    msgType: 100,
+    langCode: 90,
+    msgType: 110,
     msgTitle: 200,
     msgDesc: 350,
-    useYn: 80,
+    useYn: 90,
     action: 120,
   };
 

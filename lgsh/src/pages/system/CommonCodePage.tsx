@@ -117,24 +117,24 @@ const CommonCodePage: React.FC = () => {
 
   // 컬럼 너비 (대분류)
   const defaultMajorColumnWidths: Record<string, number> = {
-    majorCode: 120,
+    majorCode: 160,
     majorCodeNm: 200,
-    sysYn: 80,
-    useYn: 80,
-    childCnt: 80,
-    sortOrder: 80,
+    sysYn: 90,
+    useYn: 90,
+    childCnt: 90,
+    sortOrder: 90,
     regDt: 140,
     action: 100,
   };
 
   // 컬럼 너비 (소분류)
   const defaultMinorColumnWidths: Record<string, number> = {
-    minorCode: 100,
+    minorCode: 110,
     minorCodeNm: 180,
-    codeValue: 100,
-    sysYn: 80,
-    useYn: 80,
-    sortOrder: 80,
+    codeValue: 110,
+    sysYn: 90,
+    useYn: 90,
+    sortOrder: 90,
     attr1: 100,
     regDt: 140,
     action: 100,

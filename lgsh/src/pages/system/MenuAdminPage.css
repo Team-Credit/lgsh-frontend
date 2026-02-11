@@ -26,7 +26,7 @@
 
 .menu-admin-resizer {
   position: relative;
-  width: 8px;
+  width: 6px;
   cursor: col-resize;
   background: transparent;
 }
@@ -36,18 +36,27 @@
   position: absolute;
   top: 12px;
   bottom: 12px;
-  left: 3px;
-  width: 2px;
-  border-radius: 2px;
-  background: var(--line, #d0d4e4);
-  opacity: 0.7;
-  transition: opacity 120ms ease, background 120ms ease;
+  left: 2px;
+  width: 1px;
+  border-radius: 1px;
+  background: var(--line, #e6ebf5);
+  opacity: 0.5;
+  transition: opacity 0.2s ease, background 0.2s ease;
 }
 
 .menu-admin-grid.is-resizing .menu-admin-resizer::after,
 .menu-admin-resizer:hover::after {
   opacity: 1;
-  background: var(--primary-light, #5b8cff);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+:root.dark .menu-admin-resizer::after {
+  background: #374151;
+}
+
+:root.dark .menu-admin-grid.is-resizing .menu-admin-resizer::after,
+:root.dark .menu-admin-resizer:hover::after {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .menu-admin-node {

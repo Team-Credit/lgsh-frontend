@@ -69,35 +69,6 @@
   }
 }
 
-/* ========== Resizable 핸들 스타일 (덜 눈에 띄게) ========== */
-/* react-resizable 기본 스타일 오버라이드 */
-.report-item-admin-page .react-resizable {
-  position: relative;
-}
-
-.report-item-admin-page .react-resizable-handle {
-  position: absolute;
-  right: -5px;
-  bottom: 0;
-  width: 10px;
-  height: 100%;
-  cursor: col-resize;
-  z-index: 1;
-  /* 기본 핸들 아이콘(ㄴ자, |) 숨기기 */
-  background-image: none !important;
-  background-color: transparent;
-}
-
-/* 호버 시 미세한 하이라이트 */
-.report-item-admin-page .react-resizable-handle:hover {
-  background: rgba(24, 144, 255, 0.1);
-}
-
-/* 드래그 중일 때 표시 */
-.report-item-admin-page .react-resizable-handle:active {
-  background: rgba(24, 144, 255, 0.2);
-}
-
 /* 헤더 우측에 미세한 구분선 추가 */
 .report-item-admin-page .ant-table-thead > tr > th::after {
   content: '';
@@ -140,14 +111,6 @@
 :root.dark .report-item-admin-page .ant-card-small {
   background: var(--white, #1f2937);
   border-color: var(--border, #374151);
-}
-
-:root.dark .report-item-admin-page .react-resizable-handle:hover {
-  background: rgba(59, 130, 246, 0.15);
-}
-
-:root.dark .report-item-admin-page .react-resizable-handle:active {
-  background: rgba(59, 130, 246, 0.25);
 }
 
 :root.dark .report-item-admin-page .ant-table-thead > tr > th::after {

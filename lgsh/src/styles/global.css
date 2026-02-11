@@ -88,6 +88,58 @@ body {
   font-size: calc(var(--app-font-size, 14px) + 2px) !important;
 }
 
+/* ========== 공통 테이블 컬럼 리사이즈 핸들 ========== */
+.ant-table-thead .react-resizable {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.ant-table-thead .react-resizable-handle {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 1;
+  background: transparent;
+  background-image: none !important;
+}
+
+.ant-table-thead .react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 50%;
+  right: 4px;
+  top: 25%;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.ant-table-thead .react-resizable-handle:hover::after {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+.ant-table-thead .react-resizable-handle:active::after {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+:root.dark .ant-table-thead .react-resizable-handle:hover::after {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+:root.dark .ant-table-thead .react-resizable-handle:active::after {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ========== 공통 테이블 셀 한줄 표시 (ellipsis) ========== */
+.ant-table-tbody > tr > td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 스크롤바 스타일 */
 ::-webkit-scrollbar {
   width: 8px;

@@ -35,6 +35,8 @@ import {
   CloseOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { Resizable } from 'react-resizable';
+import type { ResizeCallbackData } from 'react-resizable';
 import rawDataService from '@/services/rawDataService';
 import type {
   ErrorLog,
@@ -42,6 +44,33 @@ import type {
   ErrorResolveRequest,
   UploadProgress,
 } from '@/types/rawData';
+
+/* ── 리사이즈 가능 헤더 셀 ── */
+const ResizableTitle = (
+  props: React.HTMLAttributes<HTMLElement> & {
+    onResize?: (e: React.SyntheticEvent, data: ResizeCallbackData) => void;
+    width?: number;
+  },
+) => {
+  const { onResize, width, ...restProps } = props;
+  if (!width) return <th {...restProps} />;
+  return (
+    <Resizable
+      width={width}
+      height={0}
+      handle={
+        <span
+          className="react-resizable-handle"
+          onClick={(e) => e.stopPropagation()}
+        />
+      }
+      onResize={onResize}
+      draggableOpts={{ enableUserSelectHack: false }}
+    >
+      <th {...restProps} />
+    </Resizable>
+  );
+};
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -84,6 +113,38 @@ const ErrorResolverPanel: React.FC<ErrorResolverPanelProps> = ({
   const [resolveModalVisible, setResolveModalVisible] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [form] = Form.useForm();
+
+  // ── 컬럼 리사이즈 ──
+  const STORAGE_KEY = 'errorResolverColumnWidths';
+  const defaultColumnWidths: Record<string, number> = {
+    rowNum: 70,
+    columnNm: 120,
+    errorType: 110,
+    sourceValue: 150,
+    errorMsg: 250,
+    aiSuggestion: 90,
+    resolvedYn: 90,
+    action: 130,
+  };
+
+  const loadWidths = (): Record<string, number> => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return { ...defaultColumnWidths, ...JSON.parse(saved) };
+    } catch { /* ignore */ }
+    return { ...defaultColumnWidths };
+  };
+
+  const [colWidths, setColWidths] = useState<Record<string, number>>(loadWidths);
+
+  const handleResize = (key: string) =>
+    (_: React.SyntheticEvent, { size }: ResizeCallbackData) => {
+      setColWidths((prev) => {
+        const next = { ...prev, [key]: size.width };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
+    };
 
   // 에러 목록 조회
   const fetchErrors = useCallback(async () => {
@@ -213,56 +274,63 @@ const ErrorResolverPanel: React.FC<ErrorResolverPanelProps> = ({
     return <Tag color={cfg.color}>{cfg.text}</Tag>;
   };
 
-  // 테이블 컬럼
+  // 테이블 컬럼 (리사이즈 지원)
   const columns: ColumnsType<ErrorLog> = [
     {
       title: '행',
       dataIndex: 'rowNum',
       key: 'rowNum',
-      width: 70,
+      width: colWidths.rowNum,
       align: 'center',
+      onHeaderCell: () => ({ width: colWidths.rowNum, onResize: handleResize('rowNum') }) as any,
     },
     {
       title: '컬럼',
       dataIndex: 'columnNm',
       key: 'columnNm',
-      width: 120,
+      width: colWidths.columnNm,
+      onHeaderCell: () => ({ width: colWidths.columnNm, onResize: handleResize('columnNm') }) as any,
     },
     {
       title: '타입',
       dataIndex: 'errorType',
       key: 'errorType',
-      width: 100,
+      width: colWidths.errorType,
       render: renderErrorTypeTag,
+      onHeaderCell: () => ({ width: colWidths.errorType, onResize: handleResize('errorType') }) as any,
     },
     {
       title: '원본값',
       dataIndex: 'sourceValue',
       key: 'sourceValue',
-      width: 150,
+      width: colWidths.sourceValue,
       ellipsis: true,
+      onHeaderCell: () => ({ width: colWidths.sourceValue, onResize: handleResize('sourceValue') }) as any,
     },
     {
       title: '에러 메시지',
       dataIndex: 'errorMsg',
       key: 'errorMsg',
+      width: colWidths.errorMsg,
       ellipsis: true,
+      onHeaderCell: () => ({ width: colWidths.errorMsg, onResize: handleResize('errorMsg') }) as any,
     },
     {
       title: 'AI 제안',
       dataIndex: 'aiSuggestion',
       key: 'aiSuggestion',
-      width: 80,
+      width: colWidths.aiSuggestion,
       align: 'center',
       render: (v) => (
         v ? <Tag color="blue" icon={<BulbOutlined />}>있음</Tag> : '-'
       ),
+      onHeaderCell: () => ({ width: colWidths.aiSuggestion, onResize: handleResize('aiSuggestion') }) as any,
     },
     {
       title: '상태',
       dataIndex: 'resolvedYn',
       key: 'resolvedYn',
-      width: 80,
+      width: colWidths.resolvedYn,
       align: 'center',
       render: (v) => (
         v === 'Y' ? (
@@ -271,11 +339,12 @@ const ErrorResolverPanel: React.FC<ErrorResolverPanelProps> = ({
           <Tag color="error" icon={<ExclamationCircleOutlined />}>미해결</Tag>
         )
       ),
+      onHeaderCell: () => ({ width: colWidths.resolvedYn, onResize: handleResize('resolvedYn') }) as any,
     },
     {
       title: '작업',
       key: 'action',
-      width: 120,
+      width: colWidths.action,
       align: 'center',
       render: (_, record) => (
         <Space size="small">
@@ -300,6 +369,7 @@ const ErrorResolverPanel: React.FC<ErrorResolverPanelProps> = ({
           )}
         </Space>
       ),
+      onHeaderCell: () => ({ width: colWidths.action, onResize: handleResize('action') }) as any,
     },
   ];
 
@@ -386,6 +456,8 @@ const ErrorResolverPanel: React.FC<ErrorResolverPanelProps> = ({
           rowKey="errorLogId"
           loading={loading}
           size="small"
+          components={{ header: { cell: ResizableTitle } }}
+          scroll={{ x: 'max-content' }}
           rowClassName={(record) =>
             record.resolvedYn === 'Y' ? 'error-row-resolved' : 'error-row-error'
           }

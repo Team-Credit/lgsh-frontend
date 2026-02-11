@@ -128,15 +128,15 @@ const ReportItemAdminPage: React.FC = () => {
 
   // 컬럼 너비
   const defaultColumnWidths = {
-    itemOrder: 70,
+    itemOrder: 80,
     itemId: 160,
     itemNm: 180,
-    dataSource: 100,
+    dataSource: 110,
     spName: 200,
-    chartType: 100,
-    defaultStatus: 100,
-    useYn: 70,
-    action: 100,
+    chartType: 110,
+    defaultStatus: 110,
+    useYn: 90,
+    action: 110,
   };
 
   const getStoredColumnWidths = () => {

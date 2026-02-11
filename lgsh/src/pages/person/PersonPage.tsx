@@ -40,7 +40,7 @@ import type { ColumnsType, TableRowSelection } from 'antd/es/table/interface';
 import type { ResizeCallbackData } from 'react-resizable';
 import { Resizable } from 'react-resizable';
 import dayjs from 'dayjs';
-import type { PersonFull, PersonRequest, PersonGroup, PersonGroupTreeNode } from '@/types';
+import type { PersonFull, PersonRequest, PersonGroup, PersonGroupTreeNode, PersonSearchParams } from '@/types';
 import { personService } from '@/services/personService';
 import { useAppSelector } from '@/store/hooks';
 import { useCommonCodes, useMenuPermission } from '@/hooks';
@@ -142,12 +142,12 @@ const PersonPage: React.FC = () => {
     gender: 80,
     birthDt: 110,
     mobileNo: 130,
-    jobNm: 100,
+    jobNm: 110,
     personGrpNm: 130,
     companyNm: 130,
     useYn: 105,
     regDt: 160,
-    action: 100,
+    action: 110,
   };
 
   // localStorage에서 저장된 컬럼 너비 불러오기
@@ -177,6 +177,9 @@ const PersonPage: React.FC = () => {
 
   // 관리그룹 일괄지정 모달
   const [batchGrpModalOpen, setBatchGrpModalOpen] = useState(false);
+
+  // 관리그룹 조회지정 모달
+  const [batchGrpByCriteriaModalOpen, setBatchGrpByCriteriaModalOpen] = useState(false);
 
   // 대상자 상세 모달 상태
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -491,6 +494,54 @@ const PersonPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 관리그룹 조회지정 핸들러 (검색 조건 기반 일괄 지정)
+  const handleBatchUpdateGrpByCriteria = (group: PersonGroupTreeNode) => {
+    setBatchGrpByCriteriaModalOpen(false);
+
+    const searchValues = searchForm.getFieldsValue();
+    const searchParams: PersonSearchParams = {
+      ...searchValues,
+      companyId: userCompanyId || searchValues.companyId,
+    };
+
+    Modal.confirm({
+      title: '관리그룹 조회지정',
+      icon: <TeamOutlined />,
+      content: (
+        <div>
+          <p>현재 검색 조건에 맞는 <strong>전체 대상자</strong>의 관리그룹을</p>
+          <p><strong>[{group.personGrpNm}]</strong>(으)로 변경하시겠습니까?</p>
+          <p style={{ color: '#666', fontSize: 12, marginTop: 8 }}>
+            현재 조회된 전체 {total}건이 대상입니다.
+          </p>
+        </div>
+      ),
+      okText: '일괄 변경',
+      cancelText: '취소',
+      onOk: async () => {
+        try {
+          const response = await personService.batchUpdateGrpByCriteria(searchParams, group.personGrp);
+
+          if (response.success) {
+            const result = response.data;
+            message.success(
+              result?.message || `${result?.successCount || 0}건의 관리그룹이 [${group.personGrpNm}](으)로 변경되었습니다.`
+            );
+            setSelectedRowKeys([]);
+            setSelectedRows([]);
+            fetchData();
+          } else {
+            message.error(response.message || '관리그룹 조회지정에 실패했습니다.');
+          }
+        } catch (error: any) {
+          console.error('관리그룹 조회지정 오류:', error);
+          const errorMessage = error?.response?.data?.message || error?.message || '관리그룹 조회지정 중 오류가 발생했습니다.';
+          message.error(errorMessage);
+        }
+      },
+    });
   };
 
   // 상세 보기 모달 열기
@@ -1105,7 +1156,17 @@ const PersonPage: React.FC = () => {
                 disabled={selectedRowKeys.length === 0}
                 onClick={() => setBatchGrpModalOpen(true)}
               >
-                관리그룹 일괄지정 ({selectedRowKeys.length})
+                관리그룹선택 지정 ({selectedRowKeys.length})
+              </Button>
+            )}
+            {canWrite && (
+              <Button
+                type="primary"
+                icon={<TeamOutlined />}
+                disabled={total === 0}
+                onClick={() => setBatchGrpByCriteriaModalOpen(true)}
+              >
+                관리그룹조회 지정 ({total})
               </Button>
             )}
             <Popover
@@ -1184,6 +1245,14 @@ const PersonPage: React.FC = () => {
         open={batchGrpModalOpen}
         onCancel={() => setBatchGrpModalOpen(false)}
         onSelect={handleBatchUpdateGrp}
+        companyId={userCompanyId || undefined}
+      />
+
+      {/* 관리그룹 조회지정 모달 */}
+      <PersonGroupSelectModal
+        open={batchGrpByCriteriaModalOpen}
+        onCancel={() => setBatchGrpByCriteriaModalOpen(false)}
+        onSelect={handleBatchUpdateGrpByCriteria}
         companyId={userCompanyId || undefined}
       />
 

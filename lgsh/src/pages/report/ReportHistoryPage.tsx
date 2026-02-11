@@ -111,15 +111,15 @@ const ReportHistoryPage: React.FC = () => {
 
   // 컬럼 너비
   const defaultColumnWidths = {
-    reportSeq: 80,
-    year: 80,
-    month: 60,
+    reportSeq: 90,
+    year: 90,
+    month: 80,
     title: 200,
-    genStatus: 100,
+    genStatus: 110,
     fileNm: 180,
     fileSize: 100,
-    pageCnt: 80,
-    createdBy: 100,
+    pageCnt: 90,
+    createdBy: 110,
     createdDt: 160,
     action: 150,
   };
