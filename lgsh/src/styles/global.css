@@ -182,6 +182,7 @@ a:hover {
 
 :root.dark .ant-card-body {
   background: var(--white);
+  color: var(--text);
 }
 
 :root.dark .ant-table {
@@ -271,6 +272,24 @@ a:hover {
   color: var(--primary);
 }
 
+:root.dark .ant-btn-text {
+  color: var(--text);
+}
+
+:root.dark .ant-btn-text:hover {
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+:root.dark .ant-btn-text.ant-btn-dangerous {
+  color: #f87171;
+}
+
+:root.dark .ant-btn-text.ant-btn-dangerous:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
 :root.dark .ant-menu {
   background: var(--white);
   color: var(--text);
@@ -340,6 +359,42 @@ a:hover {
   color: white;
 }
 
+:root.dark .ant-pagination-prev .ant-pagination-item-link,
+:root.dark .ant-pagination-next .ant-pagination-item-link {
+  background: #374151;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark .ant-pagination-disabled .ant-pagination-item-link {
+  background: #1f2937 !important;
+  color: #4b5563 !important;
+}
+
+:root.dark .ant-pagination-jump-prev .ant-pagination-item-ellipsis,
+:root.dark .ant-pagination-jump-next .ant-pagination-item-ellipsis {
+  color: var(--text-secondary);
+}
+
+:root.dark .ant-pagination-options .ant-select-selector {
+  background: #374151 !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+:root.dark .ant-pagination-total-text {
+  color: var(--text);
+}
+
+:root.dark .ant-table-footer,
+:root.dark .ant-table-wrapper .ant-table-pagination {
+  background: var(--white);
+}
+
+:root.dark .ant-table-container {
+  border-color: var(--border);
+}
+
 :root.dark .ant-empty-description {
   color: var(--text-secondary);
 }
@@ -364,6 +419,15 @@ a:hover {
 }
 
 :root.dark .ant-popover-inner-content {
+  color: var(--text);
+}
+
+/* Radio 다크모드 */
+:root.dark .ant-radio-wrapper {
+  color: var(--text);
+}
+
+:root.dark .ant-radio-group {
   color: var(--text);
 }
 
@@ -493,4 +557,54 @@ a:hover {
 :root.dark input::placeholder,
 :root.dark textarea::placeholder {
   color: #9ca3af;
+}
+
+/* Tree 다크모드 */
+:root.dark .ant-tree {
+  background: transparent;
+  color: var(--text);
+}
+
+:root.dark .ant-tree .ant-tree-node-content-wrapper {
+  color: var(--text);
+}
+
+:root.dark .ant-tree .ant-tree-node-content-wrapper:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+:root.dark .ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary);
+}
+
+:root.dark .ant-tree .ant-tree-switcher {
+  color: var(--muted);
+}
+
+:root.dark .ant-tree .ant-tree-indent-unit::before,
+:root.dark .ant-tree .ant-tree-switcher-line-icon {
+  border-color: var(--line) !important;
+  color: var(--muted);
+}
+
+:root.dark .ant-tree-show-line .ant-tree-indent-unit::before {
+  border-color: var(--line);
+}
+
+:root.dark .ant-tree .ant-tree-treenode {
+  color: var(--text);
+}
+
+:root.dark .ant-tree .ant-tree-iconEle {
+  color: var(--muted);
+}
+
+/* 공통 페이지 헤더/타이틀 다크모드 */
+:root.dark .page-title {
+  color: var(--text);
+}
+
+:root.dark .page-subtitle {
+  color: var(--text-secondary);
 }

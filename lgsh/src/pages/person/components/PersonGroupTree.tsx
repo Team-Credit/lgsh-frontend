@@ -22,6 +22,7 @@ interface PersonGroupTreeProps {
   onAddRoot: () => void;
   onAddChild: (parentGrp: string) => void;
   onDrop?: TreeProps['onDrop'];
+  canWrite?: boolean;
 }
 
 // 트리 노드 제목 렌더링
@@ -31,12 +32,12 @@ const renderTitle = (node: PersonGroupTreeNode): React.ReactNode => (
     <span className="grp-tree-info">
       <Tooltip title={`사용자 ${node.userCount}명`}>
         <Badge count={node.userCount} size="small" color="#1677ff" overflowCount={99}>
-          <UserOutlined style={{ fontSize: 12, color: '#999' }} />
+          <UserOutlined style={{ fontSize: 12 }} />
         </Badge>
       </Tooltip>
       <Tooltip title={`대상자 ${node.personCount}명`}>
         <Badge count={node.personCount} size="small" color="#52c41a" overflowCount={9999}>
-          <TeamOutlined style={{ fontSize: 12, color: '#999' }} />
+          <TeamOutlined style={{ fontSize: 12 }} />
         </Badge>
       </Tooltip>
     </span>
@@ -63,6 +64,7 @@ const PersonGroupTree: React.FC<PersonGroupTreeProps> = ({
   onSelect,
   onAddRoot,
   onDrop,
+  canWrite = true,
 }) => {
   const dataNodes = useMemo(() => convertToDataNode(treeData), [treeData]);
 
@@ -70,14 +72,16 @@ const PersonGroupTree: React.FC<PersonGroupTreeProps> = ({
     <div className="grp-tree-container">
       <div className="grp-tree-header">
         <Text strong>관리그룹 트리</Text>
-        <Button
-          type="primary"
-          size="small"
-          icon={<PlusOutlined />}
-          onClick={onAddRoot}
-        >
-          루트 추가
-        </Button>
+        {canWrite && (
+          <Button
+            type="primary"
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={onAddRoot}
+          >
+            루트 추가
+          </Button>
+        )}
       </div>
 
       <Tree

@@ -29,6 +29,7 @@ import {
     SettingOutlined,
     EditOutlined,
     DeleteOutlined,
+    FunctionOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType, ColumnType } from 'antd/es/table/interface';
 import type { ResizeCallbackData } from 'react-resizable';
@@ -42,7 +43,7 @@ import type {
 } from '@/types';
 import { variableService } from '@/services/variableService';
 import { modelService } from '@/services/modelService';
-import { useCommonCodes } from '@/hooks';
+import { useCommonCodes, useMenuPermission } from '@/hooks';
 import './VariableListPage.css';
 import 'react-resizable/css/styles.css';
 
@@ -88,6 +89,7 @@ const ResizableTitle = (
 };
 
 const VariableListPage: React.FC = () => {
+    const { canWrite, canDelete } = useMenuPermission('M0409');
     const [searchForm] = Form.useForm();
     const [createForm] = Form.useForm();
     const [editForm] = Form.useForm();
@@ -513,26 +515,30 @@ const VariableListPage: React.FC = () => {
             fixed: 'right',
             render: (_: unknown, record: Variable) => (
                 <Space size="small">
-                    <Button
-                        type="text"
-                        icon={<EditOutlined />}
-                        onClick={() => handleEdit(record)}
-                        title="수정"
-                    />
-                    <Popconfirm
-                        title="삭제 확인"
-                        description="이 변수를 삭제하시겠습니까?"
-                        onConfirm={() => handleDelete(record)}
-                        okText="삭제"
-                        cancelText="취소"
-                    >
+                    {canWrite && (
                         <Button
                             type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                            title="삭제"
+                            icon={<EditOutlined />}
+                            onClick={() => handleEdit(record)}
+                            title="수정"
                         />
-                    </Popconfirm>
+                    )}
+                    {canDelete && (
+                        <Popconfirm
+                            title="삭제 확인"
+                            description="이 변수를 삭제하시겠습니까?"
+                            onConfirm={() => handleDelete(record)}
+                            okText="삭제"
+                            cancelText="취소"
+                        >
+                            <Button
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                                title="삭제"
+                            />
+                        </Popconfirm>
+                    )}
                 </Space>
             ),
         },
@@ -706,7 +712,8 @@ const VariableListPage: React.FC = () => {
             {/* 페이지 헤더 */}
             <div className="page-header">
                 <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
-                    모델 변수 관리
+                    <FunctionOutlined style={{ marginRight: 8 }} />
+                    변수 메타 관리
                 </Title>
                 <Text type="secondary" style={{ fontSize: 13 }}>
                     모델별 변수의 메타 정보를 관리합니다.
@@ -782,9 +789,11 @@ const VariableListPage: React.FC = () => {
                         >
                             <Button icon={<SettingOutlined />}>컬럼 설정</Button>
                         </Popover>
-                        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-                            등록
-                        </Button>
+                        {canWrite && (
+                            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                                등록
+                            </Button>
+                        )}
                     </Space>
                 </div>
 

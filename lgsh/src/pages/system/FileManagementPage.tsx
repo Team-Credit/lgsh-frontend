@@ -48,7 +48,7 @@ import { Resizable } from 'react-resizable';
 import type { UploadFile, UploadProps } from 'antd/es/upload/interface';
 import type { FileInfo, FileRequest, FileConfig } from '@/types';
 import { fileService } from '@/services/fileService';
-import { useCommonCode } from '@/hooks';
+import { useCommonCode, useMenuPermission } from '@/hooks';
 import { useExcelExport } from '@/contexts';
 import type { ExcelColumn } from '@/utils/excelExport';
 import './FileManagementPage.css';
@@ -135,6 +135,7 @@ const getFileIcon = (ext: string) => {
 };
 
 const FileManagementPage: React.FC = () => {
+  const { canWrite, canDelete } = useMenuPermission('M0807');
   const [form] = Form.useForm();
   const [searchForm] = Form.useForm();
   const [uploadForm] = Form.useForm();
@@ -598,25 +599,29 @@ const FileManagementPage: React.FC = () => {
               onClick={() => handleDownload(record)}
             />
           </Tooltip>
-          <Tooltip title="수정">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleOpenEdit(record)}
-            />
-          </Tooltip>
-          <Popconfirm
-            title="삭제 확인"
-            description="정말 삭제하시겠습니까?"
-            onConfirm={() => handleDelete(record)}
-            okText="삭제"
-            cancelText="취소"
-          >
-            <Tooltip title="삭제">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+          {canWrite && (
+            <Tooltip title="수정">
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => handleOpenEdit(record)}
+              />
             </Tooltip>
-          </Popconfirm>
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="삭제 확인"
+              description="정말 삭제하시겠습니까?"
+              onConfirm={() => handleDelete(record)}
+              okText="삭제"
+              cancelText="취소"
+            >
+              <Tooltip title="삭제">
+                <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+              </Tooltip>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -722,9 +727,11 @@ const FileManagementPage: React.FC = () => {
         {/* 툴바 */}
         <div style={{ marginBottom: 12 }}>
           <Space>
-            <Button type="primary" icon={<UploadOutlined />} onClick={handleOpenUpload}>
-              파일 업로드
-            </Button>
+            {canWrite && (
+              <Button type="primary" icon={<UploadOutlined />} onClick={handleOpenUpload}>
+                파일 업로드
+              </Button>
+            )}
             <Popover
               content={columnSettingsContent}
               title={null}

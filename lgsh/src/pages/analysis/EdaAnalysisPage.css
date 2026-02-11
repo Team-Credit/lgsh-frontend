@@ -18,7 +18,7 @@
 .summary-card {
   min-height: 200px;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-sm, 0 8px 24px rgba(15, 23, 42, 0.08));
 }
 
 .summary-card-header {
@@ -47,13 +47,13 @@
 .metric-label {
   display: block;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--muted-light, #94a3b8);
 }
 
 .metric-value {
   font-size: 20px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text, #1e293b);
 }
 
 .summary-card-empty {
@@ -123,7 +123,7 @@
 }
 
 .analysis-table .ant-table-thead > tr > th {
-  background: #1f5fa8;
+  background: var(--primary, #1f5fa8);
   color: #ffffff;
   font-weight: 600;
   text-align: center;
@@ -134,11 +134,11 @@
 }
 
 .analysis-table .ant-table-tbody > tr:nth-child(odd) > td {
-  background: #f3f4f6;
+  background: var(--bg, #f3f4f6);
 }
 
 .analysis-table .ant-table-tbody > tr:nth-child(even) > td {
-  background: #ffffff;
+  background: var(--panel, #ffffff);
 }
 
 .outlier-table .ant-table-tbody > tr.outlier-row-outlier > td {
@@ -170,7 +170,7 @@
 
 .outlier-summary {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--muted, #6b7280);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -190,7 +190,7 @@
 .heatmap-card,
 .pvalue-card {
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-sm, 0 8px 24px rgba(15, 23, 42, 0.08));
 }
 
 
@@ -215,7 +215,7 @@
 
 .heatmap-table th,
 .heatmap-table td {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--line, #e2e8f0);
   padding: 6px 8px;
   text-align: center;
   white-space: nowrap;
@@ -256,12 +256,12 @@
   left: -99999px;
   top: 0;
   width: 1100px;
-  background: #ffffff;
+  background: var(--panel, #ffffff);
   padding: 16px;
 }
 
 .heatmap-header {
-  background: #f8fafc;
+  background: var(--bg, #f8fafc);
   font-weight: 600;
   position: sticky;
   left: 0;
@@ -269,7 +269,7 @@
 }
 
 .heatmap-corner {
-  background: #f8fafc;
+  background: var(--bg, #f8fafc);
   position: sticky;
   left: 0;
   z-index: 2;
@@ -292,4 +292,22 @@
   .eda-analysis-page {
     padding: 16px;
   }
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .outlier-table .ant-table-tbody > tr.outlier-row-outlier > td {
+  background: rgba(220, 38, 38, 0.15);
+}
+
+:root.dark .outlier-table .ant-table-tbody > tr.outlier-row-boundary > td {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+:root.dark .summary-card {
+  box-shadow: var(--shadow-sm);
+}
+
+:root.dark .heatmap-card,
+:root.dark .pvalue-card {
+  box-shadow: var(--shadow-sm);
 }

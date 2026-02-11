@@ -56,7 +56,7 @@ import type {
   ApprovalStatus,
 } from '@/types';
 import { modelService } from '@/services/modelService';
-import { useCommonCodes } from '@/hooks';
+import { useCommonCodes, useMenuPermission } from '@/hooks';
 import './ModelListPage.css';
 import 'react-resizable/css/styles.css';
 
@@ -125,6 +125,7 @@ const ResizableTitle = (
 };
 
 const ModelListPage: React.FC = () => {
+  const { canWrite, canDelete } = useMenuPermission('M0401');
   const [searchForm] = Form.useForm();
   const [createForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -709,7 +710,7 @@ const ModelListPage: React.FC = () => {
             onClick={() => handleViewDetail(record)}
             title="상세보기"
           />
-          {record.approvalStatus === 'DRAFT' && (
+          {canWrite && record.approvalStatus === 'DRAFT' && (
             <>
               <Button
                 type="link"
@@ -727,7 +728,7 @@ const ModelListPage: React.FC = () => {
               />
             </>
           )}
-          {(record.approvalStatus === 'DRAFT' || record.approvalStatus === 'FAILED') && (
+          {canDelete && (record.approvalStatus === 'DRAFT' || record.approvalStatus === 'FAILED') && (
             <Button
               type="link"
               size="small"
@@ -880,9 +881,11 @@ const ModelListPage: React.FC = () => {
       <Card size="small">
         <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              새 모델 등록
-            </Button>
+            {canWrite && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                새 모델 등록
+              </Button>
+            )}
             <Popover
               content={columnSettingsContent}
               title={null}
@@ -1000,7 +1003,7 @@ const ModelListPage: React.FC = () => {
         width={900}
         footer={
           <Space>
-            {currentModel?.approvalStatus === 'READY' && (
+            {canWrite && currentModel?.approvalStatus === 'READY' && (
               <Button type="primary" icon={<RocketOutlined />} onClick={handleDeploy}>
                 배포
               </Button>

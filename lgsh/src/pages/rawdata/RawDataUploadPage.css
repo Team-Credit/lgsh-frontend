@@ -44,7 +44,7 @@
 /* 테이블 스타일 */
 .rawdata-upload-page .ant-table-thead > tr > th,
 .mapping-grid-page .ant-table-thead > tr > th {
-  background-color: #fafafa;
+  background-color: var(--bg, #fafafa);
   font-weight: 600;
 }
 
@@ -110,7 +110,7 @@
   display: flex;
   justify-content: space-around;
   padding: 16px;
-  background: #f5f5f5;
+  background: var(--bg, #f5f5f5);
   border-radius: 8px;
 }
 
@@ -125,7 +125,7 @@
 
 .upload-stat-label {
   font-size: 12px;
-  color: #888;
+  color: var(--muted, #888);
 }
 
 /* 에러 해결 패널 */
@@ -159,12 +159,12 @@
 
 .ai-suggestion-card {
   margin-top: 16px;
-  background: #f0f5ff;
+  background: var(--primary-bg, #f0f5ff);
   border: 1px solid #d6e4ff;
 }
 
 .ai-suggestion-card .ant-card-head {
-  background: #e6f4ff;
+  background: var(--info-bg, #e6f4ff);
   border-bottom: 1px solid #d6e4ff;
 }
 
@@ -194,4 +194,28 @@
 .upload-progress-modal .ant-progress-text {
   font-size: 16px;
   font-weight: 600;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .error-row-error {
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+:root.dark .error-row-resolved {
+  background-color: rgba(82, 196, 26, 0.1);
+}
+
+:root.dark .ai-suggestion-card {
+  background: var(--primary-bg);
+  border-color: var(--line);
+}
+
+:root.dark .ai-suggestion-card .ant-card-head {
+  background: var(--panel-elevated);
+  border-color: var(--line);
+}
+
+:root.dark .rawdata-upload-page .react-resizable-handle:hover,
+:root.dark .mapping-grid-page .react-resizable-handle:hover {
+  background-color: rgba(255, 255, 255, 0.06);
 }

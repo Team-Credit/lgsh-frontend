@@ -93,6 +93,8 @@ export interface PersonSearchParams {
   personId?: string;
   companyId?: string;
   personNo?: string;
+  personIdFrom?: string;
+  personIdTo?: string;
   personNm?: string;
   personGrp?: string;
   useYn?: string;

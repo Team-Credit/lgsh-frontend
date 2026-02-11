@@ -34,15 +34,16 @@ import {
   UserOutlined,
   SettingOutlined,
   EyeOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType, TableRowSelection } from 'antd/es/table/interface';
 import type { ResizeCallbackData } from 'react-resizable';
 import { Resizable } from 'react-resizable';
 import dayjs from 'dayjs';
-import type { PersonFull, PersonRequest, PersonGroup } from '@/types';
+import type { PersonFull, PersonRequest, PersonGroup, PersonGroupTreeNode } from '@/types';
 import { personService } from '@/services/personService';
 import { useAppSelector } from '@/store/hooks';
-import { useCommonCodes } from '@/hooks';
+import { useCommonCodes, useMenuPermission } from '@/hooks';
 import { useExcelExport } from '@/contexts';
 import type { ExcelColumn } from '@/utils/excelExport';
 import PersonGroupSelectModal from '@/components/PersonGroupSelectModal';
@@ -107,6 +108,9 @@ const PersonPage: React.FC = () => {
   const currentUser = useAppSelector((state) => state.auth.user);
   const userCompanyId = currentUser?.companyId || null;
 
+  // 메뉴 권한
+  const { canWrite, canDelete, canExport } = useMenuPermission('M0201');
+
   // 공통코드 조회
   const { codeMap, getLabel: getCodeLabel } = useCommonCodes([
     CODE_KEYS.GENDER,
@@ -170,6 +174,9 @@ const PersonPage: React.FC = () => {
 
   // 관리그룹 선택 모달
   const [personGroupModalOpen, setPersonGroupModalOpen] = useState(false);
+
+  // 관리그룹 일괄지정 모달
+  const [batchGrpModalOpen, setBatchGrpModalOpen] = useState(false);
 
   // 대상자 상세 모달 상태
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -453,6 +460,39 @@ const PersonPage: React.FC = () => {
     }
   };
 
+  // 관리그룹 일괄 지정 핸들러
+  const handleBatchUpdateGrp = async (group: PersonGroupTreeNode) => {
+    if (selectedRows.length === 0) {
+      message.warning('대상자를 선택해주세요.');
+      return;
+    }
+
+    setBatchGrpModalOpen(false);
+    setLoading(true);
+    try {
+      const personIds = selectedRows.map((row) => row.personId);
+      const response = await personService.batchUpdateGrp(personIds, group.personGrp);
+
+      if (response.success) {
+        const result = response.data;
+        message.success(
+          `${result?.successCount || 0}건의 관리그룹이 [${group.personGrpNm}](으)로 변경되었습니다.`
+        );
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
+        fetchData();
+      } else {
+        message.error(response.message || '관리그룹 일괄 지정에 실패했습니다.');
+      }
+    } catch (error: any) {
+      console.error('관리그룹 일괄 지정 오류:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || '관리그룹 일괄 지정 중 오류가 발생했습니다.';
+      message.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 상세 보기 모달 열기
   const handleDetailView = (record: PersonFull) => {
     setDetailPersonId(record.personId);
@@ -663,28 +703,32 @@ const PersonPage: React.FC = () => {
             onClick={() => handleDetailView(record)}
             title="상세보기"
           />
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            title="수정"
-          />
-          <Popconfirm
-            title="삭제 확인"
-            description="정말 삭제하시겠습니까?"
-            onConfirm={() => handleDelete(record)}
-            okText="삭제"
-            cancelText="취소"
-          >
+          {canWrite && (
             <Button
               type="link"
               size="small"
-              danger
-              icon={<DeleteOutlined />}
-              title="삭제"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+              title="수정"
             />
-          </Popconfirm>
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="삭제 확인"
+              description="정말 삭제하시겠습니까?"
+              onConfirm={() => handleDelete(record)}
+              okText="삭제"
+              cancelText="취소"
+            >
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                title="삭제"
+              />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -987,8 +1031,20 @@ const PersonPage: React.FC = () => {
       {/* 검색 영역 */}
       <Card className="search-card" size="small">
         <Form form={searchForm} layout="inline">
-          <Form.Item name="personNo" label="대상자번호">
-            <Input placeholder="대상자번호" style={{ width: 150 }} />
+          <Form.Item label="대상자ID">
+            <Space.Compact>
+              <Form.Item name="personIdFrom" noStyle>
+                <Input placeholder="FROM" style={{ width: 110 }} />
+              </Form.Item>
+              <Input
+                style={{ width: 30, borderLeft: 0, borderRight: 0, pointerEvents: 'none', textAlign: 'center' }}
+                placeholder="~"
+                disabled
+              />
+              <Form.Item name="personIdTo" noStyle>
+                <Input placeholder="TO" style={{ width: 110 }} />
+              </Form.Item>
+            </Space.Compact>
           </Form.Item>
           <Form.Item name="personNm" label="대상자명">
             <Input placeholder="대상자명" style={{ width: 150 }} />
@@ -1024,21 +1080,34 @@ const PersonPage: React.FC = () => {
       <Card size="small">
         <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              등록
-            </Button>
-            <Popconfirm
-              title="일괄 삭제 확인"
-              description={`선택한 ${selectedRowKeys.length}건을 삭제하시겠습니까?`}
-              onConfirm={handleBatchDelete}
-              okText="삭제"
-              cancelText="취소"
-              disabled={selectedRowKeys.length === 0}
-            >
-              <Button danger icon={<DeleteOutlined />} disabled={selectedRowKeys.length === 0}>
-                선택 삭제 ({selectedRowKeys.length})
+            {canWrite && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                등록
               </Button>
-            </Popconfirm>
+            )}
+            {canDelete && (
+              <Popconfirm
+                title="일괄 삭제 확인"
+                description={`선택한 ${selectedRowKeys.length}건을 삭제하시겠습니까?`}
+                onConfirm={handleBatchDelete}
+                okText="삭제"
+                cancelText="취소"
+                disabled={selectedRowKeys.length === 0}
+              >
+                <Button danger icon={<DeleteOutlined />} disabled={selectedRowKeys.length === 0}>
+                  선택 삭제 ({selectedRowKeys.length})
+                </Button>
+              </Popconfirm>
+            )}
+            {canWrite && (
+              <Button
+                icon={<TeamOutlined />}
+                disabled={selectedRowKeys.length === 0}
+                onClick={() => setBatchGrpModalOpen(true)}
+              >
+                관리그룹 일괄지정 ({selectedRowKeys.length})
+              </Button>
+            )}
             <Popover
               content={columnSettingsContent}
               title={null}
@@ -1108,6 +1177,14 @@ const PersonPage: React.FC = () => {
         onCancel={() => setPersonGroupModalOpen(false)}
         onSelect={handlePersonGroupSelect}
         companyId={userCompanyId || form.getFieldValue('companyId')}
+      />
+
+      {/* 관리그룹 일괄지정 모달 */}
+      <PersonGroupSelectModal
+        open={batchGrpModalOpen}
+        onCancel={() => setBatchGrpModalOpen(false)}
+        onSelect={handleBatchUpdateGrp}
+        companyId={userCompanyId || undefined}
       />
 
       {/* 상세 보기 모달 */}

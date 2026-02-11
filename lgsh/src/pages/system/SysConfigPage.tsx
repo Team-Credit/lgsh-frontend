@@ -45,6 +45,7 @@ import { codeService } from '@/services/codeService';
 import { sysConfigService } from '@/services/sysConfigService';
 import { useExcelExport } from '@/contexts';
 import type { ExcelColumn } from '@/utils/excelExport';
+import { useMenuPermission } from '@/hooks';
 import './SysConfigPage.css';
 import 'react-resizable/css/styles.css';
 
@@ -87,6 +88,9 @@ const SysConfigPage: React.FC = () => {
   const [majorSearchForm] = Form.useForm();
   const [minorSearchForm] = Form.useForm();
   const [configForm] = Form.useForm();
+
+  // 메뉴 권한
+  const { canWrite, canDelete: permDelete } = useMenuPermission('M0804');
 
   // 대분류 상태
   const [majorLoading, setMajorLoading] = useState(false);
@@ -910,36 +914,40 @@ const SysConfigPage: React.FC = () => {
 
           return (
             <Space size="small">
-              <Tooltip title="수정">
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => handleOpenConfigEdit(record)}
-                />
-              </Tooltip>
-              <Popconfirm
-                title="삭제 확인"
-                description={
-                  isNotEditable
-                    ? '수정 불가 설정은 삭제할 수 없습니다.'
-                    : '정말 삭제하시겠습니까?'
-                }
-                onConfirm={() => !isNotEditable && handleDeleteConfig(record)}
-                okButtonProps={{ disabled: isNotEditable }}
-                okText="삭제"
-                cancelText="취소"
-              >
-                <Tooltip title={isNotEditable ? '수정불가 설정' : '삭제'}>
+              {canWrite && (
+                <Tooltip title="수정">
                   <Button
                     type="text"
                     size="small"
-                    danger
-                    disabled={isNotEditable}
-                    icon={isNotEditable ? <LockOutlined /> : <DeleteOutlined />}
+                    icon={<EditOutlined />}
+                    onClick={() => handleOpenConfigEdit(record)}
                   />
                 </Tooltip>
-              </Popconfirm>
+              )}
+              {permDelete && (
+                <Popconfirm
+                  title="삭제 확인"
+                  description={
+                    isNotEditable
+                      ? '수정 불가 설정은 삭제할 수 없습니다.'
+                      : '정말 삭제하시겠습니까?'
+                  }
+                  onConfirm={() => !isNotEditable && handleDeleteConfig(record)}
+                  okButtonProps={{ disabled: isNotEditable }}
+                  okText="삭제"
+                  cancelText="취소"
+                >
+                  <Tooltip title={isNotEditable ? '수정불가 설정' : '삭제'}>
+                    <Button
+                      type="text"
+                      size="small"
+                      danger
+                      disabled={isNotEditable}
+                      icon={isNotEditable ? <LockOutlined /> : <DeleteOutlined />}
+                    />
+                  </Tooltip>
+                </Popconfirm>
+              )}
             </Space>
           );
         },
@@ -1072,7 +1080,6 @@ const SysConfigPage: React.FC = () => {
                 rowKey="majorCode"
                 loading={majorLoading}
                 size="small"
-                scroll={{ y: 180 }}
                 pagination={{
                   current: majorCurrentPage,
                   pageSize: majorPageSize,
@@ -1155,7 +1162,6 @@ const SysConfigPage: React.FC = () => {
                 rowKey={(record) => `${record.majorCode}-${record.minorCode}`}
                 loading={minorLoading}
                 size="small"
-                scroll={{ y: 180 }}
                 pagination={{
                   current: minorCurrentPage,
                   pageSize: minorPageSize,
@@ -1227,15 +1233,17 @@ const SysConfigPage: React.FC = () => {
                 >
                   초기화
                 </Button>
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  onClick={handleOpenConfigCreate}
-                  disabled={!selectedMajorCode || !selectedMinorCode}
-                >
-                  등록
-                </Button>
+                {canWrite && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={handleOpenConfigCreate}
+                    disabled={!selectedMajorCode || !selectedMinorCode}
+                  >
+                    등록
+                  </Button>
+                )}
               </Space>
             }
             className="config-card"

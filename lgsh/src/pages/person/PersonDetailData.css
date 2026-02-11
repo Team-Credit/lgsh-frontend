@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 20px;
   padding: 24px;
-  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  background: var(--white, #ffffff);
   border-radius: 16px;
 }
 
@@ -14,23 +14,17 @@
   gap: 16px;
 }
 
-.person-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.person-subtitle {
-  font-size: 14px;
-  color: #64748b;
-  margin-top: 4px;
+.person-detail-container .page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .person-id {
   font-size: 13px;
-  color: #475569;
+  color: var(--text-secondary, #475569);
   padding: 6px 12px;
-  background: #e2e8f0;
+  background: var(--bg, #e2e8f0);
   border-radius: 999px;
 }
 
@@ -45,11 +39,11 @@
 }
 
 .person-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--white, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -64,6 +58,7 @@
 .card-title {
   font-size: 16px;
   font-weight: 700;
+  color: var(--text, inherit);
 }
 
 .card-row {
@@ -73,19 +68,23 @@
   gap: 12px;
 }
 
-.label {
+.card-row .label {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-secondary, #64748b);
 }
 
 .person-card.highlight .label {
   color: #cbd5f5;
 }
 
-.value {
+.card-row .value {
   font-size: 14px;
   font-weight: 600;
-  color: inherit;
+  color: var(--text, inherit);
+}
+
+.person-card.highlight .value {
+  color: #f8fafc;
 }
 
 .score-box {
@@ -126,13 +125,14 @@
 .history-table td {
   padding: 10px 8px;
   text-align: center;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  color: var(--text, inherit);
 }
 
 .history-table th {
-  color: #475569;
+  color: var(--text-secondary, #475569);
   font-weight: 600;
-  background: #f8fafc;
+  background: var(--bg, #f8fafc);
 }
 
 .person-detail-state {
@@ -141,7 +141,7 @@
   align-items: center;
   justify-content: center;
   padding: 32px;
-  color: #475569;
+  color: var(--text-secondary, #475569);
 }
 
 .person-detail-state.error {
@@ -149,13 +149,52 @@
   font-weight: 600;
 }
 
+/* 검색 카드 */
+.person-detail-search-card {
+  background: var(--white, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+}
+
+.person-detail-search-card .search-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text, #333);
+}
+
+/* 빈 상태 카드 */
+.person-detail-empty {
+  background: var(--bg, #f6f8fa);
+  border: 1px solid var(--border, transparent);
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+}
+
+.person-detail-empty .empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text, #333);
+}
+
+.person-detail-empty .empty-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #666);
+}
+
 .person-detail-input {
   min-width: 220px;
   padding: 10px 12px;
-  border: 1px solid #cbd5f5;
+  border: 1px solid var(--border, #cbd5f5);
   border-radius: 10px;
   font-size: 14px;
   outline: none;
+  background: var(--white, #ffffff);
+  color: var(--text, #333);
 }
 
 .person-detail-input:focus {
@@ -183,10 +222,16 @@
   font-weight: 600;
 }
 
+/* person-subtitle: 점수 이력 빈 상태 등에 사용 */
+.person-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary, #64748b);
+}
+
 .spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid #cbd5f5;
+  border: 2px solid var(--border, #cbd5f5);
   border-top-color: #2563eb;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -196,6 +241,52 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .person-detail-container {
+  background: var(--white, #1f2937);
+}
+
+:root.dark .person-card {
+  background: var(--white, #1f2937);
+  border-color: var(--border, #374151);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark .person-card.highlight {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:root.dark .person-id {
+  background: #374151;
+  color: #d1d5db;
+}
+
+:root.dark .history-table th {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+:root.dark .person-detail-search-card {
+  background: var(--white, #1f2937);
+  border-color: var(--border, #374151);
+}
+
+:root.dark .person-detail-empty {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border, #374151);
+}
+
+:root.dark .person-detail-input {
+  background: var(--bg, #111827);
+  border-color: var(--border, #374151);
+  color: var(--text, #e5e7eb);
+}
+
+:root.dark .grade-badge {
+  background: #38bdf8;
+  color: #0f172a;
 }
 
 @media (max-width: 960px) {

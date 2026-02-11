@@ -56,16 +56,16 @@
 .person-page .react-resizable-handle::after {
   content: '';
   position: absolute;
-  width: 2px;
-  height: 100%;
+  width: 1px;
+  height: 50%;
   right: 4px;
-  top: 0;
-  background-color: #d9d9d9;
-  transition: background-color 0.3s;
+  top: 25%;
+  background-color: transparent;
+  transition: background-color 0.2s;
 }
 
 .person-page .react-resizable-handle:hover::after {
-  background-color: #1890ff;
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 /* 모달 탭 스타일 */
@@ -123,5 +123,9 @@
 }
 
 :root.dark .person-page .react-resizable-handle::after {
-  background-color: #4b5563;
+  background-color: transparent;
+}
+
+:root.dark .person-page .react-resizable-handle:hover::after {
+  background-color: rgba(255, 255, 255, 0.15);
 }

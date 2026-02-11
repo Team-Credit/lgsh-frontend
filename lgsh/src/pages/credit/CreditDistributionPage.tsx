@@ -165,7 +165,7 @@ const CreditDistributionPage: React.FC = () => {
   return (
     <div className="credit-distribution-page fade-in">
       <div className="page-header">
-        <Title level={3} className="page-title">
+        <Title level={4} className="page-title">
           <BarChartOutlined style={{ marginRight: 8 }} />
           신용점수 분포 현황
         </Title>

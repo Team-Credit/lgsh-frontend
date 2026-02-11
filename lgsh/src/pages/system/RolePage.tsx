@@ -15,22 +15,27 @@ import {
     Tag,
     Divider,
     Checkbox,
+    Typography,
 } from 'antd';
 import {
     SearchOutlined,
     SaveOutlined,
     PlusOutlined,
+    SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { roleService } from '@/services/roleService';
 import { Role, RoleListRequest, RoleMenu } from '@/types';
+import { useMenuPermission } from '@/hooks';
 
+const { Title, Text } = Typography;
 const { Option } = Select;
 
 // TEMP: verbose error logging for role APIs (remove when done)
 const DEBUG_ROLE_LOGS = true;
 
 const RolePage: React.FC = () => {
+    const { canWrite } = useMenuPermission('M0803');
     const [form] = Form.useForm();
     const [searchForm] = Form.useForm();
 
@@ -183,12 +188,19 @@ const RolePage: React.FC = () => {
 
     return (
         <div style={{ padding: 24, height: '100%', overflow: 'hidden' }}>
+            <div className="page-header">
+                <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+                    <SafetyCertificateOutlined style={{ marginRight: 8 }} />
+                    역할관리
+                </Title>
+                <Text type="secondary" style={{ fontSize: 13 }}>역할을 관리하고 메뉴별 접근 권한을 설정합니다.</Text>
+            </div>
             <Row gutter={[16, 16]} style={{ height: '100%' }}>
                 {/* Left: Role List */}
                 <Col span={8} style={{ height: '100%' }}>
                     <Card
                         title="역할 목록"
-                        extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>신규</Button>}
+                        extra={canWrite && <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>신규</Button>}
                         bodyStyle={{ padding: 0, height: 'calc(100vh - 200px)', overflowY: 'auto' }}
                     >
                         <Form form={searchForm} layout="inline" style={{ padding: 16 }} onFinish={fetchRoles}>
@@ -213,7 +225,7 @@ const RolePage: React.FC = () => {
                 {/* Right: Detail & Perms */}
                 <Col span={16} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                     {/* Top: Form */}
-                    <Card title="역할 상세" extra={<Button type="primary" icon={<SaveOutlined />} onClick={handleSaveRole}>저장</Button>}>
+                    <Card title="역할 상세" extra={canWrite && <Button type="primary" icon={<SaveOutlined />} onClick={handleSaveRole}>저장</Button>}>
                         <Form form={form} layout="vertical">
                             <Row gutter={16}>
                                 <Col span={12}>
@@ -236,7 +248,7 @@ const RolePage: React.FC = () => {
 
                     {/* Bottom: Permissions (TreeTable) */}
                     <Card title="메뉴 권한" style={{ flex: 1, overflow: 'hidden' }} bodyStyle={{ height: '100%', overflowY: 'auto' }}
-                        extra={<Button type="primary" onClick={handleSavePermissions}>권한 저장</Button>}
+                        extra={canWrite && <Button type="primary" onClick={handleSavePermissions}>권한 저장</Button>}
                     >
                         <Table
                             columns={permColumns}

@@ -16,6 +16,15 @@ export interface ContractWarning {
   message?: string;
 }
 
+// 비밀번호 만료 경고 정보
+export interface PasswordWarning {
+  passwordExpired: boolean;
+  showWarning: boolean;
+  daysUntilExpiry?: number;
+  pwdExpireDt?: string;
+  message?: string;
+}
+
 // 로그인 응답
 export interface LoginResponse {
   grantType?: string;
@@ -24,6 +33,7 @@ export interface LoginResponse {
   accessTokenExpiresIn?: number;
   user: UserInfo;
   contractWarning?: ContractWarning;
+  passwordWarning?: PasswordWarning;
 }
 
 // 사용자 정보
@@ -57,4 +67,5 @@ export interface AuthState {
   loading: boolean;
   error: string | null;
   contractWarning: ContractWarning | null;
+  passwordWarning: PasswordWarning | null;
 }

@@ -177,6 +177,7 @@ const ModelSelectPage: React.FC = () => {
     <div className="model-select-page fade-in">
       <div className="page-header">
         <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+          <RocketOutlined style={{ marginRight: 8 }} />
           모델 선택
         </Title>
         <Text type="secondary" style={{ fontSize: 13 }}>

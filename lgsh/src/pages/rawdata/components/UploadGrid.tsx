@@ -38,9 +38,10 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   SyncOutlined,
-  LinkOutlined,
   BugOutlined,
   CloudSyncOutlined,
+  StopOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadProps } from 'antd';
@@ -55,7 +56,7 @@ import { useExcelExport } from '@/contexts';
 import type { ExcelColumn } from '@/utils/excelExport';
 
 const { Dragger } = Upload;
-const { Text, Title } = Typography;
+const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
 interface UploadGridProps {
@@ -72,6 +73,7 @@ const UploadGrid: React.FC<UploadGridProps> = ({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [progressModalVisible, setProgressModalVisible] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // 업로드 이력
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -272,6 +274,7 @@ const UploadGrid: React.FC<UploadGridProps> = ({
         },
         (progress) => {
           setUploading(false);
+          setCancelling(false);
           if (progress.uploadStatus === 'COMPLETED') {
             message.success(
               `업로드 완료 (성공: ${progress.successRows}건, 오류: ${progress.errorRows}건)`
@@ -279,6 +282,10 @@ const UploadGrid: React.FC<UploadGridProps> = ({
             onUploadComplete?.(progress.uploadId);
           } else if (progress.uploadStatus === 'FAILED') {
             message.error(`업로드 실패: ${progress.errorMsg}`);
+          } else if (progress.uploadStatus === 'CANCELLED') {
+            message.warning(
+              `업로드가 취소되었습니다 (처리됨: ${progress.processedRows}건, 성공: ${progress.successRows}건)`
+            );
           }
         },
         (error) => {
@@ -294,6 +301,19 @@ const UploadGrid: React.FC<UploadGridProps> = ({
       setUploading(false);
       message.error('업로드 시작 실패');
       console.error(error);
+    }
+  };
+
+  // 업로드 취소
+  const handleCancelUpload = async () => {
+    if (!uploadProgress?.uploadId) return;
+    setCancelling(true);
+    try {
+      await rawDataService.cancelUpload(uploadProgress.uploadId);
+      message.info('업로드 취소 요청이 접수되었습니다. 잠시 후 취소됩니다.');
+    } catch {
+      message.error('취소 요청에 실패했습니다.');
+      setCancelling(false);
     }
   };
 
@@ -334,6 +354,7 @@ const UploadGrid: React.FC<UploadGridProps> = ({
       PROCESSING: { color: 'processing', icon: <SyncOutlined spin />, text: '처리중' },
       COMPLETED: { color: 'success', icon: <CheckCircleOutlined />, text: '완료' },
       FAILED: { color: 'error', icon: <CloseCircleOutlined />, text: '실패' },
+      CANCELLED: { color: 'warning', icon: <ExclamationCircleOutlined />, text: '취소됨' },
     };
     const cfg = config[status] || config.PENDING;
     return (
@@ -751,18 +772,38 @@ const UploadGrid: React.FC<UploadGridProps> = ({
         onCancel={() => !uploading && setProgressModalVisible(false)}
         footer={
           uploading ? (
-            <Button
-              icon={<CloudSyncOutlined />}
-              onClick={() => {
-                setProgressModalVisible(false);
-                message.info(
-                  '백그라운드로 전환되었습니다. 업로드 완료 시 상단 알림(🔔)으로 확인하세요.',
-                  5
-                );
-              }}
-            >
-              백그라운드로 전환
-            </Button>
+            <Space>
+              <Popconfirm
+                title="업로드 취소"
+                description="업로드를 취소하시겠습니까? 이미 처리된 데이터는 유지됩니다."
+                onConfirm={handleCancelUpload}
+                okText="취소하기"
+                cancelText="계속 진행"
+                okButtonProps={{ danger: true }}
+                icon={<ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />}
+              >
+                <Button
+                  danger
+                  icon={<StopOutlined />}
+                  loading={cancelling}
+                  disabled={cancelling}
+                >
+                  {cancelling ? '취소 요청 중...' : '업로드 취소'}
+                </Button>
+              </Popconfirm>
+              <Button
+                icon={<CloudSyncOutlined />}
+                onClick={() => {
+                  setProgressModalVisible(false);
+                  message.info(
+                    '백그라운드로 전환되었습니다. 업로드 완료 시 상단 알림(🔔)으로 확인하세요.',
+                    5
+                  );
+                }}
+              >
+                백그라운드로 전환
+              </Button>
+            </Space>
           ) : (
             <Button type="primary" onClick={() => setProgressModalVisible(false)}>
               닫기
@@ -778,11 +819,16 @@ const UploadGrid: React.FC<UploadGridProps> = ({
             <Progress
               percent={uploadProgress.progressPercent || 0}
               status={
-                uploadProgress.uploadStatus === 'FAILED'
+                uploadProgress.uploadStatus === 'FAILED' || uploadProgress.uploadStatus === 'CANCELLED'
                   ? 'exception'
                   : uploadProgress.uploadStatus === 'COMPLETED'
                   ? 'success'
                   : 'active'
+              }
+              format={(percent) =>
+                uploadProgress.uploadStatus === 'CANCELLED'
+                  ? '취소됨'
+                  : `${percent}%`
               }
               strokeWidth={20}
               style={{ marginBottom: 24 }}

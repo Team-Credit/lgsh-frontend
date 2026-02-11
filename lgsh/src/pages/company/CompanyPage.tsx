@@ -39,7 +39,7 @@ import { Resizable } from 'react-resizable';
 import dayjs from 'dayjs';
 import type { Company, CompanyRequest } from '@/types';
 import { companyService } from '@/services/companyService';
-import { useCommonCodes } from '@/hooks';
+import { useCommonCodes, useMenuPermission } from '@/hooks';
 import { useExcelExport } from '@/contexts';
 import type { ExcelColumn } from '@/utils/excelExport';
 import './CompanyPage.css';
@@ -85,6 +85,9 @@ const CompanyPage: React.FC = () => {
 
   // 공통코드 조회
   const { codeMap, getLabel } = useCommonCodes(['COMPANY_TYPE', 'CONTRACT_STATUS']);
+
+  // 메뉴 권한
+  const { canWrite, canDelete, canExport } = useMenuPermission('M0601');
 
   // 상태 관리
   const [loading, setLoading] = useState(false);
@@ -559,28 +562,32 @@ const CompanyPage: React.FC = () => {
             onClick={() => handleEdit(record)}
             title="상세"
           />
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            title="수정"
-          />
-          <Popconfirm
-            title="삭제 확인"
-            description="정말 삭제하시겠습니까?"
-            onConfirm={() => handleDelete(record)}
-            okText="삭제"
-            cancelText="취소"
-          >
+          {canWrite && (
             <Button
               type="link"
               size="small"
-              danger
-              icon={<DeleteOutlined />}
-              title="삭제"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+              title="수정"
             />
-          </Popconfirm>
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="삭제 확인"
+              description="정말 삭제하시겠습니까?"
+              onConfirm={() => handleDelete(record)}
+              okText="삭제"
+              cancelText="취소"
+            >
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                title="삭제"
+              />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -678,21 +685,25 @@ const CompanyPage: React.FC = () => {
       <Card size="small">
         <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              원청사 등록
-            </Button>
-            <Popconfirm
-              title="일괄 삭제 확인"
-              description={`선택한 ${selectedRowKeys.length}건을 삭제하시겠습니까?`}
-              onConfirm={handleBatchDelete}
-              okText="삭제"
-              cancelText="취소"
-              disabled={selectedRowKeys.length === 0}
-            >
-              <Button danger icon={<DeleteOutlined />} disabled={selectedRowKeys.length === 0}>
-                선택 삭제 ({selectedRowKeys.length})
+            {canWrite && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                원청사 등록
               </Button>
-            </Popconfirm>
+            )}
+            {canDelete && (
+              <Popconfirm
+                title="일괄 삭제 확인"
+                description={`선택한 ${selectedRowKeys.length}건을 삭제하시겠습니까?`}
+                onConfirm={handleBatchDelete}
+                okText="삭제"
+                cancelText="취소"
+                disabled={selectedRowKeys.length === 0}
+              >
+                <Button danger icon={<DeleteOutlined />} disabled={selectedRowKeys.length === 0}>
+                  선택 삭제 ({selectedRowKeys.length})
+                </Button>
+              </Popconfirm>
+            )}
             <Popover
               content={columnSettingsContent}
               title={null}

@@ -538,11 +538,11 @@ const ResultVisualizationPage: React.FC = () => {
   return (
     <div className="result-visualization-page fade-in">
       <div className="page-header">
-        <Title level={3} className="page-title">
+        <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
           <DotChartOutlined style={{ marginRight: 8 }} />
           결과 시각화
         </Title>
-        <Text type="secondary">
+        <Text type="secondary" style={{ fontSize: 13 }}>
           배포중 모델의 신용평가 결과를 기준으로 통계/그래프를 생성하고 PDF 보고서로 다운로드합니다.
         </Text>
       </div>

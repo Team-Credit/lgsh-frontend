@@ -20,6 +20,7 @@ import {
   Checkbox,
   Divider,
   Descriptions,
+  Tabs,
 } from 'antd';
 import {
   SearchOutlined,
@@ -28,6 +29,8 @@ import {
   SettingOutlined,
   PlayCircleOutlined,
   EyeOutlined,
+  ClockCircleOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table/interface';
 import type { ResizeCallbackData } from 'react-resizable';
@@ -39,6 +42,7 @@ import { useCommonCode } from '@/hooks';
 import { useExcelExport } from '@/contexts';
 import type { ExcelColumn } from '@/utils/excelExport';
 import dayjs from 'dayjs';
+import BatchScheduleTab from './components/BatchScheduleTab';
 import './BatchManagementPage.css';
 import 'react-resizable/css/styles.css';
 
@@ -543,12 +547,25 @@ const BatchManagementPage: React.FC = () => {
           배치관리
         </Title>
         <Text type="secondary" style={{ fontSize: 13 }}>
-          배치 실행 이력을 조회하고 수동 실행합니다.
+          배치 실행 이력을 조회하고, 스케줄을 설정하여 자동 실행합니다.
         </Text>
       </div>
 
       {/* 메인 카드 */}
       <Card size="small" className="batch-card">
+        <Tabs
+          defaultActiveKey="history"
+          items={[
+            {
+              key: 'history',
+              label: (
+                <span>
+                  <HistoryOutlined />
+                  실행이력
+                </span>
+              ),
+              children: (
+                <>
         {/* 검색 폼 */}
         <Form
           form={searchForm}
@@ -676,6 +693,21 @@ const BatchManagementPage: React.FC = () => {
           onRow={(record) => ({
             onDoubleClick: () => handleOpenDetail(record),
           })}
+        />
+                </>
+              ),
+            },
+            {
+              key: 'schedule',
+              label: (
+                <span>
+                  <ClockCircleOutlined />
+                  스케줄 관리
+                </span>
+              ),
+              children: <BatchScheduleTab batchTypes={batchTypes} />,
+            },
+          ]}
         />
       </Card>
 

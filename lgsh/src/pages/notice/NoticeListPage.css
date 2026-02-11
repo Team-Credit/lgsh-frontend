@@ -1,4 +1,4 @@
-﻿.notice-page {
+.notice-page {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -24,7 +24,7 @@
 }
 
 .notice-list__table .ant-table-thead > tr > th {
-  background: #fafafa;
+  background: var(--bg, #fafafa);
 }
 
 .notice-list__pinned-row {
@@ -48,4 +48,9 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
+}
+
+/* ========== 다크 모드 ========== */
+:root.dark .notice-list__pinned-row {
+  background: rgba(250, 173, 20, 0.1);
 }

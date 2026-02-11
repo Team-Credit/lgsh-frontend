@@ -10,6 +10,9 @@ import type {
   BatchTriggerRequest,
   BatchTriggerResponse,
   BatchStatusUpdateRequest,
+  BatchSchedule,
+  BatchScheduleRequest,
+  BatchScheduleListResponse,
 } from '@/types/batch';
 import type { ApiResponse } from '@/types/common';
 
@@ -66,6 +69,50 @@ export const batchService = {
         failCnt: request.failCnt,
         errorMessage: request.errorMessage,
       },
+    });
+  },
+
+  // ==================== 배치 스케줄 ====================
+
+  /**
+   * 스케줄 목록 조회
+   */
+  getScheduleList: async (batchType?: string): Promise<BatchScheduleListResponse> => {
+    const response = await api.get<ApiResponse<BatchScheduleListResponse>>(`${BASE_URL}/schedules`, {
+      params: { batchType },
+    });
+    return response.data.data!;
+  },
+
+  /**
+   * 스케줄 등록
+   */
+  createSchedule: async (request: BatchScheduleRequest): Promise<BatchSchedule> => {
+    const response = await api.post<ApiResponse<BatchSchedule>>(`${BASE_URL}/schedules`, request);
+    return response.data.data!;
+  },
+
+  /**
+   * 스케줄 수정
+   */
+  updateSchedule: async (scheduleSeq: number, request: BatchScheduleRequest): Promise<BatchSchedule> => {
+    const response = await api.put<ApiResponse<BatchSchedule>>(`${BASE_URL}/schedules/${scheduleSeq}`, request);
+    return response.data.data!;
+  },
+
+  /**
+   * 스케줄 삭제
+   */
+  deleteSchedule: async (scheduleSeq: number): Promise<void> => {
+    await api.delete(`${BASE_URL}/schedules/${scheduleSeq}`);
+  },
+
+  /**
+   * 스케줄 활성화/비활성화 토글
+   */
+  toggleSchedule: async (scheduleSeq: number, enable: boolean): Promise<void> => {
+    await api.put(`${BASE_URL}/schedules/${scheduleSeq}/toggle`, null, {
+      params: { enable },
     });
   },
 };

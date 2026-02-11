@@ -46,6 +46,7 @@ import type { ExcelColumn } from '@/utils/excelExport';
 import { roleService } from '@/services/roleService';
 import { companyService } from '@/services/companyService';
 import { useAppSelector } from '@/store/hooks';
+import { useMenuPermission } from '@/hooks';
 import './UserPage.css';
 import 'react-resizable/css/styles.css';
 
@@ -91,6 +92,9 @@ const UserPage: React.FC = () => {
   // 로그인 사용자 정보
   const currentUser = useAppSelector((state) => state.auth.user);
   const userCompanyId = currentUser?.companyId || null;
+
+  // 메뉴 권한
+  const { canWrite, canDelete, canExport } = useMenuPermission('M0501');
 
   // 상태 관리
   const [loading, setLoading] = useState(false);
@@ -141,6 +145,7 @@ const UserPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentRecord, setCurrentRecord] = useState<User | null>(null);
+  const [changePwdChecked, setChangePwdChecked] = useState(false);
 
   // 컬럼 표시 설정
   const defaultVisibleColumns = {
@@ -333,6 +338,7 @@ const UserPage: React.FC = () => {
   const handleCreate = () => {
     setModalMode('create');
     setCurrentRecord(null);
+    setChangePwdChecked(false);
     form.resetFields();
     form.setFieldsValue({ useYn: 'Y' });
     if (userCompanyId) {
@@ -345,6 +351,7 @@ const UserPage: React.FC = () => {
   const handleEdit = (record: User) => {
     setModalMode('edit');
     setCurrentRecord(record);
+    setChangePwdChecked(false);
     form.setFieldsValue({
       ...record,
     });
@@ -357,8 +364,12 @@ const UserPage: React.FC = () => {
       const values = await form.validateFields();
       setLoading(true);
 
+      // 비밀번호 관련 필드 제거 (별도 API 호출)
+      const { userPwd, userPwdConfirm, newPassword, newPasswordConfirm, ...restValues } = values;
+
       const requestData: UserRequest = {
-        ...values,
+        ...restValues,
+        ...(modalMode === 'create' ? { userPwd } : {}),
       };
 
       let response;
@@ -366,6 +377,16 @@ const UserPage: React.FC = () => {
         response = await userService.create(requestData);
       } else if (currentRecord) {
         response = await userService.update(currentRecord.userId, requestData);
+
+        // 수정 모드에서 비밀번호 변경 체크된 경우
+        if (response?.success && changePwdChecked && newPassword) {
+          const pwdResponse = await userService.changePassword(currentRecord.userId, newPassword);
+          if (!pwdResponse?.success) {
+            message.warning('정보는 수정되었으나 비밀번호 변경에 실패했습니다.');
+          } else {
+            message.success('비밀번호가 변경되었습니다.');
+          }
+        }
       }
 
       if (response?.success) {
@@ -665,28 +686,32 @@ const UserPage: React.FC = () => {
             onClick={() => navigate(`/users/detail/${record.userId}`)}
             title="상세"
           />
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            title="수정"
-          />
-          <Popconfirm
-            title="비밀번호 초기화"
-            description="비밀번호를 초기화하시겠습니까?"
-            onConfirm={() => handleResetPassword(record)}
-            okText="확인"
-            cancelText="취소"
-          >
+          {canWrite && (
             <Button
               type="link"
               size="small"
-              icon={<KeyOutlined />}
-              title="비밀번호 초기화"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+              title="수정"
             />
-          </Popconfirm>
-          {record.accountLockYn === 'Y' && (
+          )}
+          {canWrite && (
+            <Popconfirm
+              title="비밀번호 초기화"
+              description="비밀번호를 초기화하시겠습니까?"
+              onConfirm={() => handleResetPassword(record)}
+              okText="확인"
+              cancelText="취소"
+            >
+              <Button
+                type="link"
+                size="small"
+                icon={<KeyOutlined />}
+                title="비밀번호 초기화"
+              />
+            </Popconfirm>
+          )}
+          {canWrite && record.accountLockYn === 'Y' && (
             <Popconfirm
               title="계정 잠금 해제"
               description="계정 잠금을 해제하시겠습니까?"
@@ -702,21 +727,23 @@ const UserPage: React.FC = () => {
               />
             </Popconfirm>
           )}
-          <Popconfirm
-            title="삭제 확인"
-            description="정말 삭제하시겠습니까?"
-            onConfirm={() => handleDelete(record)}
-            okText="삭제"
-            cancelText="취소"
-          >
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              title="삭제"
-            />
-          </Popconfirm>
+          {canDelete && (
+            <Popconfirm
+              title="삭제 확인"
+              description="정말 삭제하시겠습니까?"
+              onConfirm={() => handleDelete(record)}
+              okText="삭제"
+              cancelText="취소"
+            >
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                title="삭제"
+              />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -831,21 +858,25 @@ const UserPage: React.FC = () => {
       <Card size="small">
         <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              등록
-            </Button>
-            <Popconfirm
-              title="일괄 삭제 확인"
-              description={`선택한 ${selectedRowKeys.length}건을 삭제하시겠습니까?`}
-              onConfirm={handleBatchDelete}
-              okText="삭제"
-              cancelText="취소"
-              disabled={selectedRowKeys.length === 0}
-            >
-              <Button danger icon={<DeleteOutlined />} disabled={selectedRowKeys.length === 0}>
-                선택 삭제 ({selectedRowKeys.length})
+            {canWrite && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                등록
               </Button>
-            </Popconfirm>
+            )}
+            {canDelete && (
+              <Popconfirm
+                title="일괄 삭제 확인"
+                description={`선택한 ${selectedRowKeys.length}건을 삭제하시겠습니까?`}
+                onConfirm={handleBatchDelete}
+                okText="삭제"
+                cancelText="취소"
+                disabled={selectedRowKeys.length === 0}
+              >
+                <Button danger icon={<DeleteOutlined />} disabled={selectedRowKeys.length === 0}>
+                  선택 삭제 ({selectedRowKeys.length})
+                </Button>
+              </Popconfirm>
+            )}
             <Popover
               content={columnSettingsContent}
               title={null}
@@ -972,6 +1003,64 @@ const UserPage: React.FC = () => {
                 </Form.Item>
               </Col>
             </Row>
+          )}
+          {modalMode === 'edit' && (
+            <>
+              <Divider style={{ margin: '12px 0' }} />
+              <Checkbox
+                checked={changePwdChecked}
+                onChange={(e) => {
+                  setChangePwdChecked(e.target.checked);
+                  if (!e.target.checked) {
+                    form.setFieldsValue({ newPassword: undefined, newPasswordConfirm: undefined });
+                  }
+                }}
+              >
+                비밀번호 변경
+              </Checkbox>
+              {changePwdChecked && (
+                <Row gutter={16} style={{ marginTop: 12 }}>
+                  <Col span={12}>
+                    <Form.Item
+                      label="새 비밀번호"
+                      name="newPassword"
+                      rules={[
+                        { required: changePwdChecked, message: '새 비밀번호를 입력하세요.' },
+                        { min: 8, max: 20, message: '8~20자 사이로 입력하세요.' },
+                        {
+                          pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,20}$/,
+                          message: '영문, 숫자, 특수문자(@$!%*#?&)를 각각 1개 이상 포함해야 합니다.',
+                        },
+                      ]}
+                      extra="영문, 숫자, 특수문자(@$!%*#?&) 각 1개 이상 포함, 8~20자"
+                    >
+                      <Input.Password placeholder="새 비밀번호" maxLength={20} autoComplete="new-password" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      label="새 비밀번호 확인"
+                      name="newPasswordConfirm"
+                      dependencies={['newPassword']}
+                      rules={[
+                        { required: changePwdChecked, message: '비밀번호 확인을 입력하세요.' },
+                        ({ getFieldValue }) => ({
+                          validator(_, value) {
+                            if (!value || getFieldValue('newPassword') === value) {
+                              return Promise.resolve();
+                            }
+                            return Promise.reject(new Error('비밀번호가 일치하지 않습니다.'));
+                          },
+                        }),
+                      ]}
+                    >
+                      <Input.Password placeholder="새 비밀번호 확인" maxLength={20} autoComplete="new-password" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              )}
+              <Divider style={{ margin: '12px 0' }} />
+            </>
           )}
           <Row gutter={16}>
             <Col span={12}>

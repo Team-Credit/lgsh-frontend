@@ -68,12 +68,15 @@ import { exportAllTablesFromDOM } from '@/utils/excelExport';
 import { useExcelExport } from '@/contexts';
 import { menuService } from '@/services/menuService';
 import alertService, { type UserAlert } from '@/services/alertService';
+import { routes } from '@/routes';
 import chatService from '@/services/chatService';
 import { useTokenRefresh } from '@/hooks';
 import SessionTimeoutModal from '@/components/common/SessionTimeoutModal';
 import ContractWarningModal from '@/components/common/ContractWarningModal';
+import PasswordWarningModal from '@/components/common/PasswordWarningModal';
 import ChatFloatingWidget from '@/components/chat/ChatFloatingWidget';
-import { clearContractWarning } from '@/store/slices/authSlice';
+import ProfileModal from '@/components/profile/ProfileModal';
+import { clearContractWarning, clearPasswordWarning } from '@/store/slices/authSlice';
 import './MainLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -176,14 +179,43 @@ const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { user, contractWarning } = useAppSelector((state) => state.auth);
-  const { menus, collapsed, selectedKeys, openKeys, loading } = useAppSelector((state) => state.menu);
+  const { user, contractWarning, passwordWarning } = useAppSelector((state) => state.auth);
+  const { menus, collapsed, selectedKeys, openKeys, loading, permissions } = useAppSelector((state) => state.menu);
   const { fontSize, darkMode } = useAppSelector((state) => state.ui);
   const { favorites } = useAppSelector((state) => state.favorite);
 
   // 계약 만료 경고 모달 상태
   const [showContractWarning, setShowContractWarning] = React.useState(false);
   const [chatUnreadCount, setChatUnreadCount] = React.useState(0);
+
+  // 내 정보 모달 상태
+  const [profileModalOpen, setProfileModalOpen] = React.useState(false);
+
+  // 비밀번호 만료 경고 모달 상태
+  const [showPasswordWarning, setShowPasswordWarning] = React.useState(false);
+
+  // 비밀번호 만료 경고 모달 표시 (로그인 후 최초 1회)
+  useEffect(() => {
+    if (passwordWarning?.showWarning) {
+      setShowPasswordWarning(true);
+    }
+  }, [passwordWarning]);
+
+  // 비밀번호 만료 경고 닫기 (임박 경고용)
+  const handleClosePasswordWarning = () => {
+    setShowPasswordWarning(false);
+    dispatch(clearPasswordWarning());
+  };
+
+  // 비밀번호 변경 완료 후 → 로그아웃하여 재로그인 유도
+  const handlePasswordChanged = async () => {
+    setShowPasswordWarning(false);
+    dispatch(clearPasswordWarning());
+    dispatch(clearMenus());
+    dispatch(clearFavorites());
+    await dispatch(logout());
+    navigate('/login');
+  };
 
   // 계약 만료 경고 모달 표시 (로그인 후 최초 1회)
   useEffect(() => {
@@ -225,6 +257,7 @@ const MainLayout: React.FC = () => {
   const [alertUnreadCount, setAlertUnreadCount] = useState(0);
   const [alertLoading, setAlertLoading] = useState(false);
   const [hideReadAlerts, setHideReadAlerts] = useState(false);  // 읽은 알림 숨기기
+  const [alertPopoverOpen, setAlertPopoverOpen] = useState(false);
 
   // 알림 목록 조회 (Popover 열 때만 호출)
   const fetchAlerts = useCallback(async (hideRead?: boolean) => {
@@ -260,21 +293,45 @@ const MainLayout: React.FC = () => {
     return () => clearInterval(interval);
   }, [user?.userId]);
 
-  // 알림 읽음 처리
-  const handleReadAlert = useCallback(async (alertId: number, linkUrl?: string) => {
+  // 알림 타입별 기본 이동 경로 (linkUrl이 없거나 유효하지 않을 때 폴백)
+  const ALERT_TYPE_ROUTES: Record<string, string> = {
+    NOTICE: '/notices',
+    MODEL_DONE: '/models',
+    MODEL_TRAIN_SUCCESS: '/models',
+    MODEL_TRAIN_FAIL: '/models',
+    UPLOAD_COMPLETE: '/admin/rawdata',
+    UPLOAD_FAILED: '/admin/rawdata',
+    UPLOAD_CANCELLED: '/admin/rawdata',
+  };
+
+  // linkUrl이 실제 등록된 라우트 경로인지 검증
+  const isValidRoute = useCallback((url: string): boolean => {
+    const path = url.startsWith('/') ? url.substring(1) : url;
+    return routes.some((r) => {
+      const routeBase = r.path.split(':')[0];
+      return path === r.path || path.startsWith(routeBase);
+    });
+  }, []);
+
+  // 알림 읽음 처리 + 해당 페이지 이동
+  const handleReadAlert = useCallback(async (alertId: number, alertType: string, linkUrl?: string) => {
     try {
       await alertService.readAlert(alertId);
       setAlertUnreadCount((prev) => Math.max(0, prev - 1));
       setAlerts((prev) =>
         prev.map((a) => (a.alertId === alertId ? { ...a, readYn: 'Y' } : a))
       );
-      if (linkUrl) {
-        navigate(linkUrl);
+      setAlertPopoverOpen(false);
+      // linkUrl이 유효한 라우트이면 사용, 아니면 alertType 기반 폴백, 둘 다 없으면 현재 페이지 유지
+      const validLinkUrl = linkUrl && isValidRoute(linkUrl) ? linkUrl : null;
+      const targetUrl = validLinkUrl || ALERT_TYPE_ROUTES[alertType];
+      if (targetUrl) {
+        navigate(targetUrl);
       }
     } catch (error) {
       console.error('알림 읽음 처리 실패:', error);
     }
-  }, [navigate]);
+  }, [navigate, isValidRoute]);
 
   // 전체 읽음 처리
   const handleReadAllAlerts = useCallback(async () => {
@@ -540,18 +597,30 @@ const MainLayout: React.FC = () => {
   );
 
 
-  // 메뉴 데이터를 Ant Design 형식으로 변환
+  // 메뉴 데이터를 Ant Design 형식으로 변환 (권한 없는 메뉴 필터링)
   const menuItems: MenuProps['items'] = useMemo(() => {
     const convertMenu = (items: MenuItem[]): MenuProps['items'] => {
-      return items.map((item) => ({
-        key: item.menuId,
-        label: item.menuNm,
-        icon: getIconByName(item.menuIcon),
-        children: item.children && item.children.length > 0 ? convertMenu(item.children) : undefined,
-      }));
+      return items
+        .map((item) => {
+          const children = item.children && item.children.length > 0 ? convertMenu(item.children) : undefined;
+          // 리프 메뉴(URL 있음): canRead 권한 확인
+          if (item.menuUrl) {
+            const perm = permissions[item.menuId];
+            if (perm && !perm.canRead) return null;
+          }
+          // 부모 메뉴: 하위에 표시할 자식이 없으면 숨김
+          if (!item.menuUrl && (!children || children.filter(Boolean).length === 0)) return null;
+          return {
+            key: item.menuId,
+            label: item.menuNm,
+            icon: getIconByName(item.menuIcon),
+            children: children?.filter(Boolean) as MenuProps['items'],
+          };
+        })
+        .filter(Boolean);
     };
     return convertMenu(menus);
-  }, [menus]);
+  }, [menus, permissions]);
 
   // 메뉴 선택 핸들러
   const handleMenuSelect = ({ key }: { key: string }) => {
@@ -598,19 +667,34 @@ const MainLayout: React.FC = () => {
     </div>
   );
 
+  // 환경설정 메뉴 접근 권한 여부 (M0804: 환경설정)
+  const hasConfigPermission = !!permissions['M0804'];
+
+  // 현재 페이지의 엑셀 내보내기 권한 여부
+  const currentMenuId = urlToMenuIdMap[location.pathname];
+  const currentPerm = currentMenuId ? permissions[currentMenuId] : null;
+  const canExportCurrent = currentPerm ? currentPerm.exportYn : true;
+
   // 사용자 드롭다운 메뉴
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
       label: '내 정보',
       icon: <UserOutlined />,
+      onClick: () => setProfileModalOpen(true),
     },
-    {
-      key: 'settings',
-      label: '설정',
-      icon: <SettingOutlined />,
-    },
-    { type: 'divider' },
+    // 환경설정 메뉴 권한이 있는 경우에만 "설정" 표시
+    ...(hasConfigPermission
+      ? [
+          {
+            key: 'settings',
+            label: '설정',
+            icon: <SettingOutlined />,
+            onClick: () => navigate('/admin/configs'),
+          },
+        ]
+      : []),
+    { type: 'divider' as const },
     {
       key: 'logout',
       label: '로그아웃',
@@ -729,12 +813,13 @@ const MainLayout: React.FC = () => {
             </Tooltip>
           </Popover>
 
-          <Tooltip title="엑셀 다운로드 (전체)">
+          <Tooltip title={canExportCurrent ? '엑셀 다운로드 (전체)' : '엑셀 내보내기 권한이 없습니다'}>
             <Button
               type="text"
               icon={<FileExcelOutlined />}
               className="header-icon-btn"
               loading={isExporting}
+              disabled={!canExportCurrent}
               onClick={async () => {
                 // 1. Context에 등록된 핸들러가 있으면 전체 데이터 내보내기
                 if (hasHandlers) {
@@ -801,7 +886,7 @@ const MainLayout: React.FC = () => {
                   alerts.map((alert) => (
                     <div
                       key={alert.alertId}
-                      onClick={() => handleReadAlert(alert.alertId, alert.linkUrl)}
+                      onClick={() => handleReadAlert(alert.alertId, alert.alertType, alert.linkUrl)}
                       style={{
                         padding: '10px 12px',
                         cursor: 'pointer',
@@ -836,8 +921,10 @@ const MainLayout: React.FC = () => {
               </div>
             }
             trigger="click"
+            open={alertPopoverOpen}
             placement="bottomRight"
             onOpenChange={(open) => {
+              setAlertPopoverOpen(open);
               if (open) fetchAlerts();
             }}
           >
@@ -970,10 +1057,26 @@ const MainLayout: React.FC = () => {
         onClose={handleCloseContractWarning}
       />
 
+      {/* 비밀번호 만료 경고/강제 변경 모달 */}
+      <PasswordWarningModal
+        open={showPasswordWarning}
+        passwordWarning={passwordWarning}
+        userId={user?.userId || ''}
+        onClose={handleClosePasswordWarning}
+        onPasswordChanged={handlePasswordChanged}
+      />
+
       <ChatFloatingWidget
         unreadCount={chatUnreadCount}
         onRefreshUnread={handleRefreshUnread}
       />
+
+      {/* 내 정보 모달 */}
+      <ProfileModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
+
       {/* 즐겨찾기 컨텍스트 메뉴 (우클릭) */}
       <Dropdown
         menu={{ items: favContextMenuItems }}

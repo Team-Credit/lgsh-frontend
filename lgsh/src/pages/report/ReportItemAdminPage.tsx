@@ -47,6 +47,7 @@ import {
 } from '@ant-design/icons';
 import reportService from '@/services/reportService';
 import type { ReportItem, ReportItemCreateRequest, ReportItemUpdateRequest } from '@/types/report';
+import { useMenuPermission } from '@/hooks';
 import 'react-resizable/css/styles.css';
 import './ReportItemAdminPage.css';
 
@@ -117,6 +118,7 @@ const ResizableTitle = (
 };
 
 const ReportItemAdminPage: React.FC = () => {
+  const { canWrite, canDelete } = useMenuPermission('M1004');
   const [items, setItems] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -459,30 +461,34 @@ const ReportItemAdminPage: React.FC = () => {
       const isSystem = record.systemYn === 'Y';
       return (
         <Space>
-          <Tooltip title={isSystem ? '시스템 항목은 수정할 수 없습니다' : '수정'}>
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => openModal(record)}
-              disabled={isSystem}
-            />
-          </Tooltip>
-          {!isSystem ? (
-            <Popconfirm
-              title="삭제 확인"
-              description="이 항목을 삭제하시겠습니까?"
-              onConfirm={() => handleDelete(record.itemId)}
-              okText="삭제"
-              cancelText="취소"
-            >
-              <Tooltip title="삭제">
-                <Button type="text" danger icon={<DeleteOutlined />} />
-              </Tooltip>
-            </Popconfirm>
-          ) : (
-            <Tooltip title="시스템 항목은 삭제할 수 없습니다">
-              <Button type="text" danger icon={<DeleteOutlined />} disabled />
+          {canWrite && (
+            <Tooltip title={isSystem ? '시스템 항목은 수정할 수 없습니다' : '수정'}>
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => openModal(record)}
+                disabled={isSystem}
+              />
             </Tooltip>
+          )}
+          {canDelete && (
+            !isSystem ? (
+              <Popconfirm
+                title="삭제 확인"
+                description="이 항목을 삭제하시겠습니까?"
+                onConfirm={() => handleDelete(record.itemId)}
+                okText="삭제"
+                cancelText="취소"
+              >
+                <Tooltip title="삭제">
+                  <Button type="text" danger icon={<DeleteOutlined />} />
+                </Tooltip>
+              </Popconfirm>
+            ) : (
+              <Tooltip title="시스템 항목은 삭제할 수 없습니다">
+                <Button type="text" danger icon={<DeleteOutlined />} disabled />
+              </Tooltip>
+            )
           )}
         </Space>
       );
@@ -561,9 +567,11 @@ const ReportItemAdminPage: React.FC = () => {
             <Button icon={<ReloadOutlined />} onClick={fetchItems}>
               새로고침
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
-              항목 등록
-            </Button>
+            {canWrite && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
+                항목 등록
+              </Button>
+            )}
           </Space>
         }
       >

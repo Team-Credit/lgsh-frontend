@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Typography } from 'antd';
+import { SolutionOutlined } from '@ant-design/icons';
 import api from '@/services/api';
 import './PersonDetailData.css';
+
+const { Title, Text } = Typography;
 
 interface ApiResponse<T> {
   success: boolean;
@@ -126,27 +130,17 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
   if (!resolvedPersonId) {
     return (
       <div className="person-detail-container">
-        <div className="page-header" style={{ marginBottom: 20 }}>
-          <h2 style={{ margin: 0, marginBottom: 4, fontSize: 18, fontWeight: 600, color: '#1a1a2e' }}>
+        <div className="page-header">
+          <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+            <SolutionOutlined style={{ marginRight: 8 }} />
             대상자 상세정보
-          </h2>
-          <p style={{ margin: 0, fontSize: 13, color: '#666' }}>
-            대상자 ID를 입력하면 기본정보와 최신 신용평가 요약을 확인할 수 있습니다.
-          </p>
+          </Title>
+          <Text type="secondary">대상자 ID를 입력하면 기본정보와 최신 신용평가 요약을 확인할 수 있습니다.</Text>
         </div>
 
-        <div
-          className="search-card"
-          style={{
-            background: '#fff',
-            borderRadius: 8,
-            padding: 20,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            marginBottom: 20,
-          }}
-        >
+        <div className="person-detail-search-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <label style={{ fontSize: 14, fontWeight: 500, color: '#333' }}>대상자 ID</label>
+            <label className="search-label">대상자 ID</label>
             <input
               className="person-detail-input"
               value={inputPersonId}
@@ -174,17 +168,9 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
           {errorMessage && <div className="person-detail-error">{errorMessage}</div>}
         </div>
 
-        <div
-          style={{
-            background: '#f6f8fa',
-            borderRadius: 8,
-            padding: 40,
-            textAlign: 'center',
-            color: '#666',
-          }}
-        >
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>대상자를 조회해주세요</div>
-          <div style={{ fontSize: 13 }}>상단 검색에서 대상자 ID를 입력해 상세정보를 확인할 수 있습니다.</div>
+        <div className="person-detail-empty">
+          <div className="empty-title">대상자를 조회해주세요</div>
+          <div className="empty-desc">상단 검색에서 대상자 ID를 입력해 상세정보를 확인할 수 있습니다.</div>
         </div>
       </div>
     );
@@ -228,8 +214,11 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
     <div className="person-detail-container">
       <div className="person-detail-header">
         <div>
-          <div className="person-title">대상자 360 상세</div>
-          <div className="person-subtitle">기본 정보 및 최신 신용평가 요약</div>
+          <Title level={4} style={{ margin: 0, marginBottom: 4 }}>
+            <SolutionOutlined style={{ marginRight: 8 }} />
+            대상자 상세정보
+          </Title>
+          <Text type="secondary">기본 정보 및 최신 신용평가 요약</Text>
         </div>
         <div className="person-id">ID: {data.personId}</div>
       </div>
@@ -305,7 +294,7 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
         <div className="person-card">
           <div className="card-title">점수 이력</div>
           {history.length === 0 ? (
-            <div style={{ color: '#64748b', fontSize: 13 }}>점수 이력이 없습니다.</div>
+            <div style={{ fontSize: 13 }} className="person-subtitle">점수 이력이 없습니다.</div>
           ) : (
             <table className="history-table">
               <thead>
