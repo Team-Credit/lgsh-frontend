@@ -100,8 +100,10 @@ const STATIC_FILTER_OPTIONS: FilterOptionsResponse = {
 
 // State 타입
 interface SpiderState {
-  year: number;
-  month: number;
+  year: number;       // 분석 대상 년도
+  month: number;      // 분석 대상 월
+  ctlYear: number;    // 비교 기준 년도
+  ctlMonth: number;   // 비교 기준 월
   expTags: HashTag[];
   ctlTags: HashTag[];
   filterOptions: FilterOptionsResponse;
@@ -117,6 +119,8 @@ const now = new Date();
 const initialState: SpiderState = {
   year: now.getFullYear(),
   month: now.getMonth() + 1,
+  ctlYear: now.getFullYear(),
+  ctlMonth: now.getMonth() + 1,
   expTags: [],
   ctlTags: [],
   filterOptions: STATIC_FILTER_OPTIONS,
@@ -132,17 +136,23 @@ export const analyze = createAsyncThunk(
   'spider/analyze',
   async (_, { getState, rejectWithValue }) => {
     const state = getState() as RootState;
-    const { year, month, expTags, ctlTags } = state.spider;
+    const { year, month, ctlYear, ctlMonth, expTags, ctlTags } = state.spider;
     const companyId = state.auth.user?.companyId;
 
     if (!year || !month) {
-      message.warning('년월을 선택해주세요.');
+      message.warning('분석 대상 년월을 선택해주세요.');
       return rejectWithValue('년월 미선택');
+    }
+    if (!ctlYear || !ctlMonth) {
+      message.warning('비교 기준 년월을 선택해주세요.');
+      return rejectWithValue('비교 년월 미선택');
     }
 
     const request: SpiderAnalyzeRequest = {
       year,
       month,
+      ctlYear,
+      ctlMonth,
       companyId: companyId || undefined,
       experiment: tagsToCondition(expTags),
       control: tagsToCondition(ctlTags),
@@ -255,6 +265,10 @@ const spiderSlice = createSlice({
       state.year = action.payload.year;
       state.month = action.payload.month;
     },
+    setCtlYearMonth: (state, action: PayloadAction<{ year: number; month: number }>) => {
+      state.ctlYear = action.payload.year;
+      state.ctlMonth = action.payload.month;
+    },
     addExpTag: (state, action: PayloadAction<HashTag>) => {
       const tag = action.payload;
       const idx = state.expTags.findIndex((t) => t.type === tag.type);
@@ -287,6 +301,11 @@ const spiderSlice = createSlice({
       state.aiSummary = action.payload;
     },
     resetAll: (state) => {
+      const now = new Date();
+      state.year = now.getFullYear();
+      state.month = now.getMonth() + 1;
+      state.ctlYear = now.getFullYear();
+      state.ctlMonth = now.getMonth() + 1;
       state.expTags = [];
       state.ctlTags = [];
       state.analysisResult = null;
@@ -337,6 +356,7 @@ const spiderSlice = createSlice({
 
 export const {
   setYearMonth,
+  setCtlYearMonth,
   addExpTag,
   removeExpTag,
   addCtlTag,

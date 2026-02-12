@@ -99,7 +99,17 @@ const RolePage: React.FC = () => {
     // Columns
     const columns: ColumnsType<Role> = [
         { title: 'ID', dataIndex: 'roleId', width: 150 },
-        { title: '역할명', dataIndex: 'roleNm', width: 200 },
+        {
+            title: '역할명', dataIndex: 'roleNm', width: 200,
+            render: (v: string, r: Role) => (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <span style={r.useYn === 'N' ? { color: '#94a3b8' } : undefined}>{v}</span>
+                    {r.useYn === 'N' && (
+                        <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 999, background: '#e2e8f0', color: '#64748b' }}>비활성</span>
+                    )}
+                </span>
+            ),
+        },
         { title: '사용', dataIndex: 'useYn', width: 80, align: 'center', render: (v) => v === 'Y' ? <Tag color="green">Y</Tag> : <Tag color="red">N</Tag> },
     ];
 
@@ -216,7 +226,11 @@ const RolePage: React.FC = () => {
                             loading={loading}
                             onRow={(record) => ({
                                 onClick: () => onRowSelect(record),
-                                style: { cursor: 'pointer', backgroundColor: selectedRole?.roleId === record.roleId ? '#e6f7ff' : '' }
+                                style: {
+                                    cursor: 'pointer',
+                                    backgroundColor: selectedRole?.roleId === record.roleId ? '#e6f7ff' : '',
+                                    opacity: record.useYn === 'N' ? 0.55 : 1,
+                                },
                             })}
                         />
                     </Card>
