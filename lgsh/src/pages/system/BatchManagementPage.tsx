@@ -21,6 +21,7 @@ import {
   Divider,
   Descriptions,
   Tabs,
+  Alert,
 } from 'antd';
 import {
   SearchOutlined,
@@ -31,6 +32,7 @@ import {
   EyeOutlined,
   ClockCircleOutlined,
   HistoryOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table/interface';
 import type { ResizeCallbackData } from 'react-resizable';
@@ -689,6 +691,31 @@ const BatchManagementPage: React.FC = () => {
             header: {
               cell: ResizableTitle,
             },
+          }}
+          expandable={{
+            expandedRowRender: (record) => (
+              <Alert
+                type={record.status === 'FAILED' ? 'error' : 'warning'}
+                showIcon
+                icon={<WarningOutlined />}
+                message={
+                  <Text strong style={{ fontSize: 12 }}>
+                    {record.status === 'FAILED' ? '실패 로그' : '부분 실패 로그'}
+                  </Text>
+                }
+                description={
+                  <Text
+                    type="danger"
+                    style={{ whiteSpace: 'pre-wrap', fontSize: 12, display: 'block', maxHeight: 200, overflow: 'auto' }}
+                  >
+                    {record.errorMessage || '에러 메시지가 기록되지 않았습니다.'}
+                  </Text>
+                }
+                style={{ margin: 0 }}
+              />
+            ),
+            rowExpandable: (record) =>
+              (record.status === 'FAILED' || record.status === 'PARTIAL') && !!record.errorMessage,
           }}
           onRow={(record) => ({
             onDoubleClick: () => handleOpenDetail(record),

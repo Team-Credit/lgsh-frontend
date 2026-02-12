@@ -81,6 +81,8 @@ export interface AiSummaryResult {
 export interface SpiderAnalysisResult {
   year: number;
   month: number;
+  ctlYear?: number;       // 비교 기준 년도
+  ctlMonth?: number;      // 비교 기준 월
   experiment: GroupData;
   control: GroupData;
   diff: AxisDiff[];
@@ -90,6 +92,8 @@ export interface SpiderAnalysisResult {
 export interface SpiderAnalyzeRequest {
   year: number;
   month: number;
+  ctlYear?: number;       // 비교 기준 년도 (미입력 시 year 사용)
+  ctlMonth?: number;      // 비교 기준 월 (미입력 시 month 사용)
   companyId?: string;
   experiment: FilterCondition;
   control: FilterCondition;

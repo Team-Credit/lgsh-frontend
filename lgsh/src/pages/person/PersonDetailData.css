@@ -49,10 +49,18 @@
   gap: 12px;
 }
 
+/* highlight 카드 — 등급 없는 경우 기본 */
 .person-card.highlight {
-  background: #0f172a;
-  color: #f8fafc;
-  border-color: #0f172a;
+  background: #f8fafc;
+  color: #334155;
+  border-color: #e2e8f0;
+  border-width: 1.5px;
+}
+
+/* 등급이 있는 카드: CSS 변수로 배경/보더 적용 */
+.person-card.highlight[style*="--grade-color"] {
+  background: var(--grade-bg);
+  border-color: var(--grade-border);
 }
 
 .card-title {
@@ -74,7 +82,7 @@
 }
 
 .person-card.highlight .label {
-  color: #cbd5f5;
+  color: #64748b;
 }
 
 .card-row .value {
@@ -84,7 +92,7 @@
 }
 
 .person-card.highlight .value {
-  color: #f8fafc;
+  color: #334155;
 }
 
 .score-box {
@@ -104,14 +112,23 @@
   opacity: 0.8;
 }
 
+/* 등급 배지 — 색상은 inline style로 등급별 적용 */
 .grade-badge {
   width: fit-content;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
-  background: #38bdf8;
-  color: #0f172a;
   font-weight: 700;
   font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+/* 이력 테이블용 소형 배지 */
+.grade-badge-sm {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
 }
 
 .history-table {
@@ -254,9 +271,34 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* 다크모드 highlight 기본 */
 :root.dark .person-card.highlight {
   background: #1e293b;
   border-color: #334155;
+  color: #e2e8f0;
+}
+
+/* 다크모드 등급별 카드: 진한 배경 + 은은한 보더 */
+:root.dark .person-card.highlight[style*="--grade-color"] {
+  background: var(--grade-bg-dark);
+  border-color: #475569; /* fallback */
+  border-color: color-mix(in srgb, var(--grade-color) 30%, transparent);
+}
+
+:root.dark .person-card.highlight .card-title {
+  color: #e2e8f0;
+}
+
+:root.dark .person-card.highlight .label {
+  color: #94a3b8;
+}
+
+:root.dark .person-card.highlight .value {
+  color: #e2e8f0;
+}
+
+:root.dark .person-card.highlight .score-unit {
+  color: #94a3b8;
 }
 
 :root.dark .person-id {
@@ -284,9 +326,10 @@
   color: var(--text, #e5e7eb);
 }
 
+/* 다크모드 grade-badge: inline style이 우선하므로 fallback만 */
 :root.dark .grade-badge {
-  background: #38bdf8;
-  color: #0f172a;
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
 }
 
 @media (max-width: 960px) {

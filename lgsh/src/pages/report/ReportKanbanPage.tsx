@@ -2,7 +2,7 @@
  * 월간레포트 - 칸반보드
  * 레포트 항목 선택 및 구성 관리
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Card,
   Button,
@@ -118,6 +118,14 @@ const ReportKanbanPage: React.FC = () => {
     riskLevel: string;
   } | null>(null);
   const [isEditingAiSummary, setIsEditingAiSummary] = useState(false);
+
+  // 미리보기 캐시
+  const previewCacheRef = useRef<{
+    key: string;
+    data: ReportPreviewData;
+    timestamp: number;
+  } | null>(null);
+  const [isCachedPreview, setIsCachedPreview] = useState(false);
 
   // 드래그 상태
   const [draggedItem, setDraggedItem] = useState<ReportItem | null>(null);
@@ -387,16 +395,34 @@ const ReportKanbanPage: React.FC = () => {
     }
   };
 
-  // 미리보기
-  const handlePreview = async () => {
+  // 캐시 키 생성
+  const getPreviewCacheKey = () => {
+    const requiredItems = columns.find((c) => c.id === 'required')?.items || [];
+    const itemIds = requiredItems.map((item) => item.itemId).sort().join(',');
+    return `${userCompanyId}:${year}:${month}:${itemIds}`;
+  };
+
+  // 미리보기 (캐시 지원)
+  const handlePreview = async (forceRefresh = false) => {
     const requiredItems = columns.find((c) => c.id === 'required')?.items || [];
     if (requiredItems.length === 0) {
       message.warning('포함할 항목을 선택해주세요.');
       return;
     }
 
+    const cacheKey = getPreviewCacheKey();
+
+    // 캐시 히트: 강제 새로고침이 아니고, 캐시 키가 일치하면 즉시 표시
+    if (!forceRefresh && previewCacheRef.current?.key === cacheKey) {
+      setPreviewData(previewCacheRef.current.data);
+      setIsCachedPreview(true);
+      setPreviewOpen(true);
+      return;
+    }
+
     setPreviewLoading(true);
     setEditedAiSummary(null);
+    setIsCachedPreview(false);
     try {
       const itemIds = requiredItems.map((item) => item.itemId);
       const response = await reportService.getPreview({
@@ -410,9 +436,14 @@ const ReportKanbanPage: React.FC = () => {
 
       if (response.success && response.data) {
         setPreviewData(response.data);
-        setPreviewOpen(true);  // API 성공 시에만 모달 열기
+        // 캐시에 저장
+        previewCacheRef.current = {
+          key: cacheKey,
+          data: response.data,
+          timestamp: Date.now(),
+        };
+        setPreviewOpen(true);
       } else {
-        // 마감 에러 등 처리
         message.error(response.message || '미리보기 데이터 조회에 실패했습니다.');
       }
     } catch (error) {
@@ -420,6 +451,11 @@ const ReportKanbanPage: React.FC = () => {
     } finally {
       setPreviewLoading(false);
     }
+  };
+
+  // 미리보기 재생성 (캐시 무시)
+  const handlePreviewRefresh = () => {
+    handlePreview(true);
   };
 
   // 마감 상태 체크 (해당 월 이후에 마감된 월이 있으면 차단)
@@ -579,7 +615,7 @@ const ReportKanbanPage: React.FC = () => {
             </Button>
             <Button
               icon={<EyeOutlined />}
-              onClick={handlePreview}
+              onClick={() => handlePreview()}
               disabled={selectedCount === 0 || (!previewLoading && isAnyOperationInProgress)}
               loading={previewLoading}
             >
@@ -718,6 +754,14 @@ const ReportKanbanPage: React.FC = () => {
             닫기
           </Button>,
           <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={handlePreviewRefresh}
+            loading={previewLoading}
+          >
+            재생성
+          </Button>,
+          <Button
             key="generate"
             type="primary"
             icon={<FilePdfOutlined />}
@@ -734,6 +778,16 @@ const ReportKanbanPage: React.FC = () => {
         <Spin spinning={previewLoading}>
           {previewData && (
             <div className="preview-content">
+              {isCachedPreview && previewCacheRef.current && (
+                <Alert
+                  message={`이전 조회 데이터입니다 (${dayjs(previewCacheRef.current.timestamp).format('HH:mm')} 조회). 최신 데이터가 필요하면 재생성 버튼을 클릭하세요.`}
+                  type="info"
+                  showIcon
+                  icon={<InfoCircleOutlined />}
+                  style={{ marginBottom: 16 }}
+                  closable
+                />
+              )}
               {/* 기본 통계 */}
               <Row gutter={16} style={{ marginBottom: 24 }}>
                 <Col span={8}>
