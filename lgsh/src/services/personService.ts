@@ -14,6 +14,7 @@ import type {
 
 export const personService = {
   // 목록 조회
+  // 목록 조회
   list: async (params: PersonSearchParams): Promise<ApiResponse<PersonListResponse>> => {
     const queryParams: Record<string, string | undefined> = {};
     if (params.companyId) queryParams.companyId = params.companyId;
@@ -52,17 +53,19 @@ export const personService = {
   },
 
   // 상세 조회
+  // 상세 조회
   get: async (personId: string): Promise<ApiResponse<PersonFull>> => {
     const response = await api.get<ApiResponse<PersonFull>>(`/persons/${personId}`);
     return response.data;
   },
 
-  // 이름 조회 (personId → personNm)
+  // 이름 조회 (personId -> personNm)
   getName: async (personId: string): Promise<ApiResponse<{ personNm?: string }>> => {
     const response = await api.get<ApiResponse<any>>(`/persons/${personId}`);
     return response.data;
   },
 
+  // 등록: POST /persons
   // 등록: POST /persons
   create: async (data: PersonRequest): Promise<ApiResponse<PersonFull>> => {
     const response = await api.post<ApiResponse<PersonFull>>('/persons', data);
@@ -70,11 +73,13 @@ export const personService = {
   },
 
   // 수정: PUT /persons/{personId}
+  // 수정: PUT /persons/{personId}
   update: async (personId: string, data: PersonRequest): Promise<ApiResponse<void>> => {
     const response = await api.put<ApiResponse<void>>(`/persons/${personId}`, data);
     return response.data;
   },
 
+  // 삭제: DELETE /persons/{personId}
   // 삭제: DELETE /persons/{personId}
   delete: async (personId: string): Promise<ApiResponse<void>> => {
     const response = await api.delete<ApiResponse<void>>(`/persons/${personId}`);

@@ -1804,7 +1804,8 @@ const CreditEvaluatePage: React.FC = () => {
                     {(() => {
                       const scores = monthlyBatches
                         .map((mb) => mb.batchStatus?.avgScore)
-                        .filter((s): s is number => s != null);
+                        .map((s) => (typeof s === 'number' ? s : Number(s)))
+                        .filter((s): s is number => Number.isFinite(s));
                       return scores.length > 0
                         ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
                         : '-';
@@ -1847,7 +1848,7 @@ const CreditEvaluatePage: React.FC = () => {
                   <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                     <div>
                       <Text type="secondary">평균 점수: </Text>
-                      <Text strong>{mb.batchStatus?.avgScore?.toFixed(1) ?? '-'}점</Text>
+                      <Text strong>{formatAvgScore(mb.batchStatus?.avgScore)}점</Text>
                     </div>
                     <div>
                       <Text type="secondary">완료: </Text>
@@ -1903,7 +1904,7 @@ const CreditEvaluatePage: React.FC = () => {
                     <div className="summary-card">
                       <div className="summary-card-title">평균 신용점수</div>
                       <div className="summary-card-value">
-                        {monthlyBatches[0].batchStatus.avgScore?.toFixed(1) ?? '-'}
+                        {formatAvgScore(monthlyBatches[0].batchStatus.avgScore)}
                       </div>
                       <div className="summary-card-unit">점</div>
                     </div>
