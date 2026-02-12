@@ -67,6 +67,56 @@ const ynText = (v?: string | null): string => {
   return v;
 };
 
+/** 등급별 색상 (글자색) */
+const GRADE_COLOR: Record<string, string> = {
+  A: '#1D4ED8',
+  B: '#16A34A',
+  C: '#FACC15',
+  D: '#F97316',
+  E: '#EF4444',
+};
+
+/** 등급별 연한 배경 (라이트모드) */
+const GRADE_BG_LIGHT: Record<string, string> = {
+  A: '#EFF6FF',  // blue-50
+  B: '#F0FDF4',  // green-50
+  C: '#FEFCE8',  // yellow-50
+  D: '#FFF7ED',  // orange-50
+  E: '#FEF2F2',  // red-50
+};
+
+/** 등급별 보더 (라이트모드) */
+const GRADE_BORDER_LIGHT: Record<string, string> = {
+  A: '#BFDBFE',  // blue-200
+  B: '#BBF7D0',  // green-200
+  C: '#FEF08A',  // yellow-200
+  D: '#FED7AA',  // orange-200
+  E: '#FECACA',  // red-200
+};
+
+/** 등급별 어두운 배경 (다크모드) */
+const GRADE_BG_DARK: Record<string, string> = {
+  A: '#1E293B',
+  B: '#14332A',
+  C: '#2A2517',
+  D: '#2A1F17',
+  E: '#2A1717',
+};
+
+/** 등급별 라벨 */
+const GRADE_LABEL: Record<string, string> = {
+  A: '최우수',
+  B: '우수',
+  C: '보통',
+  D: '주의',
+  E: '위험',
+};
+
+const getGradeKey = (grade: string): string => {
+  const g = grade.trim().toUpperCase().charAt(0);
+  return ['A', 'B', 'C', 'D', 'E'].includes(g) ? g : '';
+};
+
 const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
   const navigate = useNavigate();
   const params = useParams();
@@ -209,6 +259,9 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
 
   const score = data.creditScore ?? null;
   const grade = (data.creditGrade || '').trim() || '-';
+  const gradeKey = getGradeKey(grade);
+  const gradeColor = gradeKey ? GRADE_COLOR[gradeKey] : '#64748b';
+  const gradeLabel = gradeKey ? GRADE_LABEL[gradeKey] : '미평가';
 
   return (
     <div className="person-detail-container">
@@ -252,13 +305,32 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
           </div>
         </div>
 
-        <div className="person-card highlight">
+        <div
+          className={`person-card highlight${gradeKey ? ` grade-${gradeKey}` : ''}`}
+          style={gradeKey ? {
+            '--grade-color': gradeColor,
+            '--grade-bg': GRADE_BG_LIGHT[gradeKey],
+            '--grade-border': GRADE_BORDER_LIGHT[gradeKey],
+            '--grade-bg-dark': GRADE_BG_DARK[gradeKey],
+          } as React.CSSProperties : undefined}
+        >
           <div className="card-title">신용평가 요약</div>
           <div className="score-box">
-            <div className="score-value">{score === null ? '-' : score}</div>
+            <div className="score-value" style={{ color: gradeColor }}>
+              {score === null ? '-' : score}
+            </div>
             <div className="score-unit">점</div>
           </div>
-          <div className="grade-badge">등급: {grade}</div>
+          <div
+            className="grade-badge"
+            style={{
+              background: `${gradeColor}18`,
+              color: gradeColor,
+              border: `1.5px solid ${gradeColor}55`,
+            }}
+          >
+            {grade}등급 · {gradeLabel}
+          </div>
           <div className="card-row">
             <span className="label">평가일</span>
             <span className="value">{formatDate(data.scoreDt)}</span>
@@ -305,13 +377,34 @@ const PersonDetailData: React.FC<PersonDetailDataProps> = ({ personId }) => {
                 </tr>
               </thead>
               <tbody>
-                {history.map((h) => (
-                  <tr key={h.scoreSeq}>
-                    <td>{formatDate(h.evalDt)}</td>
-                    <td>{h.creditScore ?? '-'}</td>
-                    <td>{(h.creditGrade || '').trim() || '-'}</td>
-                  </tr>
-                ))}
+                {history.map((h) => {
+                  const hGrade = getGradeKey((h.creditGrade || '').trim());
+                  const hColor = hGrade ? GRADE_COLOR[hGrade] : undefined;
+                  return (
+                    <tr key={h.scoreSeq}>
+                      <td>{formatDate(h.evalDt)}</td>
+                      <td style={hColor ? { color: hColor, fontWeight: 600 } : undefined}>
+                        {h.creditScore ?? '-'}
+                      </td>
+                      <td>
+                        {hGrade ? (
+                          <span
+                            className="grade-badge-sm"
+                            style={{
+                              color: hColor,
+                              background: `${hColor}15`,
+                              border: `1px solid ${hColor}40`,
+                            }}
+                          >
+                            {hGrade}
+                          </span>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
