@@ -68,9 +68,60 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ChartTooltip, Legend);
 
 const formatRunStart = (value?: string | null) => {
   if (!value) return '-';
-  const parsed = new Date(value);
+  const raw = String(value).trim();
+  if (!raw) return '-';
+
+  const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(raw);
+  const normalized = hasTimezone ? raw : `${raw}Z`;
+  let parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    parsed = new Date(raw);
+  }
   if (Number.isNaN(parsed.getTime())) return '-';
-  return parsed.toLocaleString('ko-KR');
+  return parsed.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+};
+
+const isMonthToken = (value?: string | null) => {
+  if (!value) return false;
+  return /^\d{4}-\d{2}$/.test(String(value).trim());
+};
+
+const normalizeSnapshotMonth = (value?: string | null) => {
+  if (!value) return undefined;
+  const raw = String(value).trim();
+  if (!raw) return undefined;
+  if (/^\d{4}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{4}$/.test(raw)) return `20${raw.slice(0, 2)}-${raw.slice(2, 4)}`;
+  if (/^\d{6}$/.test(raw) && raw.startsWith('20')) return `${raw.slice(0, 4)}-${raw.slice(4, 6)}`;
+  return undefined;
+};
+
+const buildStatusQueryParams = (mb: MonthlyBatch) => {
+  const rawDataId = mb.batchResult?.rawDataId ? String(mb.batchResult.rawDataId).trim() : '';
+  if (rawDataId) {
+    return { rawDataId };
+  }
+
+  const fromMonth =
+    (mb.batchResult?.fromMonth && String(mb.batchResult.fromMonth).trim()) ||
+    (isMonthToken(mb.month) ? mb.month : undefined);
+  const toMonth =
+    (mb.batchResult?.toMonth && String(mb.batchResult.toMonth).trim()) ||
+    (isMonthToken(mb.month) ? mb.month : undefined);
+
+  if (fromMonth && toMonth) {
+    return { fromMonth, toMonth };
+  }
+
+  const snapshotMonth =
+    normalizeSnapshotMonth(mb.batchResult?.snapshotMonth) ||
+    (isMonthToken(mb.month) ? mb.month : undefined);
+
+  if (snapshotMonth) {
+    return { snapshotMonth };
+  }
+
+  return {};
 };
 
 const gradeColorMap: Record<string, string> = {
@@ -93,6 +144,27 @@ interface MonthlyBatch {
   batchResult: CreditBatchRunResult | null;
   batchStatus: CreditBatchStatus | null;
 }
+
+const stabilizeBatchStatus = (
+  previous: CreditBatchStatus | null,
+  incoming: CreditBatchStatus
+): CreditBatchStatus => {
+  if (!previous) return incoming;
+
+  const next = { ...incoming };
+  const prevRunning = previous.status === 'RUNNING' || previous.status === 'PENDING';
+  const nextRunning = next.status === 'RUNNING' || next.status === 'PENDING';
+
+  // Prevent temporary regressions from flickering progress back to 0 during polling.
+  if (prevRunning && nextRunning) {
+    next.processedCount = Math.max(previous.processedCount || 0, next.processedCount || 0);
+    next.successCount = Math.max(previous.successCount || 0, next.successCount || 0);
+    next.failCount = Math.max(previous.failCount || 0, next.failCount || 0);
+    next.totalCount = Math.max(previous.totalCount || 0, next.totalCount || 0);
+  }
+
+  return next;
+};
 
 /** 두 Dayjs 사이의 월 목록 생성 */
 const generateMonths = (from: Dayjs, to: Dayjs): string[] => {
@@ -122,6 +194,7 @@ const CreditEvaluatePage: React.FC = () => {
   // 월별 배치 추적 (단일 월이면 length=1, 복수 월이면 length=N)
   const [monthlyBatches, setMonthlyBatches] = useState<MonthlyBatch[]>([]);
   const [statusPolling, setStatusPolling] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [evalTime, setEvalTime] = useState<string>('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfMode, setPdfMode] = useState(false);
@@ -143,6 +216,8 @@ const CreditEvaluatePage: React.FC = () => {
   const [latestRawDataId, setLatestRawDataId] = useState<string | null>(null);
   const monthlyBatchesRef = useRef<MonthlyBatch[]>([]);
   const batchProgressModalRef = useRef(false);
+  const statusRefreshInFlightRef = useRef(false);
+  const lastStatusRefreshAtRef = useRef(0);
 
   // Derived
   const firstBatchResult = monthlyBatches[0]?.batchResult ?? null;
@@ -317,40 +392,42 @@ const CreditEvaluatePage: React.FC = () => {
         return;
       }
 
-      let allFinished = true;
+      if (statusRefreshInFlightRef.current) {
+        if (!cancelled) timer = setTimeout(fetchStatuses, 1500);
+        return;
+      }
+      statusRefreshInFlightRef.current = true;
+      lastStatusRefreshAtRef.current = Date.now();
 
-      for (let i = 0; i < current.length; i++) {
-        if (cancelled) return;
-        const mb = current[i];
-        if (!mb.batchResult) continue;
-        if (mb.batchStatus && ['SUCCESS', 'PARTIAL', 'FAILED'].includes(mb.batchStatus.status)) {
-          continue;
-        }
+      try {
+      const terminalStatuses = ['SUCCESS', 'PARTIAL', 'FAILED'];
+      const updated = await Promise.all(
+        current.map(async (mb) => {
+          if (!mb.batchResult) return mb;
+          if (mb.batchStatus && terminalStatuses.includes(mb.batchStatus.status)) {
+            return mb;
+          }
 
-        try {
-          const response = await creditService.getBatchStatus(
-            mb.batchResult.batchId,
-            mb.batchResult.runId,
-            {
-              mode: mb.batchResult.mode,
-              userId: mb.batchResult.userId,
-              fromMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
-              toMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
+          try {
+            const statusParams = buildStatusQueryParams(mb);
+            const response = await creditService.getBatchStatus(
+              mb.batchResult.batchId,
+              mb.batchResult.runId,
+              {
+                mode: mb.batchResult.mode,
+                userId: mb.batchResult.userId,
+                ...statusParams,
+              }
+            );
+            if (response.success && response.data) {
+              return { ...mb, batchStatus: stabilizeBatchStatus(mb.batchStatus, response.data) };
             }
-          );
-          if (response.success && response.data) {
-            current[i] = { ...mb, batchStatus: response.data };
-            if (!['SUCCESS', 'PARTIAL', 'FAILED'].includes(response.data.status)) {
-              allFinished = false;
-            }
-          } else {
-            allFinished = false;
             if (!mb.batchStatus) {
-              current[i] = {
+              return {
                 ...mb,
                 batchStatus: {
                   batchId: mb.batchResult.batchId,
-                  status: 'RUNNING',
+                  status: 'RUNNING' as const,
                   totalCount: 0,
                   processedCount: 0,
                   successCount: 0,
@@ -358,12 +435,18 @@ const CreditEvaluatePage: React.FC = () => {
                 },
               };
             }
+            return mb;
+          } catch (error) {
+            console.error(`Status polling error for ${mb.month}:`, error);
+            return mb;
           }
-        } catch (error) {
-          allFinished = false;
-          console.error(`Status polling error for ${mb.month}:`, error);
-        }
-      }
+        })
+      );
+      if (cancelled) return;
+      current.splice(0, current.length, ...updated);
+      const allFinished =
+        current.length > 0 &&
+        current.every((mb) => mb.batchResult && mb.batchStatus && terminalStatuses.includes(mb.batchStatus.status));
 
       if (!cancelled) {
         setMonthlyBatches([...current]);
@@ -415,6 +498,9 @@ const CreditEvaluatePage: React.FC = () => {
       if (!cancelled && !allFinished) {
         timer = setTimeout(fetchStatuses, 1500);
       }
+      } finally {
+        statusRefreshInFlightRef.current = false;
+      }
     };
 
     fetchStatuses();
@@ -424,7 +510,7 @@ const CreditEvaluatePage: React.FC = () => {
     };
   }, [statusPolling, mode]);
 
-  // 개인 ID 조회
+  // 고객 ID 조회
   useEffect(() => {
     const trimmed = (personId || '').trim();
     if (!trimmed) {
@@ -553,6 +639,7 @@ const CreditEvaluatePage: React.FC = () => {
     if (isBatchRunning) {
       if (!batchProgressModal) {
         setBatchProgressModal(true);
+        void handleRefreshStatus();
       }
       return;
     }
@@ -582,6 +669,46 @@ const CreditEvaluatePage: React.FC = () => {
         delete (payload as any).snapshotMonth;
         delete (payload as any).fromMonth;
         delete (payload as any).toMonth;
+      }
+
+      if (mode !== 'single') {
+        const checkParams: { snapshotMonth?: string; fromMonth?: string; toMonth?: string; rawDataId?: string } = {};
+        if (hasRawDataId) {
+          checkParams.rawDataId = rawDataId;
+        } else if (evalRange && evalRange[0] && evalRange[1]) {
+          checkParams.fromMonth = evalRange[0].format('YYYY-MM');
+          checkParams.toMonth = evalRange[1].format('YYYY-MM');
+        } else if (payload.snapshotMonth || payload.fromMonth || payload.toMonth) {
+          checkParams.snapshotMonth = payload.snapshotMonth;
+          checkParams.fromMonth = payload.fromMonth;
+          checkParams.toMonth = payload.toMonth;
+        }
+
+        if (checkParams.rawDataId || checkParams.snapshotMonth || checkParams.fromMonth || checkParams.toMonth) {
+          const completedResponse = await creditService.getCompletedMonths(checkParams);
+          const completedMonths = completedResponse.data?.months || [];
+          if (completedMonths.length > 0) {
+            const monthLabel = completedMonths
+              .map((m) => {
+                const parsed = dayjs(`${m}-01`, 'YYYY-MM-DD');
+                return parsed.isValid() ? `${parsed.month() + 1}월` : m;
+              })
+              .join(', ');
+            const proceed = await new Promise<boolean>((resolve) => {
+              Modal.confirm({
+                title: '이미 계산이 완료된 데이터가 있습니다.',
+                content: `(${monthLabel}) 계속 실행하시겠습니까?`,
+                okText: '계속 실행',
+                cancelText: '취소',
+                onOk: () => resolve(true),
+                onCancel: () => resolve(false),
+              });
+            });
+            if (!proceed) {
+              return;
+            }
+          }
+        }
       }
 
       if (mode === 'single') {
@@ -615,24 +742,52 @@ const CreditEvaluatePage: React.FC = () => {
       } else {
         // 배치 모드: 월별 분리 실행
         let months: string[] = [];
+        if (!hasRawDataId && (!evalRange || !evalRange[0] || !evalRange[1])) {
+          message.error('평가 시작에 실패했습니다.');
+          return;
+        }
         if (!hasRawDataId && evalRange && evalRange[0] && evalRange[1]) {
           months = generateMonths(evalRange[0], evalRange[1]);
         }
         if (months.length === 0) {
           // 기간 미지정 시 단일 배치
-          months = [''];
+          if (hasRawDataId) {
+            months = [''];
+          } else {
+            message.error('평가 기간을 확인해주세요.');
+            return;
+          }
         }
 
         setBatchProgressModal(true);
         setBatchStarting(true);
 
         const batches: MonthlyBatch[] = [];
+        const latestRawDataIdByMonth = new Map<string, string>();
 
         for (const month of months) {
           const monthPayload: CreditPredictRequest = { ...payload };
           if (!hasRawDataId && month) {
             monthPayload.fromMonth = month;
             monthPayload.toMonth = month;
+            try {
+              let resolvedRawDataId = latestRawDataIdByMonth.get(month);
+              if (!resolvedRawDataId) {
+                const latestRawDataResponse = await creditService.getLatestRawDataId(month);
+                const latestRawDataId = latestRawDataResponse.success
+                  ? String(latestRawDataResponse.data?.rawDataId || '').trim()
+                  : '';
+                if (latestRawDataId) {
+                  resolvedRawDataId = latestRawDataId;
+                  latestRawDataIdByMonth.set(month, latestRawDataId);
+                }
+              }
+              if (resolvedRawDataId) {
+                monthPayload.rawDataId = resolvedRawDataId;
+              }
+            } catch {
+              // Keep month filter fallback if latest raw lookup fails.
+            }
           }
 
           try {
@@ -640,7 +795,12 @@ const CreditEvaluatePage: React.FC = () => {
             if (response.success && response.data) {
               batches.push({
                 month: month || (hasRawDataId ? 'RAW_DATA_ID' : '전체'),
-                batchResult: response.data,
+                batchResult: {
+                  ...response.data,
+                  rawDataId: response.data.rawDataId || monthPayload.rawDataId,
+                  fromMonth: response.data.fromMonth || monthPayload.fromMonth,
+                  toMonth: response.data.toMonth || monthPayload.toMonth,
+                },
                 batchStatus: {
                   batchId: response.data.batchId,
                   status: 'RUNNING',
@@ -704,23 +864,33 @@ const CreditEvaluatePage: React.FC = () => {
   const handleRefreshStatus = useCallback(async () => {
     const current = monthlyBatchesRef.current;
     if (current.length === 0) return;
+    const now = Date.now();
+    if (statusRefreshInFlightRef.current) return;
+    if (now - lastStatusRefreshAtRef.current < 1000) return;
+    statusRefreshInFlightRef.current = true;
+    lastStatusRefreshAtRef.current = now;
+
     try {
+      const terminalStatuses = ['SUCCESS', 'PARTIAL', 'FAILED'];
       const updated = await Promise.all(
         current.map(async (mb) => {
           if (!mb.batchResult) return mb;
+          if (mb.batchStatus && terminalStatuses.includes(mb.batchStatus.status)) {
+            return mb;
+          }
           try {
+            const statusParams = buildStatusQueryParams(mb);
             const response = await creditService.getBatchStatus(
               mb.batchResult.batchId,
               mb.batchResult.runId,
               {
                 mode: mb.batchResult.mode,
                 userId: mb.batchResult.userId,
-                fromMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
-                toMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
+                ...statusParams,
               }
             );
             if (response.success && response.data) {
-              return { ...mb, batchStatus: response.data };
+              return { ...mb, batchStatus: stabilizeBatchStatus(mb.batchStatus, response.data) };
             }
           } catch {
             // keep existing status
@@ -731,38 +901,74 @@ const CreditEvaluatePage: React.FC = () => {
       setMonthlyBatches(updated);
     } catch (error) {
       message.error('상태 조회에 실패했습니다.');
+    } finally {
+      statusRefreshInFlightRef.current = false;
     }
   }, []);
+
+  useEffect(() => {
+    if (!statusPolling || mode === 'single') return;
+
+    let lastTriggeredAt = 0;
+    const triggerRefresh = () => {
+      if (document.visibilityState === 'hidden') return;
+      const now = Date.now();
+      if (now - lastTriggeredAt < 800) return;
+      lastTriggeredAt = now;
+      void handleRefreshStatus();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        triggerRefresh();
+      }
+    };
+
+    window.addEventListener('focus', triggerRefresh);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', triggerRefresh);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [statusPolling, mode, handleRefreshStatus]);
+
+  useEffect(() => {
+    if (!batchProgressModal || !statusPolling || mode === 'single') return;
+    void handleRefreshStatus();
+  }, [batchProgressModal, statusPolling, mode, handleRefreshStatus]);
 
   const handleStopBatch = useCallback(async () => {
     const current = monthlyBatchesRef.current;
     if (current.length === 0) return;
+    setStopping(true);
+    message.loading({ content: '중지 중입니다...', key: 'stopping', duration: 0 });
     try {
-      await Promise.all(
-        current
-          .filter(
-            (mb) =>
-              mb.batchResult &&
-              (!mb.batchStatus || ['PENDING', 'RUNNING'].includes(mb.batchStatus.status))
-          )
-          .map((mb) =>
-            creditService.stopBatch({
-              batchId: mb.batchResult!.batchId,
-              runId: mb.batchResult!.runId,
-              mode: mb.batchResult!.mode,
-              userId: mb.batchResult!.userId,
-            })
-          )
+      const running = current.filter(
+        (mb) =>
+          mb.batchResult &&
+          (!mb.batchStatus || ['PENDING', 'RUNNING'].includes(mb.batchStatus.status))
       );
+      // 첫 번째 배치만 stopBatch 호출 (Celery 중지/재시작이 전체에 적용됨)
+      if (running.length > 0) {
+        const first = running[0];
+        await creditService.stopBatch({
+          batchId: first.batchResult!.batchId,
+          runId: first.batchResult!.runId,
+          mode: first.batchResult!.mode,
+          userId: first.batchResult!.userId,
+        });
+      }
       setStatusPolling(false);
       setBatchProgressModal(false);
       setMonthlyBatches([]);
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch {}
-      message.warning('평가가 중지되었습니다. 이미 처리된 건은 저장됩니다.');
+      message.warning({ content: '평가가 중지되었습니다. 이미 처리된 건은 저장됩니다.', key: 'stopping' });
     } catch (error) {
-      message.error('평가 중지에 실패했습니다.');
+      message.error({ content: '평가 중지에 실패했습니다.', key: 'stopping' });
+    } finally {
+      setStopping(false);
     }
   }, []);
 
@@ -1203,7 +1409,7 @@ const CreditEvaluatePage: React.FC = () => {
                         실패: {monthlyBatches[0].batchStatus.failCount.toLocaleString()}명
                       </Text>
                       <Text>
-                        처리:{' '}
+                        처리건:{' '}
                         {Math.min(
                           monthlyBatches[0].batchStatus.processedCount,
                           monthlyBatches[0].batchStatus.totalCount
@@ -1382,7 +1588,7 @@ const CreditEvaluatePage: React.FC = () => {
         <div className="batch-progress-header">
           <div className="batch-progress-title">
             {modeLabels[mode].icon}
-            <span style={{ marginLeft: 8 }}>{modeLabels[mode].label} 진행중</span>
+            <span style={{ marginLeft: 8 }}>{modeLabels[mode].label} 실행중</span>
             {isMultiMonth && (
               <Tag color="blue" style={{ marginLeft: 8 }}>
                 {monthlyBatches.length}개월
@@ -1391,7 +1597,7 @@ const CreditEvaluatePage: React.FC = () => {
           </div>
           <Button
             type="text"
-            icon={<span style={{ fontSize: 18 }}>×</span>}
+            icon={<span style={{ fontSize: 18 }}>-</span>}
             onClick={() => {
               setBatchProgressModal(false);
               message.info('실행 완료 후 알림으로 알려드리겠습니다.');
@@ -1553,8 +1759,8 @@ const CreditEvaluatePage: React.FC = () => {
           )}
 
           <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 12 }}>
-            <Button danger icon={<StopOutlined />} onClick={handleStopBatch}>
-              중지
+            <Button danger icon={<StopOutlined />} onClick={handleStopBatch} loading={stopping} disabled={stopping}>
+              {stopping ? '중지 중...' : '중지'}
             </Button>
             <Button onClick={() => {
               setBatchProgressModal(false);
@@ -1581,7 +1787,7 @@ const CreditEvaluatePage: React.FC = () => {
           </div>
           <Button
             type="text"
-            icon={<span style={{ fontSize: 18 }}>×</span>}
+            icon={<span style={{ fontSize: 18 }}>-</span>}
             onClick={() => setBatchSummaryModal(false)}
             className="batch-summary-close pdf-hide"
           />
@@ -1762,7 +1968,7 @@ const CreditEvaluatePage: React.FC = () => {
                       </Descriptions.Item>
                       <Descriptions.Item label="완료 시간">
                         {monthlyBatches[0].batchStatus.endedAt
-                          ? new Date(monthlyBatches[0].batchStatus.endedAt).toLocaleString('ko-KR')
+                          ? formatRunStart(monthlyBatches[0].batchStatus.endedAt)
                           : '-'}
                       </Descriptions.Item>
                     </Descriptions>

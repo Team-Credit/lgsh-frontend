@@ -65,6 +65,11 @@ export interface CreditCeleryStatus {
   error?: string;
 }
 
+export interface CreditCompletedMonths {
+  months: string[];
+  count: number;
+}
+
 export interface CreditDistributionStats {
   average: number;
   median: number;

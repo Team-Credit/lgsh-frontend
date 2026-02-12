@@ -8,6 +8,7 @@ import type {
   CreditBatchRunResult,
   CreditBatchStatus,
   CreditCeleryStatus,
+  CreditCompletedMonths,
   CreditCorrelationResult,
   CreditDistributionResult,
   CreditMissingPatternResult,
@@ -45,7 +46,7 @@ const creditService = {
   getBatchStatus: async (
     batchId: string,
     runId: string,
-    params?: { mode?: string; userId?: string; snapshotMonth?: string; fromMonth?: string; toMonth?: string }
+    params?: { mode?: string; userId?: string; snapshotMonth?: string; fromMonth?: string; toMonth?: string; rawDataId?: string }
   ): Promise<ApiResponse<CreditBatchStatus>> => {
     const response = await api.get<ApiResponse<CreditBatchStatus>>('/credit/run/status', {
       params: { batchId, runId, ...params },
@@ -60,6 +61,15 @@ const creditService = {
     const response = await api.get<ApiResponse<{ month: string; rawDataId: string | null }>>('/credit/raw/latest', {
       params: { month },
     });
+    return response.data;
+  },
+  getCompletedMonths: async (params: {
+    snapshotMonth?: string;
+    fromMonth?: string;
+    toMonth?: string;
+    rawDataId?: string;
+  }): Promise<ApiResponse<CreditCompletedMonths>> => {
+    const response = await api.get<ApiResponse<CreditCompletedMonths>>('/credit/raw/completed-months', { params });
     return response.data;
   },
   stopBatch: async (payload: {

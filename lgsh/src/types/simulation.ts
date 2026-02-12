@@ -23,6 +23,7 @@ export interface SimulationResult {
   delta: number;
   beforeGrade: string;
   afterGrade: string;
+  referenceScoreDt?: string;
   appliedColumns: string[];
   breakdown: SimulationBreakdown[];
 }

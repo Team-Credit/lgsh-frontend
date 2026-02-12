@@ -192,6 +192,7 @@ const SimulationPage: React.FC<SimulationPageProps> = ({
 
       const payload: SimulationRequest = {
         personId: values.personId,
+        modelId: values.modelId,
         adjustments,
       };
 
@@ -218,6 +219,7 @@ const SimulationPage: React.FC<SimulationPageProps> = ({
     }
     const payload: SimulationSaveRequest = {
       personId: lastRequest.personId,
+      modelId: lastRequest.modelId,
       scenarioType: 'WHAT_IF',
       beforeScore: result.beforeScore,
       afterScore: result.afterScore,
@@ -355,6 +357,11 @@ const SimulationPage: React.FC<SimulationPageProps> = ({
                 <div className={`delta ${result.delta >= 0 ? 'positive' : 'negative'}`}>
                   변화량: {result.delta >= 0 ? '+' : ''}{result.delta} 점
                 </div>
+                {result.referenceScoreDt && (
+                  <div style={{ marginTop: 8, color: '#8c8c8c', fontSize: 12 }}>
+                    이 데이터는 {result.referenceScoreDt} 기준(score_dt)으로 실행되었습니다.
+                  </div>
+                )}
 
                 <div className="score-breakdown">
                   <div className="section-title">세부 점수 변화</div>
