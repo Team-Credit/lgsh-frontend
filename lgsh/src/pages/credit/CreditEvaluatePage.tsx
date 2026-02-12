@@ -72,6 +72,35 @@ const formatRunStart = (value?: string | null) => {
   return parsed.toLocaleString('ko-KR');
 };
 
+const formatAvgScore = (value?: number | string | null) => {
+  if (value === null || value === undefined) return '-';
+  const parsed = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(parsed)) return '-';
+  return parsed.toFixed(1);
+};
+
+const formatEndedAt = (value?: string | null, runStart?: string | null) => {
+  if (!value) return '-';
+  const localParsed = new Date(value);
+  if (Number.isNaN(localParsed.getTime())) return '-';
+
+  if (runStart) {
+    const startParsed = new Date(runStart);
+    if (!Number.isNaN(startParsed.getTime())) {
+      // Legacy rows may have UTC timestamps without timezone suffix.
+      // If endedAt appears earlier than runStart, reinterpret endedAt as UTC.
+      if (localParsed.getTime() + 60 * 1000 < startParsed.getTime()) {
+        const utcParsed = new Date(`${value}Z`);
+        if (!Number.isNaN(utcParsed.getTime())) {
+          return utcParsed.toLocaleString('ko-KR');
+        }
+      }
+    }
+  }
+
+  return localParsed.toLocaleString('ko-KR');
+};
+
 const gradeColorMap: Record<string, string> = {
   A: '#1d4ed8',
   B: '#16a34a',
@@ -103,6 +132,11 @@ const generateMonths = (from: Dayjs, to: Dayjs): string[] => {
     cursor = cursor.add(1, 'month');
   }
   return months;
+};
+
+const toStatusMonthParam = (monthLabel?: string): string | undefined => {
+  if (!monthLabel) return undefined;
+  return /^\d{4}-\d{2}$/.test(monthLabel) ? monthLabel : undefined;
 };
 
 const CreditEvaluatePage: React.FC = () => {
@@ -313,8 +347,8 @@ const CreditEvaluatePage: React.FC = () => {
             {
               mode: mb.batchResult.mode,
               userId: mb.batchResult.userId,
-              fromMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
-              toMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
+              fromMonth: toStatusMonthParam(mb.month),
+              toMonth: toStatusMonthParam(mb.month),
             }
           );
           if (response.success && response.data) {
@@ -658,8 +692,8 @@ const CreditEvaluatePage: React.FC = () => {
               {
                 mode: mb.batchResult.mode,
                 userId: mb.batchResult.userId,
-                fromMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
-                toMonth: mb.month && mb.month !== '전체' ? mb.month : undefined,
+                fromMonth: toStatusMonthParam(mb.month),
+                toMonth: toStatusMonthParam(mb.month),
               }
             );
             if (response.success && response.data) {
@@ -1502,7 +1536,8 @@ const CreditEvaluatePage: React.FC = () => {
                     {(() => {
                       const scores = monthlyBatches
                         .map((mb) => mb.batchStatus?.avgScore)
-                        .filter((s): s is number => s != null);
+                        .map((s) => (typeof s === 'number' ? s : Number(s)))
+                        .filter((s): s is number => Number.isFinite(s));
                       return scores.length > 0
                         ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
                         : '-';
@@ -1545,7 +1580,7 @@ const CreditEvaluatePage: React.FC = () => {
                   <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                     <div>
                       <Text type="secondary">평균 점수: </Text>
-                      <Text strong>{mb.batchStatus?.avgScore?.toFixed(1) ?? '-'}점</Text>
+                      <Text strong>{formatAvgScore(mb.batchStatus?.avgScore)}점</Text>
                     </div>
                     <div>
                       <Text type="secondary">완료: </Text>
@@ -1601,7 +1636,7 @@ const CreditEvaluatePage: React.FC = () => {
                     <div className="summary-card">
                       <div className="summary-card-title">평균 신용점수</div>
                       <div className="summary-card-value">
-                        {monthlyBatches[0].batchStatus.avgScore?.toFixed(1) ?? '-'}
+                        {formatAvgScore(monthlyBatches[0].batchStatus.avgScore)}
                       </div>
                       <div className="summary-card-unit">점</div>
                     </div>
@@ -1665,9 +1700,10 @@ const CreditEvaluatePage: React.FC = () => {
                         {formatRunStart(monthlyBatches[0].batchResult?.runStart)}
                       </Descriptions.Item>
                       <Descriptions.Item label="완료 시간">
-                        {monthlyBatches[0].batchStatus.endedAt
-                          ? new Date(monthlyBatches[0].batchStatus.endedAt).toLocaleString('ko-KR')
-                          : '-'}
+                        {formatEndedAt(
+                          monthlyBatches[0].batchStatus.endedAt,
+                          monthlyBatches[0].batchResult?.runStart
+                        )}
                       </Descriptions.Item>
                     </Descriptions>
                   </div>

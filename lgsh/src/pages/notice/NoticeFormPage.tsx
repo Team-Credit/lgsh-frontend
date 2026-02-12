@@ -1,6 +1,6 @@
 ﻿/**
- * 怨듭??ы빆 ?깅줉/?섏젙 ?섏씠吏
- * NOT002 - 怨듭??ы빆 ?깅줉 愿由?
+ * 공지사항 등록/수정 페이지
+ * NOT002 - 공지사항 등록 기능
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { Form, Input, Button, DatePicker, Switch, Space, Card, Row, Col, Select, message } from 'antd';
@@ -42,12 +42,12 @@ const NoticeFormPage: React.FC = () => {
         },
     });
 
-    // ?곹깭 愿由?(?덇굅???⑦꽩: 媛쒕퀎 useState)
+    // 로딩 상태 관리(조회/저장)
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [detailData, setDetailData] = useState<Notice | null>(null);
 
-    // ?곸꽭 議고쉶 (?덇굅???⑦꽩: 而댄룷?뚰듃 ?대? ?⑥닔)
+    // 상세 조회 (수정 모드에서만 실행)
     const fetchDetail = useCallback(async () => {
         if (!noticeId) return;
 
@@ -57,24 +57,24 @@ const NoticeFormPage: React.FC = () => {
             if (response.success && response.data) {
                 setDetailData(response.data);
             } else {
-                message.error(response.message || '怨듭??ы빆 ?뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.');
+                message.error(response.message || '공지사항 상세 정보를 불러오지 못했습니다.');
             }
         } catch (error: any) {
-            console.error('怨듭??ы빆 ?곸꽭 議고쉶 ?ㅻ쪟:', error);
-            message.error('怨듭??ы빆 ?뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.');
+            console.error('공지사항 상세 조회 오류:', error);
+            message.error('공지사항 상세 정보를 불러오지 못했습니다.');
         } finally {
             setLoading(false);
         }
     }, [noticeId]);
 
-    // 珥덇린 濡쒕뱶
+    // 컴포넌트 마운트 시 상세 데이터 조회
     useEffect(() => {
         if (isEdit) {
             fetchDetail();
         }
     }, [isEdit, fetchDetail]);
 
-    // ?곸꽭 ?곗씠??濡쒕뱶 ?????ㅼ젙
+    // 상세 데이터 수신 시 폼/에디터 값 반영
     useEffect(() => {
         if (detailData) {
             form.setFieldsValue({
@@ -118,14 +118,14 @@ const NoticeFormPage: React.FC = () => {
             }
 
             if (response.success) {
-                message.success(isEdit ? '怨듭??ы빆???섏젙?섏뿀?듬땲??' : '怨듭??ы빆???깅줉?섏뿀?듬땲??');
+                message.success(isEdit ? '공지사항이 수정되었습니다.' : '공지사항이 등록되었습니다.');
                 navigate('/notices');
             } else {
-                message.error(response.message || '??μ뿉 ?ㅽ뙣?덉뒿?덈떎.');
+                message.error(response.message || '요청 처리에 실패했습니다.');
             }
         } catch (error: any) {
-            console.error('????ㅻ쪟:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || '???以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
+            console.error('저장 오류:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || '알 수 없는 오류가 발생했습니다.';
             message.error(errorMessage);
         } finally {
             setSubmitting(false);
@@ -217,4 +217,3 @@ const NoticeFormPage: React.FC = () => {
 };
 
 export default NoticeFormPage;
-

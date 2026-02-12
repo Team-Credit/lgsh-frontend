@@ -16,6 +16,48 @@ import type {
   CreditPredictResult,
 } from '@/types';
 
+const asNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+};
+
+const asString = (value: unknown): string | undefined => {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+};
+
+const asNullableNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const normalizeBatchStatus = (raw: any): CreditBatchStatus => {
+  const totalCount = asNumber(raw?.totalCount ?? raw?.total_count, 0);
+  const processedCount = asNumber(raw?.processedCount ?? raw?.processed_count, 0);
+  const successCount = asNumber(raw?.successCount ?? raw?.success_count, 0);
+  const failCount = asNumber(raw?.failCount ?? raw?.fail_count, 0);
+
+  return {
+    batchId: String(raw?.batchId ?? raw?.batch_id ?? ''),
+    status: (raw?.status ?? 'PENDING') as CreditBatchStatus['status'],
+    totalCount,
+    processedCount,
+    successCount,
+    failCount,
+    startedAt: asString(raw?.startedAt ?? raw?.started_at),
+    endedAt: asString(raw?.endedAt ?? raw?.ended_at),
+    avgScore: asNullableNumber(raw?.avgScore ?? raw?.avg_score),
+    gradeDistribution: raw?.gradeDistribution ?? raw?.grade_distribution,
+  };
+};
+
 const creditService = {
   predict: async (payload: CreditPredictRequest): Promise<ApiResponse<CreditPredictResult>> => {
     const response = await api.post<ApiResponse<CreditPredictResult>>('/credit/run', payload);
@@ -50,7 +92,14 @@ const creditService = {
     const response = await api.get<ApiResponse<CreditBatchStatus>>('/credit/run/status', {
       params: { batchId, runId, ...params },
     });
-    return response.data;
+    const payload = response.data;
+    if (payload?.success && payload?.data) {
+      return {
+        ...payload,
+        data: normalizeBatchStatus(payload.data),
+      };
+    }
+    return payload;
   },
   getCeleryStatus: async (): Promise<ApiResponse<CreditCeleryStatus>> => {
     const response = await api.get<ApiResponse<CreditCeleryStatus>>('/credit/celery/status');
