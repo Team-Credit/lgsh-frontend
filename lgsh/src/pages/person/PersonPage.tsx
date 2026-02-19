@@ -387,7 +387,7 @@ const PersonPage: React.FC = () => {
 
       const requestData: PersonRequest = {
         ...values,
-        birthDt: values.birthDt ? dayjs(values.birthDt).format('YYYY-MM-DD') : null,
+        birthDt: values.birthDt ? dayjs(values.birthDt).format('YYYYMMDD') : null,
       };
 
       let response;

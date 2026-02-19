@@ -37,6 +37,8 @@ interface HelpModalProps {
   menuKey: string | null;
 }
 
+const helpDataModules = import.meta.glob('../../help/data/*.json');
+
 const HelpModal: React.FC<HelpModalProps> = ({ open, onClose, menuKey }) => {
   const [helpData, setHelpData] = useState<HelpData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,7 +48,15 @@ const HelpModal: React.FC<HelpModalProps> = ({ open, onClose, menuKey }) => {
       setLoading(true);
       setHelpData(null);
 
-      import(`@/help/data/${menuKey}.json`)
+      const loader = helpDataModules[`../../help/data/${menuKey}.json`];
+
+      if (!loader) {
+        setHelpData(null);
+        setLoading(false);
+        return;
+      }
+
+      loader()
         .then((data) => {
           setHelpData(data.default || data);
         })
