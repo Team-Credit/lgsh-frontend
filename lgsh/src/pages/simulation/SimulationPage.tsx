@@ -10,6 +10,20 @@ import type { SimulationAdjustment, SimulationRequest, SimulationResult, Simulat
 import { simulationService } from '@/services';
 import './SimulationPage.css';
 
+const CREDIT_BATCH_STORAGE_KEY = 'credit_batch_in_progress';
+
+const isCreditBatchRunning = (): boolean => {
+  try {
+    const raw = localStorage.getItem(CREDIT_BATCH_STORAGE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    const batch = saved?.monthlyBatches?.[0]?.batchResult ?? saved?.batchResult;
+    return !!(batch && batch.batchId && batch.runId);
+  } catch {
+    return false;
+  }
+};
+
 type ScenarioItem = {
   key: string;
   label: string;
@@ -182,6 +196,11 @@ const SimulationPage: React.FC<SimulationPageProps> = ({
   };
 
   const handleRun = async () => {
+    if (isCreditBatchRunning()) {
+      message.warning('평가 실행이 진행 중입니다. 완료 또는 중지 후 시뮬레이션을 실행해 주세요.');
+      return;
+    }
+
     try {
       const values = await form.validateFields();
       const adjustments: SimulationAdjustment[] = scenarioConfig.map((item) => ({
@@ -287,7 +306,13 @@ const SimulationPage: React.FC<SimulationPageProps> = ({
                 <Button icon={<ReloadOutlined />} onClick={handleReset}>
                   초기화
                 </Button>
-                <Button type="primary" icon={<PlayCircleOutlined />} loading={loading} onClick={handleRun}>
+                <Button
+                  type="primary"
+                  icon={<PlayCircleOutlined />}
+                  loading={loading}
+                  onClick={handleRun}
+                  disabled={isCreditBatchRunning()}
+                >
                   시뮬레이션 실행
                 </Button>
               </Space>

@@ -285,6 +285,35 @@ const MenuAdminPage: React.FC = () => {
     }
   };
 
+  const handleDelete = async () => {
+    const menuId = form.getFieldValue('menuId');
+    if (!menuId) {
+      message.warning('삭제할 메뉴를 선택해주세요.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const response = await menuService.deleteAdminMenu(menuId);
+      if (response.success) {
+        message.success('메뉴가 삭제되었습니다.');
+        setSelectedId(null);
+        form.resetFields();
+        await loadTree();
+        return;
+      }
+      message.error(response.message || '삭제에 실패했습니다.');
+    } catch (error: any) {
+      if (error?.response?.data?.code === 'ERR_MENU_002') {
+        message.error('하위 메뉴가 존재하여 삭제할 수 없습니다.');
+        return;
+      }
+      message.error(error?.response?.data?.message || '삭제에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDrop: TreeProps['onDrop'] = async (info) => {
     const dragKey = String(info.dragNode.key);
     const dropKey = String(info.node.key);
