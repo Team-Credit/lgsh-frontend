@@ -36,6 +36,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   ExperimentOutlined,
+  RedoOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
@@ -727,6 +728,15 @@ const ModelListPage: React.FC = () => {
                 title="학습"
               />
             </>
+          )}
+          {canWrite && record.approvalStatus === 'FAILED' && (
+            <Button
+              type="link"
+              size="small"
+              icon={<RedoOutlined />}
+              onClick={() => handleTrain(record)}
+              title="재시작"
+            />
           )}
           {canDelete && (record.approvalStatus === 'DRAFT' || record.approvalStatus === 'FAILED') && (
             <Button

@@ -175,6 +175,11 @@ const PersonPage: React.FC = () => {
   // 관리그룹 선택 모달
   const [personGroupModalOpen, setPersonGroupModalOpen] = useState(false);
 
+  // 검색 조건용 관리그룹 (코드/명 분리 관리)
+  const [searchGrpCode, setSearchGrpCode] = useState<string>('');
+  const [searchGrpNm, setSearchGrpNm] = useState<string>('');
+  const [searchGrpModalOpen, setSearchGrpModalOpen] = useState(false);
+
   // 관리그룹 일괄지정 모달
   const [batchGrpModalOpen, setBatchGrpModalOpen] = useState(false);
 
@@ -264,6 +269,7 @@ const PersonPage: React.FC = () => {
         size: pageSize,
         ...searchValues,
         companyId: userCompanyId || searchValues.companyId,
+        personGrp: searchGrpCode || undefined,
       });
 
       if (response.success && response.data) {
@@ -345,6 +351,8 @@ const PersonPage: React.FC = () => {
   // 초기화
   const handleReset = () => {
     searchForm.resetFields();
+    setSearchGrpCode('');
+    setSearchGrpNm('');
     setPage(1);
     fetchData(1);
   };
@@ -694,7 +702,12 @@ const PersonPage: React.FC = () => {
         width: columnWidths.personGrpNm,
         onResize: handleResize('personGrpNm'),
       }),
-      render: (text, record) => text || record.personGrp || '-',
+      render: (text, record) => {
+        const nm = text || '-';
+        const code = record.personGrp;
+        if (!code) return '-';
+        return `${nm} (${code})`;
+      },
     },
     {
       title: '원청사',
@@ -1105,8 +1118,23 @@ const PersonPage: React.FC = () => {
               <Input placeholder="원청사ID" style={{ width: 130 }} />
             </Form.Item>
           )}
-          <Form.Item name="personGrp" label="관리그룹">
-            <Input placeholder="관리그룹" style={{ width: 130 }} />
+          <Form.Item label="관리그룹">
+            <Space.Compact>
+              <Input
+                readOnly
+                placeholder="관리그룹 선택"
+                value={searchGrpCode ? `${searchGrpNm} (${searchGrpCode})` : ''}
+                style={{ width: 180 }}
+                allowClear
+                onChange={(e) => {
+                  if (!e.target.value) {
+                    setSearchGrpCode('');
+                    setSearchGrpNm('');
+                  }
+                }}
+              />
+              <Button icon={<SearchOutlined />} onClick={() => setSearchGrpModalOpen(true)} />
+            </Space.Compact>
           </Form.Item>
           <Form.Item name="useYn" label="사용여부">
             <Select placeholder="전체" allowClear style={{ width: 100 }}>
@@ -1232,7 +1260,19 @@ const PersonPage: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* 관리그룹 선택 모달 */}
+      {/* 검색 조건 관리그룹 선택 모달 */}
+      <PersonGroupSelectModal
+        open={searchGrpModalOpen}
+        onCancel={() => setSearchGrpModalOpen(false)}
+        onSelect={(group) => {
+          setSearchGrpCode(group.personGrp);
+          setSearchGrpNm(group.personGrpNm);
+          setSearchGrpModalOpen(false);
+        }}
+        companyId={userCompanyId || searchForm.getFieldValue('companyId')}
+      />
+
+      {/* 관리그룹 선택 모달 (등록/수정 폼용) */}
       <PersonGroupSelectModal
         open={personGroupModalOpen}
         onCancel={() => setPersonGroupModalOpen(false)}
