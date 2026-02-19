@@ -15,29 +15,24 @@ import type {
 export const personService = {
   // 목록 조회
   list: async (params: PersonSearchParams): Promise<ApiResponse<PersonListResponse>> => {
-    const queryParams: Record<string, string | undefined> = {};
+    const queryParams: Record<string, string | number | undefined> = {};
     if (params.companyId) queryParams.companyId = params.companyId;
     if (params.personNm) queryParams.personNm = params.personNm;
     if (params.personIdFrom) queryParams.personIdFrom = params.personIdFrom;
     if (params.personIdTo) queryParams.personIdTo = params.personIdTo;
     if (params.personGrp) queryParams.personGrp = params.personGrp;
+    queryParams.page = params.page ?? 0;
+    queryParams.size = params.size ?? 20;
 
-    const response = await api.get<ApiResponse<PersonFull[]>>('/persons', {
+    const response = await api.get<ApiResponse<PersonListResponse>>('/persons', {
       params: queryParams,
     });
 
-    // 백엔드가 단순 리스트를 반환하면 PageResponse 형태로 변환
     const data = response.data;
-    if (data.success && Array.isArray(data.data)) {
-      const items = data.data || [];
+    if (data.success && data.data) {
       return {
         success: data.success,
-        data: {
-          content: items,
-          totalCount: items.length,
-          page: params.page || 0,
-          size: params.size || items.length,
-        },
+        data: data.data,
         message: data.message,
         errorCode: data.errorCode,
       };
