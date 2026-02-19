@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Col, DatePicker, Row, Select, Tabs, Button, Spin, Table, message, Empty, Typography } from 'antd';
+import { Card, Col, DatePicker, Row, Select, Tabs, Button, Spin, Table, message, Empty, Typography, Space } from 'antd';
 import { LineChartOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import {
@@ -403,6 +403,20 @@ const TimeSeriesPage: React.FC = () => {
     { title: 'PSI', dataIndex: 'psiValue', key: 'psiValue', render: (v: number) => fmtPsi(v) },
   ];
 
+  const migrationOverviewColumns = [
+    { title: '항목', dataIndex: 'label', key: 'label' },
+    { title: '값', dataIndex: 'value', key: 'value' },
+  ];
+
+  const migrationOverviewData = useMemo(() => {
+    if (!migration) return [];
+    return [
+      { key: 'upgrade', label: '상승 비율', value: `${((migration.upgradeRate ?? 0) * 100).toFixed(1)}%` },
+      { key: 'stay', label: '유지 비율', value: `${((migration.stayRate ?? 0) * 100).toFixed(1)}%` },
+      { key: 'downgrade', label: '하락 비율', value: `${((migration.downgradeRate ?? 0) * 100).toFixed(1)}%` },
+    ];
+  }, [migration]);
+
   // ─── Dashboard 탭 렌더링 ───
 
   const dashboardTab = (
@@ -635,9 +649,13 @@ const TimeSeriesPage: React.FC = () => {
                   </Col>
                   <Col span={12}>
                     <Card title="등급 이동">
-                      <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                        {migration ? JSON.stringify(migration, null, 2) : 'No data'}
-                      </pre>
+                      <Table
+                        rowKey="key"
+                        columns={migrationOverviewColumns}
+                        dataSource={migrationOverviewData}
+                        pagination={false}
+                        locale={{ emptyText: 'No data' }}
+                      />
                     </Card>
                   </Col>
                 </Row>

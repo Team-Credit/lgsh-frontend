@@ -40,6 +40,8 @@ const tabKeys = {
   tab4: 'tab4',
 };
 
+const DEFAULT_ANALYSIS_MONTH = '2026-01';
+
 const VARIABLE_LABELS: Record<string, string> = {
   // 필요시 한글 매핑을 여기에 추가하세요.
   // 예: "RES_WOE": "거주안정(woe)"
@@ -114,6 +116,7 @@ const getMissingColor = (rate?: number | null) => {
 
 const EdaAnalysisPage: React.FC = () => {
   const [activeKey, setActiveKey] = useState(tabKeys.summary);
+  const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs(`${DEFAULT_ANALYSIS_MONTH}-01`));
   const [loading, setLoading] = useState(false);
   const [correlation, setCorrelation] = useState<CreditCorrelationResult | null>(null);
   const [basicStats, setBasicStats] = useState<CreditBasicStatsResult | null>(null);
@@ -140,11 +143,14 @@ const EdaAnalysisPage: React.FC = () => {
   const [selectedVariable, setSelectedVariable] = useState<string | undefined>(undefined);
   const [outlierMethod, setOutlierMethod] = useState('Z-Score');
   const [outlierThreshold, setOutlierThreshold] = useState<number>(3);
+  const targetMonth = selectedMonth.format('YYYY-MM');
+  const targetMonthStartDate = selectedMonth.startOf('month').format('YYYY-MM-DD');
+  const targetMonthEndDate = selectedMonth.endOf('month').format('YYYY-MM-DD');
 
   const fetchCorrelation = async (selectedModelId?: string) => {
     setLoading(true);
     try {
-      const response = await creditService.analysis(selectedModelId);
+      const response = await creditService.analysis(selectedModelId, targetMonth);
       if (response.success && response.data) {
         setCorrelation(response.data);
       } else {
@@ -162,10 +168,10 @@ const EdaAnalysisPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if ((activeKey === tabKeys.summary || activeKey === tabKeys.correlation) && !correlation) {
+    if (activeKey === tabKeys.summary || activeKey === tabKeys.correlation) {
       fetchCorrelation();
     }
-  }, [activeKey, correlation]);
+  }, [activeKey, targetMonth]);
 
   const fetchBasicStats = async (page = statsPage, search = statsSearch) => {
     setBasicStatsLoading(true);
@@ -174,6 +180,7 @@ const EdaAnalysisPage: React.FC = () => {
         page,
         size: 10,
         search: search || undefined,
+        targetMonth,
       });
       if (response.success && response.data) {
         setBasicStats(response.data);
@@ -195,8 +202,9 @@ const EdaAnalysisPage: React.FC = () => {
     setMissingLoading(true);
     try {
       const response = await creditService.missingPatterns({
-        startDate: missingStartDate ? missingStartDate.format('YYYY-MM-DD') : undefined,
-        endDate: missingEndDate ? missingEndDate.format('YYYY-MM-DD') : undefined,
+        startDate: targetMonthStartDate,
+        endDate: targetMonthEndDate,
+        targetMonth,
       });
       if (response.success && response.data) {
         const payload = Array.isArray(response.data) ? response.data : [response.data];
@@ -223,7 +231,7 @@ const EdaAnalysisPage: React.FC = () => {
     if (variableLoading) return;
     setVariableLoading(true);
     try {
-      const response = await creditService.basicStats({ page: 1, size: 200 });
+      const response = await creditService.basicStats({ page: 1, size: 200, targetMonth });
       if (response.success && response.data?.variables) {
         const options = response.data.variables.map((variable) => ({
           label: variable.displayName || getDisplayLabel(variable.name),
@@ -256,6 +264,9 @@ const EdaAnalysisPage: React.FC = () => {
         variableSeq: selectedVariable,
         method: outlierMethod,
         threshold: outlierThreshold,
+        targetMonth,
+        startDate: targetMonthStartDate,
+        endDate: targetMonthEndDate,
       });
       if (response.success && response.data) {
         const payload = Array.isArray(response.data) ? response.data : [response.data];
@@ -284,27 +295,25 @@ const EdaAnalysisPage: React.FC = () => {
     if (activeKey === tabKeys.summary || activeKey === tabKeys.tab2) {
       fetchBasicStats(statsPage, statsSearch);
     }
-  }, [activeKey, statsPage, statsSearch]);
+  }, [activeKey, statsPage, statsSearch, targetMonth]);
 
   useEffect(() => {
     if (activeKey === tabKeys.summary || activeKey === tabKeys.tab3) {
-      if (missingItems.length === 0) {
-        fetchMissingPatterns();
-      }
+      fetchMissingPatterns();
     }
-  }, [activeKey, missingStartDate, missingEndDate]);
+  }, [activeKey, missingStartDate, missingEndDate, targetMonth]);
 
   useEffect(() => {
-    if ((activeKey === tabKeys.summary || activeKey === tabKeys.tab4) && variableOptions.length === 0) {
+    if (activeKey === tabKeys.summary || activeKey === tabKeys.tab4) {
       fetchVariableOptions();
     }
-  }, [activeKey, variableOptions.length]);
+  }, [activeKey, targetMonth]);
 
   useEffect(() => {
-    if ((activeKey === tabKeys.summary || activeKey === tabKeys.tab4) && selectedVariable && outlierItems.length === 0) {
+    if ((activeKey === tabKeys.summary || activeKey === tabKeys.tab4) && selectedVariable) {
       fetchOutliers();
     }
-  }, [activeKey, selectedVariable]);
+  }, [activeKey, selectedVariable, targetMonth]);
 
   const summaryCards = [
     { key: tabKeys.tab2, title: '기초통계 요약', position: 'summary-card top-left' },
@@ -1177,6 +1186,21 @@ const EdaAnalysisPage: React.FC = () => {
           데이터분석
         </Title>
         <Text type="secondary" style={{ fontSize: 13 }}>기초통계, 상관분석, 결측치, 이상치 탐지를 수행합니다.</Text>
+      </div>
+      <div className="analysis-month-filter">
+        <Text type="secondary">기준 월</Text>
+        <DatePicker
+          picker="month"
+          value={selectedMonth}
+          format="YYYY-MM"
+          allowClear={false}
+          onChange={(value) => {
+            if (value) setSelectedMonth(value.startOf('month'));
+          }}
+        />
+        <Button size="small" onClick={() => setSelectedMonth(dayjs(`${DEFAULT_ANALYSIS_MONTH}-01`))}>
+          2026-01
+        </Button>
       </div>
       <Tabs
         activeKey={activeKey}

@@ -282,6 +282,7 @@ export const rawDataService = {
       ApiResponse<{ registeredCount: number; linkedCount: number }>
     >(`${BASE_URL}/data/${uploadId}/register-persons`, null, {
       params: { companyId },
+      timeout: 900000,
     });
     return response.data.data!;
   },

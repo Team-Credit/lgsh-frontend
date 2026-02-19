@@ -86,6 +86,14 @@
   gap: 4px;
 }
 
+.analysis-month-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
 .correlation-meta {
   display: flex;
   flex-wrap: wrap;

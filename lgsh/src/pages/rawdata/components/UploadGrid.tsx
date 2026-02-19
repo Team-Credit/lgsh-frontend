@@ -426,8 +426,17 @@ const UploadGrid: React.FC<UploadGridProps> = ({
         `대상자 자동 등록 완료 (신규: ${result.registeredCount}명, 연결: ${result.linkedCount}명)`
       );
       fetchDataList();
-    } catch (error) {
-      message.error('대상자 자동 등록 실패');
+    } catch (error: any) {
+      const errorMessage = String(error?.message || '');
+      const isTimeout =
+        error?.code === 'ECONNABORTED' || errorMessage.includes('timeout');
+      if (isTimeout) {
+        message.error(
+          '대상자 자동 등록 요청이 시간 초과되었습니다. 잠시 후 다시 시도해 주세요.'
+        );
+      } else {
+        message.error('대상자 자동 등록 실패');
+      }
       console.error(error);
     }
   };

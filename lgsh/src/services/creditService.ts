@@ -117,6 +117,7 @@ const creditService = {
     fromMonth?: string;
     toMonth?: string;
     rawDataId?: string;
+    all?: boolean;
   }): Promise<ApiResponse<CreditCompletedMonths>> => {
     const response = await api.get<ApiResponse<CreditCompletedMonths>>('/credit/raw/completed-months', { params });
     return response.data;
@@ -134,9 +135,15 @@ const creditService = {
     const response = await api.get<ApiResponse<CreditDistributionResult>>('/credit/distribution', { params });
     return response.data;
   },
-  analysis: async (modelId?: string): Promise<ApiResponse<CreditCorrelationResult>> => {
+  analysis: async (
+    modelId?: string,
+    targetMonth?: string
+  ): Promise<ApiResponse<CreditCorrelationResult>> => {
     const response = await api.get<ApiResponse<CreditCorrelationResult>>('/analysis', {
-      params: modelId ? { modelId } : undefined,
+      params: {
+        ...(modelId ? { modelId } : {}),
+        ...(targetMonth ? { targetMonth } : {}),
+      },
     });
     return response.data;
   },
@@ -145,6 +152,7 @@ const creditService = {
     size?: number;
     search?: string;
     modelId?: string;
+    targetMonth?: string;
   }): Promise<ApiResponse<CreditBasicStatsResult>> => {
     const response = await api.get<ApiResponse<CreditBasicStatsResult>>('/analysis/basic-stats', {
       params,
@@ -155,6 +163,7 @@ const creditService = {
     variableSeq?: number | string;
     startDate?: string;
     endDate?: string;
+    targetMonth?: string;
   }): Promise<ApiResponse<CreditMissingPatternResult | CreditMissingPatternResult[]>> => {
     const variableSeq = params?.variableSeq ?? 0;
     const response = await api.get<ApiResponse<CreditMissingPatternResult | CreditMissingPatternResult[]>>(
@@ -163,6 +172,7 @@ const creditService = {
         params: {
           startDate: params?.startDate,
           endDate: params?.endDate,
+          targetMonth: params?.targetMonth,
         },
       }
     );
@@ -172,6 +182,9 @@ const creditService = {
     variableSeq: number | string;
     method: string;
     threshold: number;
+    targetMonth?: string;
+    startDate?: string;
+    endDate?: string;
   }): Promise<ApiResponse<CreditOutlierResult | CreditOutlierResult[]>> => {
     const response = await api.get<ApiResponse<CreditOutlierResult | CreditOutlierResult[]>>(
       `/analysis/outliers/${params.variableSeq}`,
@@ -179,6 +192,9 @@ const creditService = {
         params: {
           method: params.method,
           threshold: params.threshold,
+          targetMonth: params.targetMonth,
+          startDate: params.startDate,
+          endDate: params.endDate,
         },
       }
     );
