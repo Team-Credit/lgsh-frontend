@@ -2,6 +2,7 @@
  * 대시보드 상태 관리(Zustand)
  */
 import { create } from 'zustand';
+import axios from 'axios';
 import type {
   DashboardConfig,
   DashboardLayoutItem,
@@ -286,7 +287,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         isLoadingYearMonth: false,
       });
     } catch (error) {
-      console.error('마지막 평가 년월 로드 실패:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('마지막 평가 년월 로드 실패:', {
+          status: error.response?.status,
+          code: error.code,
+          url: error.config?.url,
+          message: error.message,
+          response: error.response?.data,
+        });
+      } else {
+        console.error('마지막 평가 년월 로드 실패:', error);
+      }
       // 실패 시 현재 월로 설정
       const currentMonth = new Date().toISOString().slice(0, 7).replace('-', '');
       set({

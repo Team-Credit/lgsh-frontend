@@ -96,6 +96,13 @@ const normalizeSnapshotMonth = (value?: string | null) => {
   return undefined;
 };
 
+const formatAvgScore = (value?: number | string | null): string => {
+  if (value === null || value === undefined) return '-';
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) return '-';
+  return num.toFixed(1);
+};
+
 const buildStatusQueryParams = (mb: MonthlyBatch) => {
   const rawDataId = mb.batchResult?.rawDataId ? String(mb.batchResult.rawDataId).trim() : '';
   if (rawDataId) {

@@ -2,6 +2,7 @@
  * 대시보드 API 서비스
  */
 import api from './api';
+import axios from 'axios';
 import type {
   Widget,
   DashboardConfig,
@@ -13,6 +14,14 @@ import type {
 } from '@/types/dashboard';
 
 const BASE_URL = '/dashboard';
+
+const YEAR_MONTH_RE = /^\d{6}$/;
+
+const normalizeYearMonth = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return YEAR_MONTH_RE.test(trimmed) ? trimmed : null;
+};
 
 export const dashboardService = {
   /**
@@ -107,8 +116,42 @@ export const dashboardService = {
    * - 가장 최근 평가가 이루어진 년월을 반환
    */
   async getLastEvalMonth(): Promise<string> {
-    const response = await api.get(`${BASE_URL}/last-eval-month`);
-    return response.data.data.lastEvalMonth;
+    try {
+      const response = await api.get(`${BASE_URL}/last-eval-month`);
+      const candidate =
+        normalizeYearMonth(response?.data?.data?.lastEvalMonth) ||
+        normalizeYearMonth(response?.data?.lastEvalMonth) ||
+        normalizeYearMonth(response?.data?.data);
+
+      if (candidate) {
+        return candidate;
+      }
+      throw new Error('Invalid lastEvalMonth response format');
+    } catch (primaryError) {
+      try {
+        // Fallback for environments where /last-eval-month is unavailable.
+        const bulk = await api.get(`${BASE_URL}/widgets/data/all`);
+        const all = bulk?.data?.data;
+        const candidate =
+          normalizeYearMonth(all?.WGT_STAT_EVAL_CNT?.data?.yearMonth) ||
+          normalizeYearMonth(all?.WGT_STAT_AVG_SCORE?.data?.yearMonth) ||
+          normalizeYearMonth(all?.WGT_STAT_EVAL_DIFF?.data?.yearMonth);
+
+        if (candidate) {
+          return candidate;
+        }
+      } catch {
+        // Ignore fallback error and rethrow enriched primary error below.
+      }
+
+      if (axios.isAxiosError(primaryError)) {
+        const status = primaryError.response?.status ?? 'NO_RESPONSE';
+        const url = primaryError.config?.url ?? `${BASE_URL}/last-eval-month`;
+        const code = primaryError.code ?? 'UNKNOWN';
+        throw new Error(`getLastEvalMonth failed (${status}, ${code}, ${url})`);
+      }
+      throw primaryError;
+    }
   },
 
   /**
