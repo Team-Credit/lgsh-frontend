@@ -76,10 +76,19 @@ export const personService = {
     return response.data;
   },
 
-  // 카드보드 목록 조회
+  // 카드보드 목록 조회 (OFFSET 방식 - fallback용)
   cardList: async (params: PersonCardSearchParams): Promise<ApiResponse<PersonCardListResponse>> => {
     const response = await api.get<ApiResponse<PersonCardListResponse>>(
       '/persons/card-list',
+      { params }
+    );
+    return response.data;
+  },
+
+  // 카드보드 목록 조회 (Keyset/Seek 방식 - 성능 개선)
+  cardListSeek: async (params: PersonCardSearchParams): Promise<ApiResponse<PersonCardListResponse>> => {
+    const response = await api.get<ApiResponse<PersonCardListResponse>>(
+      '/persons/card-list-seek',
       { params }
     );
     return response.data;

@@ -139,12 +139,18 @@ export interface PersonCardSearchParams {
   personGrp?: string;
   useYn?: string;
   creditGrade?: string;
+  // Keyset(Seek) 커서 파라미터 (card-list-seek 전용)
+  cursorScore?: number;      // 직전 페이지 마지막 행 creditScore
+  cursorScoreDt?: string;    // 직전 페이지 마지막 행 scoreDt (ISO string)
+  cursorRegDt?: string;      // 직전 페이지 마지막 행 regDt (RECENT 정렬용)
+  cursorPersonId?: string;   // 직전 페이지 마지막 행 personId (tie-breaker)
+  needTotal?: 'Y' | 'N';    // 'Y': total count 계산 (초기 로드/검색 변경 시만)
 }
 
 // 카드보드 목록 응답
 export interface PersonCardListResponse {
   content: PersonCardItem[];
-  totalCount: number;
+  totalCount: number;  // needTotal='N'이면 0 (프론트에서 캐싱 값 사용)
   page: number;
   size: number;
   totalPages: number;
