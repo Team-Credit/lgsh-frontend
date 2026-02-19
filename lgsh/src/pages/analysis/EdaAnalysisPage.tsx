@@ -92,6 +92,14 @@ const toPercent = (value?: number | null) => {
   return Math.max(0, Math.min(100, Number(normalized)));
 };
 
+const formatNumber = (value: number | null | undefined, fractionDigits = 0) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
+  return Number(value).toLocaleString('en-US', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+};
+
 const getMissingStatus = (rate?: number | null) => {
   const percent = toPercent(rate);
   if (percent >= 20) return { label: '위험', color: 'red' };
@@ -114,6 +122,45 @@ const getMissingColor = (rate?: number | null) => {
   }
 };
 
+const extractVariableOptions = (payload: any): { label: string; value: string }[] => {
+  const list =
+    payload?.variables ??
+    payload?.items ??
+    payload?.list ??
+    payload?.rows ??
+    payload?.data?.variables ??
+    payload?.data?.items ??
+    payload?.data?.list ??
+    payload?.data?.rows ??
+    [];
+
+  if (!Array.isArray(list)) return [];
+
+  const mapped = list
+    .map((item: any) => {
+      const rawValue =
+        item?.name ??
+        item?.variableName ??
+        item?.variableNm ??
+        item?.variable_nm ??
+        item?.variableSeq ??
+        item?.variable_seq;
+      if (rawValue === null || rawValue === undefined || rawValue === '') return null;
+      const value = String(rawValue);
+      const label = String(
+        item?.displayName ?? item?.display_name ?? item?.label ?? getDisplayLabel(value)
+      );
+      return { label, value };
+    })
+    .filter(Boolean) as { label: string; value: string }[];
+
+  const unique = new Map<string, { label: string; value: string }>();
+  mapped.forEach((option) => {
+    if (!unique.has(option.value)) unique.set(option.value, option);
+  });
+  return Array.from(unique.values());
+};
+
 const EdaAnalysisPage: React.FC = () => {
   const [activeKey, setActiveKey] = useState(tabKeys.summary);
   const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs(`${DEFAULT_ANALYSIS_MONTH}-01`));
@@ -129,10 +176,6 @@ const EdaAnalysisPage: React.FC = () => {
   const [downloading, setDownloading] = useState(false);
   const [missingLoading, setMissingLoading] = useState(false);
   const [missingItems, setMissingItems] = useState<CreditMissingPatternItem[]>([]);
-  const [missingStartDate, setMissingStartDate] = useState<Dayjs | null>(
-    dayjs().subtract(1, 'month')
-  );
-  const [missingEndDate, setMissingEndDate] = useState<Dayjs | null>(dayjs());
   const [outlierLoading, setOutlierLoading] = useState(false);
   const [outlierItems, setOutlierItems] = useState<CreditOutlierItem[]>([]);
   const [outlierSummary, setOutlierSummary] = useState<CreditOutlierResult['summary']>(null);
@@ -232,15 +275,49 @@ const EdaAnalysisPage: React.FC = () => {
     setVariableLoading(true);
     try {
       const response = await creditService.basicStats({ page: 1, size: 200, targetMonth });
-      if (response.success && response.data?.variables) {
-        const options = response.data.variables.map((variable) => ({
-          label: variable.displayName || getDisplayLabel(variable.name),
-          value: variable.name,
-        }));
-        setVariableOptions(options);
-        if (!selectedVariable && options.length > 0) {
-          setSelectedVariable(options[0].value);
+      let options: { label: string; value: string }[] = [];
+
+      if (response.success && response.data) {
+        options = extractVariableOptions(response.data);
+      }
+
+      if (options.length === 0) {
+        const analysisResponse = await creditService.analysis(undefined, targetMonth);
+        if (analysisResponse.success && Array.isArray(analysisResponse.data?.variables)) {
+          options = analysisResponse.data.variables.map((name) => ({
+            label: getDisplayLabel(name),
+            value: name,
+          }));
         }
+      }
+
+      if (options.length === 0) {
+        const missingResponse = await creditService.missingPatterns({
+          startDate: targetMonthStartDate,
+          endDate: targetMonthEndDate,
+          targetMonth,
+        });
+        if (missingResponse.success && missingResponse.data) {
+          const payload = Array.isArray(missingResponse.data)
+            ? missingResponse.data
+            : [missingResponse.data];
+          const names = payload
+            .flatMap((entry: any) => entry?.items || entry?.list || entry?.rows || entry || [])
+            .map((item: any) => item?.variableName ?? item?.variableNm ?? item?.variable_nm)
+            .filter((name: any) => typeof name === 'string' && name.length > 0);
+          const uniqueNames = Array.from(new Set(names));
+          options = uniqueNames.map((name) => ({
+            label: getDisplayLabel(name),
+            value: name,
+          }));
+        }
+      }
+
+      setVariableOptions(options);
+      if (options.length === 0) {
+        setSelectedVariable(undefined);
+      } else if (!selectedVariable || !options.some((option) => option.value === selectedVariable)) {
+        setSelectedVariable(options[0].value);
       }
     } catch (error: any) {
       message.error(
@@ -301,7 +378,7 @@ const EdaAnalysisPage: React.FC = () => {
     if (activeKey === tabKeys.summary || activeKey === tabKeys.tab3) {
       fetchMissingPatterns();
     }
-  }, [activeKey, missingStartDate, missingEndDate, targetMonth]);
+  }, [activeKey, targetMonth]);
 
   useEffect(() => {
     if (activeKey === tabKeys.summary || activeKey === tabKeys.tab4) {
@@ -443,46 +520,48 @@ const EdaAnalysisPage: React.FC = () => {
       dataIndex: 'count',
       key: 'count',
       width: 110,
+      align: 'right' as const,
+      render: (value: number | null | undefined) => formatNumber(value, 0),
     },
     {
       title: '평균',
       dataIndex: 'mean',
       key: 'mean',
       width: 110,
-      render: (value: number | null | undefined) =>
-        value === null || value === undefined ? '-' : value.toFixed(4),
+      align: 'right' as const,
+      render: (value: number | null | undefined) => formatNumber(value, 4),
     },
     {
       title: '중앙값',
       dataIndex: 'median',
       key: 'median',
       width: 110,
-      render: (value: number | null | undefined) =>
-        value === null || value === undefined ? '-' : value.toFixed(4),
+      align: 'right' as const,
+      render: (value: number | null | undefined) => formatNumber(value, 4),
     },
     {
       title: '최소',
       dataIndex: 'min',
       key: 'min',
       width: 110,
-      render: (value: number | null | undefined) =>
-        value === null || value === undefined ? '-' : value.toFixed(4),
+      align: 'right' as const,
+      render: (value: number | null | undefined) => formatNumber(value, 4),
     },
     {
       title: '최대',
       dataIndex: 'max',
       key: 'max',
       width: 110,
-      render: (value: number | null | undefined) =>
-        value === null || value === undefined ? '-' : value.toFixed(4),
+      align: 'right' as const,
+      render: (value: number | null | undefined) => formatNumber(value, 4),
     },
     {
       title: '표준편차',
       dataIndex: 'stddev',
       key: 'stddev',
       width: 110,
-      render: (value: number | null | undefined) =>
-        value === null || value === undefined ? '-' : value.toFixed(4),
+      align: 'right' as const,
+      render: (value: number | null | undefined) => formatNumber(value, 4),
     },
   ];
 
@@ -740,10 +819,9 @@ const EdaAnalysisPage: React.FC = () => {
                       <span className="metric-value">{missingItems.length || '-'}</span>
                     </div>
                     <div>
-                      <span className="metric-label">기간</span>
+                      <span className="metric-label">기준월</span>
                       <span className="metric-value">
-                        {missingStartDate?.format('YY.MM.DD') || '-'} ~{' '}
-                        {missingEndDate?.format('YY.MM.DD') || '-'}
+                        {targetMonth}
                       </span>
                     </div>
                   </div>
@@ -1033,34 +1111,6 @@ const EdaAnalysisPage: React.FC = () => {
               <Tag color="blue">EDA_003</Tag>
               <Tag color="default">결측치 패턴</Tag>
             </div>
-
-            <Card className="pvalue-card" title="조회 조건">
-              <div className="filter-row">
-                <div className="filter-item">
-                  <Text type="secondary">시작일</Text>
-                  <DatePicker
-                    value={missingStartDate}
-                    onChange={(value) => setMissingStartDate(value)}
-                    placeholder="시작일"
-                    className="filter-input"
-                  />
-                </div>
-                <div className="filter-item">
-                  <Text type="secondary">종료일</Text>
-                  <DatePicker
-                    value={missingEndDate}
-                    onChange={(value) => setMissingEndDate(value)}
-                    placeholder="종료일"
-                    className="filter-input"
-                  />
-                </div>
-                <div className="filter-actions">
-                  <Button type="primary" onClick={fetchMissingPatterns}>
-                    조회
-                  </Button>
-                </div>
-              </div>
-            </Card>
 
             <Card className="pvalue-card" title="변수별 결측치 현황">
               <Table<CreditMissingPatternItem>

@@ -20,6 +20,12 @@
   width: 100%;
 }
 
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .filter-button {
   width: 100%;
 }

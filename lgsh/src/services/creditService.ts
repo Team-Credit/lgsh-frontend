@@ -143,6 +143,7 @@ const creditService = {
       params: {
         ...(modelId ? { modelId } : {}),
         ...(targetMonth ? { targetMonth } : {}),
+        ...(targetMonth ? { snapshotMonth: targetMonth } : {}),
       },
     });
     return response.data;
@@ -153,9 +154,13 @@ const creditService = {
     search?: string;
     modelId?: string;
     targetMonth?: string;
+    snapshotMonth?: string;
   }): Promise<ApiResponse<CreditBasicStatsResult>> => {
     const response = await api.get<ApiResponse<CreditBasicStatsResult>>('/analysis/basic-stats', {
-      params,
+      params: {
+        ...params,
+        snapshotMonth: params?.snapshotMonth ?? params?.targetMonth,
+      },
     });
     return response.data;
   },
@@ -164,6 +169,7 @@ const creditService = {
     startDate?: string;
     endDate?: string;
     targetMonth?: string;
+    snapshotMonth?: string;
   }): Promise<ApiResponse<CreditMissingPatternResult | CreditMissingPatternResult[]>> => {
     const variableSeq = params?.variableSeq ?? 0;
     const response = await api.get<ApiResponse<CreditMissingPatternResult | CreditMissingPatternResult[]>>(
@@ -173,6 +179,7 @@ const creditService = {
           startDate: params?.startDate,
           endDate: params?.endDate,
           targetMonth: params?.targetMonth,
+          snapshotMonth: params?.snapshotMonth ?? params?.targetMonth,
         },
       }
     );
@@ -183,6 +190,7 @@ const creditService = {
     method: string;
     threshold: number;
     targetMonth?: string;
+    snapshotMonth?: string;
     startDate?: string;
     endDate?: string;
   }): Promise<ApiResponse<CreditOutlierResult | CreditOutlierResult[]>> => {
@@ -193,6 +201,7 @@ const creditService = {
           method: params.method,
           threshold: params.threshold,
           targetMonth: params.targetMonth,
+          snapshotMonth: params.snapshotMonth ?? params.targetMonth,
           startDate: params.startDate,
           endDate: params.endDate,
         },

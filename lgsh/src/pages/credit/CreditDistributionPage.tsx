@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Typography, DatePicker, Select, Button, Row, Col, Spin, Tag, message } from 'antd';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import { Card, Typography, DatePicker, Select, Button, Row, Col, Spin, Tag, message, Empty } from 'antd';
 import { BarChartOutlined } from '@ant-design/icons';
 import { Bar } from 'react-chartjs-2';
 import {
@@ -11,7 +11,7 @@ import {
   Legend,
 } from 'chart.js';
 import type { ChartOptions } from 'chart.js';
-import dayjs, { Dayjs } from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import { creditService } from '@/services';
 import type { CreditDistributionResult } from '@/types';
 import './CreditDistributionPage.css';
@@ -26,6 +26,11 @@ const gradeColorMap: Record<string, string> = {
   C: '#facc15',
   D: '#f97316',
   E: '#ef4444',
+};
+
+const emptyDistribution: CreditDistributionResult = {
+  gradeCounts: { A: 0, B: 0, C: 0, D: 0, E: 0 },
+  stats: { average: 0, median: 0, max: 0, min: 0, stddev: 0 },
 };
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -49,6 +54,10 @@ const CreditDistributionPage: React.FC = () => {
   };
 
   const gradeCounts = data?.gradeCounts || {};
+  const totalCount = useMemo(
+    () => gradeLabels.reduce((sum, grade) => sum + Number(gradeCounts[grade] || 0), 0),
+    [gradeCounts]
+  );
 
   const chartConfig = useMemo(() => {
     const values = gradeLabels.map((grade) => Number(gradeCounts[grade] || 0));
@@ -56,6 +65,7 @@ const CreditDistributionPage: React.FC = () => {
     const total = values.reduce((sum, value) => sum + value, 0);
     const axisColor = isDark ? '#e5e7eb' : '#0f172a';
     const axisSubColor = isDark ? '#e5e7eb' : '#475569';
+
     const options: ChartOptions<'bar'> = {
       responsive: true,
       maintainAspectRatio: false,
@@ -63,7 +73,7 @@ const CreditDistributionPage: React.FC = () => {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            title: (items: any[]) => `${gradeLabels[items[0].dataIndex]} 등급`,
+            title: (items: any[]) => `${gradeLabels[items[0].dataIndex]}등급`,
             label: (ctx: any) => {
               const count = ctx.parsed.y ?? 0;
               const percent = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
@@ -96,6 +106,7 @@ const CreditDistributionPage: React.FC = () => {
         },
       },
     };
+
     return {
       data: {
         labels: gradeLabels,
@@ -123,16 +134,44 @@ const CreditDistributionPage: React.FC = () => {
         params.startMonth = start.format('YYMM');
         params.endMonth = end.format('YYMM');
       }
+
       const response = await creditService.distribution(
         Object.keys(params).length > 0 ? params : undefined
       );
+
       if (response.success && response.data) {
         setData(response.data);
+        const fetchedTotal = gradeLabels.reduce(
+          (sum, grade) => sum + Number(response.data?.gradeCounts?.[grade] || 0),
+          0
+        );
+        if (fetchedTotal === 0) {
+          message.info('조회할 데이터가 없습니다.');
+        }
       } else {
-        message.error(response.message || '점수 분포 조회에 실패했습니다.');
+        setData(emptyDistribution);
+        message.info('조회할 데이터가 없습니다.');
       }
     } catch (error: any) {
-      message.error(error?.response?.data?.message || error?.message || '점수 분포 조회 중 오류가 발생했습니다.');
+      const status = error?.response?.status;
+      const code = error?.code;
+      const msg = String(error?.message || '');
+      const isTimeout =
+        code === 'ECONNABORTED' ||
+        status === 408 ||
+        status === 504 ||
+        msg.toLowerCase().includes('timeout');
+
+      if (isTimeout) {
+        setData(emptyDistribution);
+        message.info('조회할 데이터가 없습니다.');
+      } else {
+        message.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            '점수 분포 조회 중 오류가 발생했습니다.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -155,7 +194,7 @@ const CreditDistributionPage: React.FC = () => {
     const observer = new MutationObserver(() => {
       setIsDark(
         target.getAttribute('data-theme') === 'dark' ||
-          target.classList.contains('dark')
+        target.classList.contains('dark')
       );
     });
     observer.observe(target, { attributes: true, attributeFilter: ['data-theme', 'class'] });
@@ -175,28 +214,40 @@ const CreditDistributionPage: React.FC = () => {
       <Card className="filter-card" title="조회 조건">
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={6}>
-            <DatePicker
-              className="filter-input"
-              placeholder="시작월"
-              picker="month"
-              value={startMonth}
-              onChange={(val) => setStartMonth(val)}
-            />
+            <div className="filter-field">
+              <Text type="secondary">시작 월</Text>
+              <DatePicker
+                className="filter-input"
+                placeholder="시작 월"
+                picker="month"
+                value={startMonth}
+                onChange={(val) => setStartMonth(val)}
+              />
+            </div>
           </Col>
           <Col xs={24} md={6}>
-            <DatePicker
-              className="filter-input"
-              placeholder="종료월"
-              picker="month"
-              value={endMonth}
-              onChange={(val) => setEndMonth(val)}
-            />
+            <div className="filter-field">
+              <Text type="secondary">종료 월</Text>
+              <DatePicker
+                className="filter-input"
+                placeholder="종료 월"
+                picker="month"
+                value={endMonth}
+                onChange={(val) => setEndMonth(val)}
+              />
+            </div>
           </Col>
           <Col xs={24} md={6}>
-            <Select className="filter-input" placeholder="그룹 전체" disabled options={[{ value: 'all', label: '그룹 전체' }]} />
+            <div className="filter-field">
+              <Text type="secondary">그룹</Text>
+              <Select className="filter-input" placeholder="그룹 전체" disabled options={[{ value: 'all', label: '그룹 전체' }]} />
+            </div>
           </Col>
           <Col xs={24} md={4}>
-            <Select className="filter-input" placeholder="직업 전체" disabled options={[{ value: 'all', label: '직업 전체' }]} />
+            <div className="filter-field">
+              <Text type="secondary">직업</Text>
+              <Select className="filter-input" placeholder="직업 전체" disabled options={[{ value: 'all', label: '직업 전체' }]} />
+            </div>
           </Col>
           <Col xs={24} md={2}>
             <Button type="primary" className="filter-button" onClick={handleSearch} loading={loading}>
@@ -240,27 +291,33 @@ const CreditDistributionPage: React.FC = () => {
           </Col>
         </Row>
 
-        <Card className="chart-card" title={
-          <span>
-            점수 분포 (등급 기준)
-            {data?.algorithmType && (
-              <Tag color="blue" style={{ marginLeft: 8 }}>
-                {data.algorithmType}
-              </Tag>
-            )}
-            {data?.modelNm && (
-              <span style={{ fontSize: 13, fontWeight: 400, color: '#888', marginLeft: 4 }}>
-                {data.modelNm}
-              </span>
-            )}
-          </span>
-        }>
+        <Card
+          className="chart-card"
+          title={
+            <span>
+              점수 분포 (등급 기준)
+              {data?.algorithmType && (
+                <Tag color="blue" style={{ marginLeft: 8 }}>
+                  {data.algorithmType}
+                </Tag>
+              )}
+              {data?.modelNm && (
+                <span style={{ fontSize: 13, fontWeight: 400, color: '#888', marginLeft: 4 }}>
+                  {data.modelNm}
+                </span>
+              )}
+            </span>
+          }
+        >
           <div className="distribution-chart">
-            <Bar
-              key={isDark ? 'dark' : 'light'}
-              data={chartConfig.data}
-              options={chartConfig.options}
-            />
+            {totalCount > 0 ? (
+              <Bar key={isDark ? 'dark' : 'light'} data={chartConfig.data} options={chartConfig.options} />
+            ) : (
+              <Empty
+                description="조회할 데이터가 없습니다."
+                style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+              />
+            )}
           </div>
         </Card>
       </Spin>
