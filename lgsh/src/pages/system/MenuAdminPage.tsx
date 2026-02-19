@@ -315,10 +315,37 @@ const MenuAdminPage: React.FC = () => {
   };
 
   const handleDrop: TreeProps['onDrop'] = async (info) => {
+    // 부모 노드 내부로 드롭(dropToGap=false)은 허용하지 않음
+    // → 같은 부모 아래 순서 변경만 지원 (레벨/사이클 오류 방지)
+    if (!info.dropToGap) {
+      message.warning('같은 레벨 내에서만 순서를 변경할 수 있습니다.');
+      return;
+    }
+
     const dragKey = String(info.dragNode.key);
     const dropKey = String(info.node.key);
     const dropPos = info.node.pos.split('-');
     const dropPosition = info.dropPosition - Number(dropPos[dropPos.length - 1]);
+
+    // 드래그 노드와 드롭 대상의 부모가 같은지 확인 (같은 레벨만 허용)
+    const findParentId = (items: MenuItem[], targetId: string, parentId: string | null): string | null | undefined => {
+      for (const item of items) {
+        if (item.menuId === targetId) return parentId;
+        if (item.children && item.children.length > 0) {
+          const found = findParentId(item.children, targetId, item.menuId);
+          if (found !== undefined) return found;
+        }
+      }
+      return undefined;
+    };
+
+    const dragParent = findParentId(treeData, dragKey, null);
+    const dropParent = findParentId(treeData, dropKey, null);
+
+    if (dragParent !== dropParent) {
+      message.warning('같은 레벨 내에서만 순서를 변경할 수 있습니다.');
+      return;
+    }
 
     const data = JSON.parse(JSON.stringify(treeData)) as MenuItem[];
     let dragObj: MenuItem | null = null;
@@ -348,27 +375,22 @@ const MenuAdminPage: React.FC = () => {
       return;
     }
 
-    if (!info.dropToGap) {
-      loop(data, dropKey, (item) => {
-        item.children = item.children || [];
-        item.children.unshift(dragObj as MenuItem);
-      });
+    // dropToGap=true: 같은 레벨 내 위치 조정
+    let targetList: MenuItem[] = [];
+    let targetIndex = 0;
+    loop(data, dropKey, (_, index, list) => {
+      targetList = list;
+      targetIndex = index;
+    });
+    if (dropPosition === -1) {
+      targetList.splice(targetIndex, 0, dragObj);
     } else {
-      let targetList: MenuItem[] = [];
-      let targetIndex = 0;
-      loop(data, dropKey, (_, index, list) => {
-        targetList = list;
-        targetIndex = index;
-      });
-      if (dropPosition === -1) {
-        targetList.splice(targetIndex, 0, dragObj);
-      } else {
-        targetList.splice(targetIndex + 1, 0, dragObj);
-      }
+      targetList.splice(targetIndex + 1, 0, dragObj);
     }
 
     setTreeData(data);
 
+    // 변경된 형제 목록만 추출하여 서버로 전송 (전체 트리 전송 불필요)
     const orders: { menuId: string; parentMenuId: string | null; sortOrder: number }[] = [];
     const buildOrders = (items: MenuItem[], parentId: string | null) => {
       items.forEach((menu, index) => {
@@ -428,6 +450,11 @@ const MenuAdminPage: React.FC = () => {
             selectedKeys={selectedId ? [selectedId] : []}
             onSelect={handleSelect}
             draggable
+            allowDrop={({ dropNode, dropPosition }) => {
+              // dropPosition: -1(위), 0(내부), 1(아래) → 0(내부 삽입)은 허용하지 않음
+              if (dropPosition === 0) return false;
+              return true;
+            }}
             onDrop={handleDrop}
           />
         </Card>
