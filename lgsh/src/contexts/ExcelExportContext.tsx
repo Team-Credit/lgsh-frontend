@@ -116,24 +116,42 @@ export const ExcelExportProvider: React.FC<ExcelExportProviderProps> = ({ childr
     handler: ExportHandler
   ): Promise<any[]> => {
     // fetchDataByPage가 있으면 배치 방식 사용
-    if (handler.fetchDataByPage && handler.totalCount > BATCH_SIZE) {
+    if (handler.fetchDataByPage) {
       const allData: any[] = [];
-      const totalPages = Math.ceil(handler.totalCount / BATCH_SIZE);
+      const hasKnownTotal = handler.totalCount > 0;
+      const totalPages = hasKnownTotal ? Math.ceil(handler.totalCount / BATCH_SIZE) : null;
+      const maxPages = Math.ceil(MAX_EXPORT_LIMIT / BATCH_SIZE) + 1;
 
-      for (let page = 0; page < totalPages; page++) {
+      for (let page = 0; page < maxPages; page++) {
         message.loading({
-          content: `데이터 조회 중... (${page + 1}/${totalPages})`,
+          content: totalPages
+            ? `데이터 조회 중... (${page + 1}/${totalPages})`
+            : `데이터 조회 중... (${page + 1})`,
           key: 'excel-batch-loading',
           duration: 0,
         });
 
         const pageData = await handler.fetchDataByPage(page, BATCH_SIZE);
+        if (!pageData || pageData.length === 0) {
+          break;
+        }
+
         allData.push(...pageData);
 
-        // 메모리 관리를 위한 짧은 딜레이
-        if (page < totalPages - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+        if (allData.length >= MAX_EXPORT_LIMIT) {
+          allData.length = MAX_EXPORT_LIMIT;
+          break;
         }
+
+        if (pageData.length < BATCH_SIZE) {
+          break;
+        }
+
+        if (hasKnownTotal && allData.length >= handler.totalCount) {
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       message.destroy('excel-batch-loading');

@@ -90,8 +90,24 @@ const CreditEvaluationTargetPage: React.FC = () => {
     setLoading(true);
     try {
       const searchValues = searchForm.getFieldsValue();
+      const { personId: _personId, ...restSearchValues } = searchValues;
+      const personId = (searchValues.personId || '').trim();
+      let personNo = (searchValues.personNo || '').trim();
+
+      if (personId) {
+        const personResponse = await personService.get(personId);
+        if (!personResponse.success || !personResponse.data?.personNo) {
+          setDataSource([]);
+          setTotal(0);
+          message.info('입력한 대상자ID를 찾을 수 없습니다.');
+          return;
+        }
+        personNo = personResponse.data.personNo;
+      }
+
       const commonParams = {
-        ...searchValues,
+        ...restSearchValues,
+        personNo: personNo || undefined,
         companyId: userCompanyId || searchValues.companyId,
         size: currentSize,
       };
@@ -204,6 +220,9 @@ const CreditEvaluationTargetPage: React.FC = () => {
       {/* 조회조건 */}
       <Card className="search-card" size="small">
         <Form form={searchForm} layout="inline" initialValues={{ sortBy: 'SCORE_DESC' }}>
+          <Form.Item name="personId" label="대상자ID">
+            <Input placeholder="대상자ID" style={{ width: 150 }} />
+          </Form.Item>
           <Form.Item name="personNo" label="대상자번호">
             <Input placeholder="대상자번호" style={{ width: 150 }} />
           </Form.Item>

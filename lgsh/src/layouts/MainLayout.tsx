@@ -6,7 +6,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Button, Dropdown, Avatar, Badge, Tooltip, Spin, Slider, Popover, message } from 'antd';
+import { Layout, Menu, Button, Dropdown, Avatar, Badge, Tooltip, Spin, Slider, Popover, message, Modal } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   MenuFoldOutlined,
@@ -264,6 +264,18 @@ const MainLayout: React.FC = () => {
   const [alertLoading, setAlertLoading] = useState(false);
   const [hideReadAlerts, setHideReadAlerts] = useState(false);  // 읽은 알림 숨기기
   const [alertPopoverOpen, setAlertPopoverOpen] = useState(false);
+
+  // 이전 페이지에서 남은 정적 모달(Modal.confirm 등) 오버레이를 정리한다.
+  useEffect(() => {
+    Modal.destroyAll();
+  }, []);
+
+  // 화면 전환/사용자 전환 시 열린 팝오버/컨텍스트 메뉴를 닫아 UI 잠김을 방지한다.
+  useEffect(() => {
+    setContextMenuOpen(false);
+    setFavContextMenuOpen(false);
+    setAlertPopoverOpen(false);
+  }, [location.pathname, user?.userId]);
 
   // 알림 목록 조회 (Popover 열 때만 호출)
   const fetchAlerts = useCallback(async (hideRead?: boolean) => {

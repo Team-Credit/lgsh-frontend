@@ -314,19 +314,24 @@ const PersonPage: React.FC = () => {
   ], []);
 
   // 전체 데이터 조회 함수 (엑셀용)
-  const fetchAllDataForExcel = useCallback(async (): Promise<PersonFull[]> => {
+  const fetchDataByPageForExcel = useCallback(async (page: number, size: number): Promise<PersonFull[]> => {
     const searchValues = searchForm.getFieldsValue();
     const response = await personService.list({
-      page: 0,
-      size: 50000,
+      page,
+      size,
       ...searchValues,
       companyId: userCompanyId || searchValues.companyId,
+      personGrp: searchGrpCode || undefined,
     });
     if (response.success && response.data) {
       return response.data.content;
     }
     return [];
-  }, [searchForm, userCompanyId]);
+  }, [searchForm, userCompanyId, searchGrpCode]);
+
+  const fetchAllDataForExcel = useCallback(async (): Promise<PersonFull[]> => {
+    return fetchDataByPageForExcel(0, 50000);
+  }, [fetchDataByPageForExcel]);
 
   // 핸들러 등록/해제
   useEffect(() => {
@@ -334,13 +339,14 @@ const PersonPage: React.FC = () => {
       sheetName: '대상자목록',
       totalCount: total,
       fetchAllData: fetchAllDataForExcel,
+      fetchDataByPage: fetchDataByPageForExcel,
       columns: excelColumns,
     });
 
     return () => {
       unregisterExportHandler('person');
     };
-  }, [registerExportHandler, unregisterExportHandler, total, fetchAllDataForExcel, excelColumns]);
+  }, [registerExportHandler, unregisterExportHandler, total, fetchAllDataForExcel, fetchDataByPageForExcel, excelColumns]);
 
   // 검색
   const handleSearch = () => {
