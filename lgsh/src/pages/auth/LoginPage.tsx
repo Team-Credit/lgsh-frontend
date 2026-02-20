@@ -127,13 +127,13 @@ const LoginPage: React.FC = () => {
 
     // 아이디 저장
     if (rememberMe) {
-      localStorage.setItem('lgsh_remember_userId', userId);
+      localStorage.setItem('lgsh_remember_userId', userId.trim());
     } else {
       localStorage.removeItem('lgsh_remember_userId');
     }
 
-    // 로그인 요청
-    const result = await dispatch(loginAsync({ userId, password }));
+    // 로그인 요청 (userId trim 처리: trailing space 방지)
+    const result = await dispatch(loginAsync({ userId: userId.trim(), password }));
 
     if (loginAsync.fulfilled.match(result)) {
       navigate('/dashboard', { replace: true });
