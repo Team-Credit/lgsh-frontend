@@ -263,19 +263,36 @@ const CompanyPage: React.FC = () => {
     return [];
   }, [searchForm]);
 
+  // 페이지별 데이터 조회 (엑셀 배치 다운로드용, 5만건 초과 시)
+  const fetchDataByPage = useCallback(async (page: number, size: number): Promise<Company[]> => {
+    const searchValues = searchForm.getFieldsValue();
+    const response = await companyService.list({
+      page,
+      size,
+      keyword: searchValues.keyword,
+      companyType: searchValues.companyType,
+      contractStatus: searchValues.contractStatus,
+    });
+    if (response.success && response.data) {
+      return response.data.content;
+    }
+    return [];
+  }, [searchForm]);
+
   // 핸들러 등록/해제
   useEffect(() => {
     registerExportHandler('company', {
       sheetName: '원청사목록',
       totalCount: total,
       fetchAllData: fetchAllDataForExcel,
+      fetchDataByPage: fetchDataByPage,
       columns: excelColumns,
     });
 
     return () => {
       unregisterExportHandler('company');
     };
-  }, [registerExportHandler, unregisterExportHandler, total, fetchAllDataForExcel, excelColumns]);
+  }, [registerExportHandler, unregisterExportHandler, total, fetchAllDataForExcel, fetchDataByPage, excelColumns]);
 
   // 검색
   const handleSearch = () => {

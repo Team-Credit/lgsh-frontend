@@ -328,19 +328,35 @@ const PersonPage: React.FC = () => {
     return [];
   }, [searchForm, userCompanyId]);
 
+  // 페이지별 데이터 조회 (엑셀 배치 다운로드용, 5만건 초과 시)
+  const fetchDataByPage = useCallback(async (page: number, size: number): Promise<PersonFull[]> => {
+    const searchValues = searchForm.getFieldsValue();
+    const response = await personService.list({
+      page,
+      size,
+      ...searchValues,
+      companyId: userCompanyId || searchValues.companyId,
+    });
+    if (response.success && response.data) {
+      return response.data.content;
+    }
+    return [];
+  }, [searchForm, userCompanyId]);
+
   // 핸들러 등록/해제
   useEffect(() => {
     registerExportHandler('person', {
       sheetName: '대상자목록',
       totalCount: total,
       fetchAllData: fetchAllDataForExcel,
+      fetchDataByPage: fetchDataByPage,
       columns: excelColumns,
     });
 
     return () => {
       unregisterExportHandler('person');
     };
-  }, [registerExportHandler, unregisterExportHandler, total, fetchAllDataForExcel, excelColumns]);
+  }, [registerExportHandler, unregisterExportHandler, total, fetchAllDataForExcel, fetchDataByPage, excelColumns]);
 
   // 검색
   const handleSearch = () => {

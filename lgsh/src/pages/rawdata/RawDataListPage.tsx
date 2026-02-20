@@ -865,12 +865,26 @@ const RawDataListPage: React.FC = () => {
     return response.data || [];
   }, [searchParams, user?.companyId]);
 
+  // 페이지별 데이터 조회 (엑셀 배치 다운로드용, 5만건 초과 시)
+  const fetchDataByPage = useCallback(async (page: number, size: number): Promise<RawDataListItem[]> => {
+    const params: RawDataListSearchParams = {
+      ...searchParams,
+      companyId: user?.companyId,
+      page,
+      size,
+    };
+
+    const response = await rawDataListService.getListForExport(params);
+    return response.data || [];
+  }, [searchParams, user?.companyId]);
+
   // 엑셀 내보내기 핸들러 등록
   useEffect(() => {
     registerExportHandler('rawDataList', {
       sheetName: '기초데이터목록',
       totalCount: total,
       fetchAllData: fetchAllDataForExcel,
+      fetchDataByPage: fetchDataByPage,
       columns: excelColumns,
     });
 
@@ -882,6 +896,7 @@ const RawDataListPage: React.FC = () => {
     unregisterExportHandler,
     total,
     fetchAllDataForExcel,
+    fetchDataByPage,
     excelColumns,
   ]);
 
