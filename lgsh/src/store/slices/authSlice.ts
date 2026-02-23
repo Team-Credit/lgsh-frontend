@@ -51,8 +51,25 @@ export const login = createAsyncThunk(
       }
       return rejectWithValue(response.message || '로그인에 실패했습니다.');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(err.response?.data?.message || '로그인에 실패했습니다.');
+      const err = error as {
+        code?: string;
+        message?: string;
+        response?: { data?: { message?: string } };
+      };
+
+      if (err.response?.data?.message) {
+        return rejectWithValue(err.response.data.message);
+      }
+
+      if (err.code === 'ECONNABORTED' || err.message?.toLowerCase().includes('timeout')) {
+        return rejectWithValue('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');
+      }
+
+      if (!err.response) {
+        return rejectWithValue('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      }
+
+      return rejectWithValue('로그인에 실패했습니다.');
     }
   }
 );

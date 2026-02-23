@@ -19,6 +19,7 @@ const TEST_ACCOUNTS = [
   { userId: 'user01', role: '일반사용자', password: 'password123!' },
   { userId: 'analyst', role: '분석가', password: 'password123!' },
 ];
+const USE_MOCK_AUTH = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -306,20 +307,22 @@ const LoginPage: React.FC = () => {
               </div>
             </form>
 
-            {/* 테스트 계정 */}
-            <div className="test-accounts">
-              <div className="test-accounts-title">테스트 계정</div>
-              {TEST_ACCOUNTS.map((account) => (
-                <div
-                  key={account.userId}
-                  className="test-account-item"
-                  onClick={() => handleTestAccountClick(account)}
-                >
-                  <span>{account.role}</span>
-                  <span>{account.userId}</span>
-                </div>
-              ))}
-            </div>
+            {/* 테스트 계정 (목업 모드에서만 노출) */}
+            {USE_MOCK_AUTH && (
+              <div className="test-accounts">
+                <div className="test-accounts-title">테스트 계정</div>
+                {TEST_ACCOUNTS.map((account) => (
+                  <div
+                    key={account.userId}
+                    className="test-account-item"
+                    onClick={() => handleTestAccountClick(account)}
+                  >
+                    <span>{account.role}</span>
+                    <span>{account.userId}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
