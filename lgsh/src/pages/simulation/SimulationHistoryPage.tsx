@@ -7,6 +7,7 @@ import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import type { SimulationHistoryItem, SimulationHistoryResponse } from '@/types';
 import { simulationService } from '@/services';
+import { getSimulationScenarioLabel } from './scenarioConfig';
 import './SimulationHistoryPage.css';
 
 const { RangePicker } = DatePicker;
@@ -23,6 +24,10 @@ const scenarioOptions = [
   { label: '스트레스', value: 'STRESS' },
   { label: '민감도', value: 'SENSITIVITY' },
 ];
+
+const getScenarioTypeLabel = (value?: string) => {
+  return scenarioOptions.find((opt) => opt.value === (value || ''))?.label || value || '-';
+};
 
 const SimulationHistoryPage: React.FC = () => {
   const [form] = Form.useForm<SearchFormValues>();
@@ -110,7 +115,7 @@ const SimulationHistoryPage: React.FC = () => {
       dataIndex: 'scenarioType',
       width: 120,
       render: (value) => {
-        const label = scenarioOptions.find((opt) => opt.value === value)?.label || value || '-';
+        const label = getScenarioTypeLabel(value);
         return <Tag>{label}</Tag>;
       },
     },
@@ -219,7 +224,7 @@ const SimulationHistoryPage: React.FC = () => {
               </div>
               <div className="detail-row">
                 <span className="detail-label">시나리오</span>
-                <span>{detailItem.scenarioType || '-'}</span>
+                <span>{getScenarioTypeLabel(detailItem.scenarioType)}</span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">변경 전 점수</span>
@@ -243,12 +248,15 @@ const SimulationHistoryPage: React.FC = () => {
               <div className="detail-title">세부 점수 변화</div>
               {detailScenario?.breakdown?.length ? (
                 <div className="detail-breakdown">
-                  {detailScenario.breakdown.map((item: any) => {
-                    const label = item.key || '항목';
+                  {detailScenario.breakdown.map((item: any, index: number) => {
+                    const rawKey = typeof item === 'string'
+                      ? item
+                      : (item?.key ?? item?.itemKey ?? item?.scenarioKey ?? item?.name);
+                    const label = getSimulationScenarioLabel(rawKey);
                     const delta = item.delta ?? 0;
                     const sign = delta >= 0 ? '+' : '';
                     return (
-                      <div className="detail-breakdown-row" key={item.key}>
+                      <div className="detail-breakdown-row" key={rawKey || index}>
                         <span className="detail-label">{label}</span>
                         <span>{sign}{delta}점</span>
                       </div>

@@ -329,6 +329,10 @@ const PersonPage: React.FC = () => {
     return [];
   }, [searchForm, userCompanyId]);
 
+  const fetchAllDataForExcel = useCallback(async (): Promise<PersonFull[]> => {
+    return fetchDataByPageForExcel(0, 50000);
+  }, [fetchDataByPageForExcel]);
+
   // 페이지별 데이터 조회 (엑셀 배치 다운로드용, 5만건 초과 시)
   const fetchDataByPage = useCallback(async (page: number, size: number): Promise<PersonFull[]> => {
     const searchValues = searchForm.getFieldsValue();
