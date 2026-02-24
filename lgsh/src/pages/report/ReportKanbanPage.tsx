@@ -102,6 +102,8 @@ const ReportKanbanPage: React.FC = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState<ReportPreviewData | null>(null);
+  const [aiAnalysesLoading, setAiAnalysesLoading] = useState(false);
+  const aiAnalysesAbortRef = useRef(false); // 모달 닫힘 시 AI 결과 반영 방지
 
   // 생성 모달
   const [generateOpen, setGenerateOpen] = useState(false);
@@ -402,6 +404,39 @@ const ReportKanbanPage: React.FC = () => {
     return `${userCompanyId}:${year}:${month}:${itemIds}`;
   };
 
+  // AI 분석 백그라운드 로딩 (종합 요약 + 항목별 분석)
+  const loadAiAnalyses = async (itemIds: string[], cacheKey: string, basePreviewData: ReportPreviewData) => {
+    setAiAnalysesLoading(true);
+    aiAnalysesAbortRef.current = false;
+    try {
+      const response = await reportService.getAiAnalyses({
+        companyId: userCompanyId,
+        year,
+        month,
+        itemIds,
+      });
+
+      if (aiAnalysesAbortRef.current) return; // 모달이 닫혔으면 무시
+
+      if (response.success && response.data) {
+        const fullData: ReportPreviewData = {
+          ...basePreviewData,
+          aiSummary: response.data.aiSummary,
+          itemAnalyses: response.data.itemAnalyses,
+        };
+        setPreviewData(fullData);
+        // AI 결과 포함 데이터를 캐시에 저장
+        previewCacheRef.current = { key: cacheKey, data: fullData, timestamp: Date.now() };
+      }
+    } catch (error) {
+      console.warn('AI 분석 로딩 실패:', error);
+    } finally {
+      if (!aiAnalysesAbortRef.current) {
+        setAiAnalysesLoading(false);
+      }
+    }
+  };
+
   // 미리보기 (캐시 지원)
   const handlePreview = async (forceRefresh = false) => {
     const requiredItems = columns.find((c) => c.id === 'required')?.items || [];
@@ -412,7 +447,7 @@ const ReportKanbanPage: React.FC = () => {
 
     const cacheKey = getPreviewCacheKey();
 
-    // 캐시 히트: 강제 새로고침이 아니고, 캐시 키가 일치하면 즉시 표시
+    // 캐시 히트: 강제 새로고침이 아니고, 캐시 키가 일치하면 즉시 표시 (AI 포함)
     if (!forceRefresh && previewCacheRef.current?.key === cacheKey) {
       setPreviewData(previewCacheRef.current.data);
       setIsCachedPreview(true);
@@ -425,24 +460,21 @@ const ReportKanbanPage: React.FC = () => {
     setIsCachedPreview(false);
     try {
       const itemIds = requiredItems.map((item) => item.itemId);
+      // includeAiSummary: false → 데이터만 빠르게 가져오고 모달을 먼저 연다
       const response = await reportService.getPreview({
         companyId: userCompanyId,
         year,
         month,
         itemIds,
-        includeAiSummary: true,
+        includeAiSummary: false,
         includeCharts: false,
       });
 
       if (response.success && response.data) {
         setPreviewData(response.data);
-        // 캐시에 저장
-        previewCacheRef.current = {
-          key: cacheKey,
-          data: response.data,
-          timestamp: Date.now(),
-        };
         setPreviewOpen(true);
+        // AI 분석은 백그라운드에서 비동기 로딩 (캐시는 AI 완료 후 저장)
+        loadAiAnalyses(itemIds, cacheKey, response.data);
       } else {
         message.error(response.message || '미리보기 데이터 조회에 실패했습니다.');
       }
@@ -748,6 +780,8 @@ const ReportKanbanPage: React.FC = () => {
         onCancel={() => {
           setPreviewOpen(false);
           setIsEditingAiSummary(false);
+          aiAnalysesAbortRef.current = true; // 진행 중인 AI 로딩 결과 무시
+          setAiAnalysesLoading(false);
         }}
         footer={[
           <Button key="close" onClick={() => setPreviewOpen(false)}>
@@ -835,7 +869,18 @@ const ReportKanbanPage: React.FC = () => {
                     ),
                     children: (
                       <div>
-                        {previewData.aiSummary?.success ? (
+                        {aiAnalysesLoading ? (
+                          <div style={{ textAlign: 'center', padding: '48px 0' }}>
+                            <Spin size="large" />
+                            <div style={{ marginTop: 16, color: '#666' }}>
+                              <RobotOutlined style={{ marginRight: 6 }} />
+                              AI 종합 요약 및 항목별 분석 생성 중...
+                            </div>
+                            <div style={{ marginTop: 8, color: '#999', fontSize: 12 }}>
+                              통상 30~90초 소요됩니다. 다른 탭을 먼저 확인하셔도 됩니다.
+                            </div>
+                          </div>
+                        ) : previewData.aiSummary?.success ? (
                           <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                               <Title level={5} style={{ margin: 0 }}>

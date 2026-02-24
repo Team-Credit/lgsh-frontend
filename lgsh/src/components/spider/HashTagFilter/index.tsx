@@ -85,6 +85,7 @@ const HashTagFilter: React.FC = () => {
             <TagChip key={tag.id} tag={tag} onRemove={(id) => dispatch(removeExpTag(id))} />
           ))}
           <TagInput
+            key="exp-input"
             group="experiment"
             filterOptions={filterOptions}
             onAdd={(tag) => dispatch(addExpTag(tag))}
@@ -113,6 +114,7 @@ const HashTagFilter: React.FC = () => {
             <TagChip key={tag.id} tag={tag} onRemove={(id) => dispatch(removeCtlTag(id))} />
           ))}
           <TagInput
+            key="ctl-input"
             group="control"
             filterOptions={filterOptions}
             onAdd={(tag) => dispatch(addCtlTag(tag))}

@@ -15,7 +15,6 @@ import {
   Legend,
   ResponsiveContainer,
   ReferenceLine,
-  Cell,
 } from 'recharts';
 import { useAppSelector } from '@/store/hooks';
 import { modelService } from '@/services/modelService';
@@ -36,6 +35,23 @@ const GRADE_COLORS: Record<string, string> = {
   E: '#ef4444',
 };
 const GRADE_KEYS = ['A', 'B', 'C', 'D', 'E'] as const;
+const GRADE_CODE_MAP: Record<string, keyof typeof GRADE_COLORS> = {
+  A: 'A',
+  B: 'B',
+  C: 'C',
+  D: 'D',
+  E: 'E',
+  '01': 'A',
+  '1': 'A',
+  '02': 'B',
+  '2': 'B',
+  '03': 'C',
+  '3': 'C',
+  '04': 'D',
+  '4': 'D',
+  '05': 'E',
+  '5': 'E',
+};
 
 /** 숫자 소수점 정리: 정수면 그대로, 소수면 최대 digits자리 */
 const fmt = (v: unknown, digits = 2): string => {
@@ -46,6 +62,35 @@ const fmt = (v: unknown, digits = 2): string => {
 };
 const fmtPsi = (v: unknown) => fmt(v, 4);
 const fmtRate = (v: unknown) => fmt(v, 4);
+
+const normalizeGradeCounts = (gradeCntJson?: string | null): Record<(typeof GRADE_KEYS)[number], number> => {
+  const normalized: Record<(typeof GRADE_KEYS)[number], number> = {
+    A: 0,
+    B: 0,
+    C: 0,
+    D: 0,
+    E: 0,
+  };
+
+  if (!gradeCntJson) return normalized;
+
+  try {
+    const parsed = JSON.parse(gradeCntJson) as Record<string, unknown>;
+    Object.entries(parsed).forEach(([key, value]) => {
+      const normalizedKey = String(key).trim().toUpperCase();
+      const mappedGrade = GRADE_CODE_MAP[normalizedKey] as (typeof GRADE_KEYS)[number] | undefined;
+      if (!mappedGrade) return;
+      const count = Number(value);
+      if (Number.isFinite(count)) {
+        normalized[mappedGrade] += count;
+      }
+    });
+  } catch {
+    return normalized;
+  }
+
+  return normalized;
+};
 
 const TimeSeriesPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
@@ -229,19 +274,14 @@ const TimeSeriesPage: React.FC = () => {
   /** 월별 등급 분포 (Stacked Bar) */
   const gradeChartData = useMemo(() => {
     return summary.map((row) => {
-      let grades: Record<string, number> = {};
-      try {
-        grades = row.gradeCntJson ? JSON.parse(row.gradeCntJson) : {};
-      } catch {
-        grades = {};
-      }
+      const grades = normalizeGradeCounts(row.gradeCntJson);
       return {
         month: row.snapshotMonth,
-        A: grades.A || 0,
-        B: grades.B || 0,
-        C: grades.C || 0,
-        D: grades.D || 0,
-        E: grades.E || 0,
+        A: grades.A,
+        B: grades.B,
+        C: grades.C,
+        D: grades.D,
+        E: grades.E,
       };
     });
   }, [summary]);
@@ -296,21 +336,33 @@ const TimeSeriesPage: React.FC = () => {
     const last = scoreDist.length > 0 ? scoreDist : [];
     if (first.length === 0 && last.length === 0) return [];
 
-    const maxBins = Math.max(first.length, last.length);
-    const result: { bin: string; [key: string]: string | number }[] = [];
-    for (let i = 0; i < maxBins; i++) {
-      const binLabel = first[i]
-        ? `${first[i].binMin ?? ''}-${first[i].binMax ?? ''}`
-        : last[i]
-        ? `${last[i].binMin ?? ''}-${last[i].binMax ?? ''}`
-        : `Bin ${i + 1}`;
-      result.push({
-        bin: binLabel,
-        [fromMonth]: first[i]?.binCnt ?? 0,
-        [toMonth]: last[i]?.binCnt ?? 0,
+    const binMap = new Map<number, { bin: string; [key: string]: string | number }>();
+    const upsert = (bins: TsScoreBin[], monthKey: string) => {
+      bins.forEach((bin, index) => {
+        const orderKey = Number.isFinite(bin.binNo) ? bin.binNo : index + 1;
+        const binLabel = `${bin.binMin ?? ''}-${bin.binMax ?? ''}`;
+        const existing = binMap.get(orderKey);
+        if (existing) {
+          existing[monthKey] = bin.binCnt ?? 0;
+        } else {
+          binMap.set(orderKey, {
+            bin: binLabel || `Bin ${orderKey}`,
+            [monthKey]: bin.binCnt ?? 0,
+          });
+        }
       });
-    }
-    return result;
+    };
+
+    upsert(first, fromMonth);
+    upsert(last, toMonth);
+
+    return Array.from(binMap.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([, item]) => ({
+        ...item,
+        [fromMonth]: (item[fromMonth] as number | undefined) ?? 0,
+        [toMonth]: (item[toMonth] as number | undefined) ?? 0,
+      }));
   }, [scoreDist, scoreDistFirst, range]);
 
   const fromMonthLabel = formatMonth(range[0]) || '';

@@ -57,11 +57,11 @@ const NoticeFormPage: React.FC = () => {
             if (response.success && response.data) {
                 setDetailData(response.data);
             } else {
-                message.error(response.message || '怨듭??ы빆 ?뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.');
+                message.error(response.message || '공지사항 정보를 불러오는데 실패했습니다.');
             }
         } catch (error: any) {
-            console.error('怨듭??ы빆 ?곸꽭 議고쉶 ?ㅻ쪟:', error);
-            message.error('怨듭??ы빆 ?뺣낫瑜?遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.');
+            console.error('공지사항 상세 조회 오류:', error);
+            message.error('공지사항 정보를 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
         }
@@ -118,14 +118,14 @@ const NoticeFormPage: React.FC = () => {
             }
 
             if (response.success) {
-                message.success(isEdit ? '怨듭??ы빆???섏젙?섏뿀?듬땲??' : '怨듭??ы빆???깅줉?섏뿀?듬땲??');
+                message.success(isEdit ? '공지사항이 수정되었습니다.' : '공지사항이 등록되었습니다.');
                 navigate('/notices');
             } else {
-                message.error(response.message || '??μ뿉 ?ㅽ뙣?덉뒿?덈떎.');
+                message.error(response.message || '저장에 실패했습니다.');
             }
         } catch (error: any) {
-            console.error('????ㅻ쪟:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || '???以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
+            console.error('저장 오류:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || '저장 중 오류가 발생했습니다.';
             message.error(errorMessage);
         } finally {
             setSubmitting(false);

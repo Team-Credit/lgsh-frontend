@@ -68,7 +68,7 @@ const CreditEvaluationTargetPage: React.FC = () => {
     const last = items[items.length - 1];
     const cursor: CursorState = { cursorPersonId: last.personId };
     if (sortBy === 'RECENT') {
-      cursor.cursorRegDt = last.scoreDt ?? undefined; // REG_DT는 현재 VO에 없어 scoreDt 대체 불가 → personId만 사용
+      cursor.cursorScoreDt = last.scoreDt ?? undefined;
     } else {
       cursor.cursorScore    = last.creditScore ?? undefined;
       cursor.cursorScoreDt  = last.scoreDt ?? undefined;
@@ -226,7 +226,7 @@ const CreditEvaluationTargetPage: React.FC = () => {
           </Form.Item>
           <Form.Item name="creditGrade" label="등급">
             <Select placeholder="전체" allowClear style={{ width: 120 }}>
-              {gradeOptions.map((opt) => (
+              {gradeOptions.filter((opt) => opt.value !== '01').map((opt) => (
                 <Option key={opt.value} value={opt.value}>{opt.label}</Option>
               ))}
             </Select>
