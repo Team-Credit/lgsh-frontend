@@ -330,7 +330,6 @@ const ResultVisualizationPage: React.FC = () => {
     try {
       const res = await resultVisualizationService.getData({
         modelId: modelIdToLoad,
-        maxRows: 50000,
       });
 
       if (!res.success || !res.data) {
@@ -409,8 +408,14 @@ const ResultVisualizationPage: React.FC = () => {
       .filter((v): v is number => v !== null);
     if (!values.length) return [];
 
-    const min = Math.min(...values);
-    const max = Math.max(...values);
+    // Avoid spreading very large arrays into Math.min/Math.max (can overflow call stack).
+    let min = values[0];
+    let max = values[0];
+    for (let i = 1; i < values.length; i += 1) {
+      const current = values[i];
+      if (current < min) min = current;
+      if (current > max) max = current;
+    }
     if (min === max) {
       return [{ bucket: '구간 1', rangeLabel: `${formatNumber(round0(min))}`, count: values.length }];
     }
