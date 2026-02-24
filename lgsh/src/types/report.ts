@@ -151,8 +151,15 @@ export interface ReportPreviewData {
   };
   items: Record<string, ReportItemData>;
   aiSummary?: AiSummaryData;
+  itemAnalyses?: Record<string, string>;
   chartImages?: Record<string, string>;
   errorItems?: ErrorItem[];
+}
+
+// AI 분석 결과 (preview와 분리된 백그라운드 응답)
+export interface ReportAiAnalysesData {
+  aiSummary?: AiSummaryData;
+  itemAnalyses?: Record<string, string>;
 }
 
 // 레포트 항목 데이터

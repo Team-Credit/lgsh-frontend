@@ -120,7 +120,6 @@ const NoticeFormPage: React.FC = () => {
 
             if (response.success) {
                 message.success(isEdit ? '공지사항이 수정되었습니다.' : '공지사항이 등록되었습니다.');
-                message.success(isEdit ? '공지사항이 수정되었습니다.' : '공지사항이 등록되었습니다.');
                 navigate('/notices');
             } else {
                 message.error(response.message || '저장에 실패했습니다.');

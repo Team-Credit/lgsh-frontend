@@ -10,6 +10,7 @@ import type {
   ReportGenerateRequest,
   ReportPreviewRequest,
   ReportPreviewData,
+  ReportAiAnalysesData,
   ReportHistory,
   ReportHistorySearchParams,
   ReportHistoryResponse,
@@ -132,11 +133,35 @@ export const reportService = {
     };
     try {
       const response = await api.post<ApiResponse<ReportPreviewData>>('/report/preview', payload, {
-        timeout: 120000, // AI 요약 + 항목별 분석 생성을 위해 2분 타임아웃
+        timeout: 300000, // AI 요약 + 항목별 분석 생성을 위해 5분 타임아웃
       });
       return response.data;
     } catch (error: any) {
       // HTTP 에러 응답 (400, 500 등)에서 메시지 추출
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      return { success: false, code: 'ERR_NETWORK', message: '네트워크 오류가 발생했습니다.', data: null as any };
+    }
+  },
+
+  /**
+   * AI 종합 요약 + 항목별 분석 조회 (preview와 분리된 백그라운드 호출)
+   * Django 에서 generate_summary / generate_item_analyses 를 병렬 실행하므로
+   * 기존 일괄 preview 대비 약 50% 빠름
+   */
+  getAiAnalyses: async (request: ReportPreviewRequest): Promise<ApiResponse<ReportAiAnalysesData>> => {
+    const payload = {
+      year: request.year,
+      month: request.month,
+      selectedItemIds: request.itemIds || request.selectedItemIds,
+    };
+    try {
+      const response = await api.post<ApiResponse<ReportAiAnalysesData>>('/report/preview/ai-analyses', payload, {
+        timeout: 300000, // 5분 타임아웃
+      });
+      return response.data;
+    } catch (error: any) {
       if (error.response?.data) {
         return error.response.data;
       }

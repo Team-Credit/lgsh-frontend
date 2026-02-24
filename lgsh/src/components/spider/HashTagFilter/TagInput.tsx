@@ -36,7 +36,6 @@ const TagInput: React.FC<Props> = ({ group, filterOptions, onAdd, existingTypes,
   const [personSearched, setPersonSearched] = useState(false);
 
   const availableTypes = TAG_TYPE_OPTIONS.filter((opt) => {
-    if (group === 'control' && opt.value === 'person') return false;
     return !existingTypes.includes(opt.value as HashTagType);
   });
 

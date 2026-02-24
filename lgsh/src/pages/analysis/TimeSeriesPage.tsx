@@ -15,7 +15,6 @@ import {
   Legend,
   ResponsiveContainer,
   ReferenceLine,
-  Cell,
 } from 'recharts';
 import { useAppSelector } from '@/store/hooks';
 import { modelService } from '@/services/modelService';
@@ -36,6 +35,23 @@ const GRADE_COLORS: Record<string, string> = {
   E: '#ef4444',
 };
 const GRADE_KEYS = ['A', 'B', 'C', 'D', 'E'] as const;
+const GRADE_CODE_MAP: Record<string, keyof typeof GRADE_COLORS> = {
+  A: 'A',
+  B: 'B',
+  C: 'C',
+  D: 'D',
+  E: 'E',
+  '01': 'A',
+  '1': 'A',
+  '02': 'B',
+  '2': 'B',
+  '03': 'C',
+  '3': 'C',
+  '04': 'D',
+  '4': 'D',
+  '05': 'E',
+  '5': 'E',
+};
 
 /** 숫자 소수점 정리: 정수면 그대로, 소수면 최대 digits자리 */
 const fmt = (v: unknown, digits = 2): string => {
@@ -273,19 +289,14 @@ const TimeSeriesPage: React.FC = () => {
   /** 월별 등급 분포 (Stacked Bar) */
   const gradeChartData = useMemo(() => {
     return summary.map((row) => {
-      let grades: Record<string, number> = {};
-      try {
-        grades = row.gradeCntJson ? JSON.parse(row.gradeCntJson) : {};
-      } catch {
-        grades = {};
-      }
+      const grades = normalizeGradeCounts(row.gradeCntJson);
       return {
         month: row.snapshotMonth,
-        A: grades.A || 0,
-        B: grades.B || 0,
-        C: grades.C || 0,
-        D: grades.D || 0,
-        E: grades.E || 0,
+        A: grades.A,
+        B: grades.B,
+        C: grades.C,
+        D: grades.D,
+        E: grades.E,
       };
     });
   }, [summary]);

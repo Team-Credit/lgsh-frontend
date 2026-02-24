@@ -283,7 +283,13 @@ const spiderSlice = createSlice({
     },
     addCtlTag: (state, action: PayloadAction<HashTag>) => {
       const tag = action.payload;
-      if (tag.type === 'person') return;
+      // person 태그 선택 시 다른 필터 태그 모두 제거 (그룹 조건과 상호 배타)
+      if (tag.type === 'person') {
+        state.ctlTags = [tag];
+        return;
+      }
+      // 다른 태그 추가 시 person 태그가 있으면 제거
+      state.ctlTags = state.ctlTags.filter((t) => t.type !== 'person');
       const idx = state.ctlTags.findIndex((t) => t.type === tag.type);
       if (idx >= 0) {
         state.ctlTags[idx] = tag;
