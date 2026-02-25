@@ -2,7 +2,7 @@
  * 분석관리 > 모델 선택
  */
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Typography, message } from 'antd';
+import { Card, Button, Typography, message, Select } from 'antd';
 import { RocketOutlined } from '@ant-design/icons';
 import type { ApprovalStatus, AlgorithmType, ModelListResponse, ModelType } from '@/types';
 import { modelService } from '@/services/modelService';
@@ -59,23 +59,24 @@ const algorithmTitles: Record<AlgorithmType, string> = {
   XGBOOST: 'XGBoost',
 };
 
+// 승인 상태 우선순위 (모듈 레벨로 추출 - pickModelByType + backupModels 정렬에서 공통 사용)
+const approvalPriority: Record<ApprovalStatus, number> = {
+  DEPLOYED: 0,
+  READY: 1,
+  APPROVED: 2,
+  TRAINING: 3,
+  DRAFT: 4,
+  ARCHIVED: 5,
+  FAILED: 6,
+};
+
 const pickModelByType = (models: ModelListResponse[], modelType: ModelType) => {
   const filtered = models.filter((item) => item.modelType === modelType);
   if (filtered.length === 0) return null;
 
-  const priority: Record<ApprovalStatus, number> = {
-    DEPLOYED: 0,
-    READY: 1,
-    APPROVED: 2,
-    TRAINING: 3,
-    DRAFT: 4,
-    ARCHIVED: 5,
-    FAILED: 6,
-  };
-
   return [...filtered].sort((a, b) => {
-    const pa = priority[a.approvalStatus] ?? 99;
-    const pb = priority[b.approvalStatus] ?? 99;
+    const pa = approvalPriority[a.approvalStatus] ?? 99;
+    const pb = approvalPriority[b.approvalStatus] ?? 99;
     if (pa !== pb) return pa - pb;
     const adt = new Date(a.deployedDt || a.regDt || 0).getTime();
     const bdt = new Date(b.deployedDt || b.regDt || 0).getTime();
@@ -99,6 +100,8 @@ const pickDefaultModelId = (list: ModelListResponse[]) => {
 
 const ModelSelectPage: React.FC = () => {
   const [cardModels, setCardModels] = useState<ModelListResponse[]>([]);
+  const [backupModels, setBackupModels] = useState<ModelListResponse[]>([]);
+  const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [applyLoading, setApplyLoading] = useState(false);
 
@@ -107,15 +110,42 @@ const ModelSelectPage: React.FC = () => {
       const response = await modelService.list({ page: 0, size: 200 });
       if (response.data.success && response.data.data) {
         const list = response.data.data.content || [];
+
+        // MAIN / BACKUP(best 1개) / REFERENCE 각 타입별 최우선 모델
         const picked = modelSelectOrder
           .map((modelType) => pickModelByType(list, modelType))
           .filter((item): item is ModelListResponse => Boolean(item));
         setCardModels(picked);
+
+        // 백업 모델 전체 목록 (우선순위 정렬)
+        const allBackups = list
+          .filter((item) => item.modelType === 'BACKUP')
+          .sort((a, b) => {
+            const pa = approvalPriority[a.approvalStatus] ?? 99;
+            const pb = approvalPriority[b.approvalStatus] ?? 99;
+            if (pa !== pb) return pa - pb;
+            const adt = new Date(a.deployedDt || a.regDt || 0).getTime();
+            const bdt = new Date(b.deployedDt || b.regDt || 0).getTime();
+            return bdt - adt;
+          });
+        setBackupModels(allBackups);
+
+        // selectedBackupId: 기존 선택이 유효하면 유지, 없으면 최우선 백업으로 기본값
+        setSelectedBackupId((prev) => {
+          if (prev && allBackups.some((m) => m.modelId === prev)) return prev;
+          return allBackups[0]?.modelId || null;
+        });
+
+        // selectedModelId: cardModels(non-REFERENCE) + backupModels 전체 범위에서 유효성 검증
         setSelectedModelId((prev) => {
-          const selectable = picked.filter((item) => item.modelType !== 'REFERENCE');
-          if (selectable.length === 0) return null;
-          if (prev && selectable.some((item) => item.modelId === prev)) return prev;
-          return pickDefaultModelId(selectable);
+          const selectableCard = picked.filter((item) => item.modelType !== 'REFERENCE');
+          if (prev) {
+            const stillValid =
+              selectableCard.some((m) => m.modelId === prev) ||
+              allBackups.some((m) => m.modelId === prev);
+            if (stillValid) return prev;
+          }
+          return selectableCard[0]?.modelId || allBackups[0]?.modelId || null;
         });
       } else {
         message.error(response.data.message || "모델 정보를 불러오지 못했습니다.");
@@ -138,7 +168,8 @@ const ModelSelectPage: React.FC = () => {
       return;
     }
 
-    const selected = cardModels.find((item) => item.modelId === selectedModelId);
+    // cardModels + backupModels 전체에서 선택된 모델 검색
+    const selected = [...cardModels, ...backupModels].find((item) => item.modelId === selectedModelId);
     if (selected?.algorithmType === 'XGBOOST') {
       message.warning("참조용 모델은 선택할 수 없습니다.");
       return;
@@ -188,10 +219,25 @@ const ModelSelectPage: React.FC = () => {
       <Card className="model-select-card" size="small">
         <div className="model-select-grid">
           {modelSelectOrder.map((modelType) => {
-            const model = cardModels.find((item) => item.modelType === modelType) || null;
+            // 백업 모델은 selectedBackupId로 찾은 모델 표시, 나머지는 기존 cardModels 사용
+            const model =
+              modelType === 'BACKUP'
+                ? backupModels.find((m) => m.modelId === selectedBackupId) || null
+                : cardModels.find((item) => item.modelType === modelType) || null;
+
             const label = modelSelectLabels[modelType]!;
-            const selected = model && selectedModelId === model.modelId;
-            const selectable = Boolean(model) && modelType !== 'REFERENCE';
+
+            // 백업 타일은 selectedBackupId와 selectedModelId 일치 여부로 선택 상태 판단
+            const selected =
+              modelType === 'BACKUP'
+                ? selectedModelId === selectedBackupId
+                : Boolean(model && selectedModelId === model.modelId);
+
+            // 백업 타일은 백업 모델이 1개 이상이면 선택 가능
+            const selectable =
+              (Boolean(model) || (modelType === 'BACKUP' && backupModels.length > 0))
+              && modelType !== 'REFERENCE';
+
             const deployed = model?.approvalStatus === 'DEPLOYED' && model?.modelType === 'MAIN';
             const algorithmClass = model?.algorithmType ? model.algorithmType.toLowerCase() : '';
             const title = model ? (model.algorithmTypeNm || algorithmTitles[model.algorithmType]) : label.title;
@@ -202,8 +248,12 @@ const ModelSelectPage: React.FC = () => {
                 type="button"
                 className={`model-select-tile ${algorithmClass} ${selected ? 'selected' : ''} ${model ? '' : 'empty'} ${selectable ? '' : 'disabled'} ${deployed ? 'deployed' : ''}`}
                 onClick={() => {
-                  if (selectable && model) {
-                    setSelectedModelId(model.modelId);
+                  if (selectable) {
+                    if (modelType === 'BACKUP') {
+                      if (selectedBackupId) setSelectedModelId(selectedBackupId);
+                    } else if (model) {
+                      setSelectedModelId(model.modelId);
+                    }
                   }
                 }}
                 disabled={!selectable}
@@ -217,6 +267,29 @@ const ModelSelectPage: React.FC = () => {
                   <div className="model-select-meta">
                     {model ? '' : label.hint}
                   </div>
+
+                  {/* 백업 모델 2개 이상일 때: 드롭다운으로 원하는 백업 모델 선택 가능 */}
+                  {modelType === 'BACKUP' && backupModels.length > 1 && (
+                    <div
+                      className="model-select-backup-picker"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Select
+                        size="small"
+                        value={selectedBackupId}
+                        style={{ width: '100%' }}
+                        popupMatchSelectWidth={false}
+                        onChange={(value) => {
+                          setSelectedBackupId(value);
+                          setSelectedModelId(value);
+                        }}
+                        options={backupModels.map((m) => ({
+                          value: m.modelId,
+                          label: `${m.modelNm || m.modelId} (${m.approvalStatusNm || m.approvalStatus})`,
+                        }))}
+                      />
+                    </div>
+                  )}
                 </div>
               </button>
             );
