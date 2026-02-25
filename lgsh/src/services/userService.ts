@@ -73,14 +73,16 @@ export const userService = {
 
   // 일괄 삭제
   deleteBatch: async (userIds: string[]): Promise<ApiResponse<null>> => {
-    await Promise.all(
-      userIds.map(userId => api.delete(`/users/${userId}`))
+    const responses = await Promise.all(
+      userIds.map(userId => api.delete<ApiResponse<void>>(`/users/${userId}`))
     );
 
+    // 첫 번째 응답의 message를 대표 메시지로 사용 (TB_SYS_MESSAGE 코드 반영)
+    const firstMessage = responses[0]?.data?.message;
     return {
       success: true,
       data: null,
-      message: `${userIds.length}건이 삭제되었습니다.`,
+      message: firstMessage || `${userIds.length}건이 삭제되었습니다.`,
       errorCode: null,
     };
   },

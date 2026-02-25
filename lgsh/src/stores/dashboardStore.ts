@@ -81,6 +81,13 @@ interface DashboardState {
 // 원본 레이아웃 저장(취소 시 복원용)
 let originalLayout: DashboardLayoutItem[] | null = null;
 
+// 자동 재시도: 첫 로드 시 불완전한 CHART 위젯을 자동으로 다시 조회 (서버 웜업 대기)
+let _autoRetryTimer: ReturnType<typeof setTimeout> | null = null;
+let _autoRetryCount = 0;
+const MAX_AUTO_RETRIES = 3;
+const AUTO_RETRY_DELAYS = [5000, 10000, 15000]; // 5초, 10초, 15초
+let _autoRetryPending = false; // setTimeout 콜백에서 호출 시 true
+
 export const useDashboardStore = create<DashboardState>((set, get) => ({
   config: null,
   settings: DEFAULT_SETTINGS,
@@ -335,6 +342,16 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     const { config, selectedYearMonth, lastEvalMonth } = get();
     if (!config) return;
 
+    // 직접 호출(재시도 아님)이면 재시도 상태 초기화
+    if (!_autoRetryPending) {
+      _autoRetryCount = 0;
+      if (_autoRetryTimer) {
+        clearTimeout(_autoRetryTimer);
+        _autoRetryTimer = null;
+      }
+    }
+    _autoRetryPending = false;
+
     const visibleWidgets = config.layout.filter((item) => item.visible);
     if (visibleWidgets.length === 0) return;
 
@@ -380,6 +397,25 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       set((state) => ({
         widgetDataCache: { ...state.widgetDataCache, ...newCache },
       }));
+
+      // 불완전한 CHART 위젯이 있으면 자동 재시도 (서버 웜업 대기 대응)
+      const hasIncompleteChart = visibleWidgets.some((w) => {
+        if (w.widgetType !== 'CHART') return false;
+        const cached = newCache[w.widgetId];
+        return !(cached?.data as { chartType?: string } | undefined)?.chartType;
+      });
+
+      if (hasIncompleteChart && _autoRetryCount < MAX_AUTO_RETRIES) {
+        if (_autoRetryTimer) clearTimeout(_autoRetryTimer);
+        const delay = AUTO_RETRY_DELAYS[_autoRetryCount] ?? 15000;
+        _autoRetryPending = true;
+        _autoRetryTimer = setTimeout(() => {
+          _autoRetryCount++;
+          get().loadAllWidgets();
+        }, delay);
+      } else {
+        _autoRetryCount = 0;
+      }
     } catch (error) {
       console.error('위젯 데이터 벌크 조회 실패:', error);
       // 실패 시 개별 조회로 폴백
@@ -491,6 +527,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
    */
   resetStore: () => {
     originalLayout = null;
+    // 자동 재시도 타이머 정리
+    _autoRetryCount = 0;
+    _autoRetryPending = false;
+    if (_autoRetryTimer) {
+      clearTimeout(_autoRetryTimer);
+      _autoRetryTimer = null;
+    }
     set({
       config: null,
       settings: DEFAULT_SETTINGS,
