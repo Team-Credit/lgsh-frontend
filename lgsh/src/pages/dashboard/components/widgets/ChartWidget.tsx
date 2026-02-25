@@ -37,6 +37,12 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ data }) => {
   ];
 
   const renderChart = () => {
+    // chartType 또는 chartData가 없으면 데이터 미준비 (서버 웜업 대기 등)
+    // 에러 메시지 대신 빈 상태 반환
+    if (!chartType || !chartData) {
+      return null;
+    }
+
     switch (chartType) {
       case 'PIE':
         return (

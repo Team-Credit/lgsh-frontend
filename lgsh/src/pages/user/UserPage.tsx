@@ -417,7 +417,7 @@ const UserPage: React.FC = () => {
     try {
       const response = await userService.delete(record.userId);
       if (response.success) {
-        message.success('삭제되었습니다.');
+        message.success(response.message || '삭제되었습니다.');
         fetchData();
       } else {
         message.error(response.message || '삭제에 실패했습니다.');
@@ -441,8 +441,8 @@ const UserPage: React.FC = () => {
     setLoading(true);
     try {
       const userIds = selectedRows.map((row) => row.userId);
-      await userService.deleteBatch(userIds);
-      message.success(`${userIds.length}건이 삭제되었습니다.`);
+      const response = await userService.deleteBatch(userIds);
+      message.success(response.message || `${userIds.length}건이 삭제되었습니다.`);
       setSelectedRowKeys([]);
       setSelectedRows([]);
       fetchData();
