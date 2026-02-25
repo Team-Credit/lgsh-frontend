@@ -30,7 +30,7 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({
   widget,
   isEditMode,
 }) => {
-  const { widgetDataCache, loadWidgetData, toggleWidget } = useDashboardStore();
+  const { widgetDataCache, loadWidgetData, refreshWidgetData, toggleWidget } = useDashboardStore();
 
   const widgetData = widgetDataCache[widget.widgetId];
   const isLoading = widgetData?.loading ?? true;
@@ -47,7 +47,7 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({
   // 새로고침 핸들러
   const handleRefresh = (e: React.MouseEvent) => {
     e.stopPropagation();
-    loadWidgetData(widget.widgetId);
+    refreshWidgetData(widget.widgetId);
   };
 
   // 제거 핸들러
