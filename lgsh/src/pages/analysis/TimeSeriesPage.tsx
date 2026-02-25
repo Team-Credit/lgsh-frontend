@@ -78,6 +78,54 @@ const pickDefaultModelId = (list: ModelListResponse[]) => {
   return preferred || list[0]?.modelId || '';
 };
 
+const toSafeCount = (value: unknown): number => {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
+};
+
+const normalizeGradeCounts = (raw?: string | null): Record<(typeof GRADE_KEYS)[number], number> => {
+  const counts: Record<(typeof GRADE_KEYS)[number], number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+  if (!raw) return counts;
+
+  let parsed: unknown = raw;
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return counts;
+    }
+  }
+
+  if (Array.isArray(parsed)) {
+    for (const item of parsed) {
+      if (!item || typeof item !== 'object') continue;
+      const obj = item as Record<string, unknown>;
+      const keyRaw = String(obj.grade ?? obj.GRADE_BUCKET ?? '').trim();
+      const normalized = keyRaw.toUpperCase();
+      const grade = (GRADE_CODE_MAP[normalized] ?? GRADE_CODE_MAP[keyRaw]) as
+        | (typeof GRADE_KEYS)[number]
+        | undefined;
+      if (!grade) continue;
+      counts[grade] += toSafeCount(obj.count ?? obj.cnt ?? obj.CNT ?? 0);
+    }
+    return counts;
+  }
+
+  if (parsed && typeof parsed === 'object') {
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      const keyRaw = String(key).trim();
+      const normalized = keyRaw.toUpperCase();
+      const grade = (GRADE_CODE_MAP[normalized] ?? GRADE_CODE_MAP[keyRaw]) as
+        | (typeof GRADE_KEYS)[number]
+        | undefined;
+      if (!grade) continue;
+      counts[grade] += toSafeCount(value);
+    }
+  }
+
+  return counts;
+};
+
 const TimeSeriesPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
   const companyId = user?.companyId || '';
